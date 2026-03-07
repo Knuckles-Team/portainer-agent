@@ -17,7 +17,7 @@ from agent_utilities.mcp_utilities import (
 )
 from portainer_agent.auth import get_client
 
-__version__ = "0.1.5"
+__version__ = "0.1.6"
 print(f"Portainer MCP v{__version__}")
 
 logger = get_logger(name="TokenMiddleware")
