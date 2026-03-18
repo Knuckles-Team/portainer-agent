@@ -39,6 +39,29 @@ class PortainerApi:
             self.session.headers.update({"X-API-Key": token})
         self.session.headers.update({"Accept": "application/json"})
 
+        # Validate credentials during initialization
+        try:
+            # Using /system/status as a lightweight validation endpoint
+            response = self.session.get(f"{self.api_base}/system/status")
+            if response.status_code == 401:
+                from agent_utilities.exceptions import AuthError
+
+                raise AuthError(
+                    "Portainer authentication failed: Invalid token or credentials."
+                )
+            elif response.status_code == 403:
+                from agent_utilities.exceptions import UnauthorizedError
+
+                raise UnauthorizedError(
+                    "Portainer access forbidden: Insufficient permissions."
+                )
+            response.raise_for_status()
+        except Exception as e:
+            if isinstance(e, (AuthError, UnauthorizedError)):
+                raise e
+            # For other errors (connection, etc.), let it pass or handle elsewhere
+            pass
+
     # ── Generic helpers ──────────────────────────────────────────────────
 
     def _url(self, endpoint: str) -> str:

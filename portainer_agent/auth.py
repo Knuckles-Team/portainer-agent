@@ -7,6 +7,7 @@ import urllib3
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 from portainer_agent.portainer_api import PortainerApi
+from agent_utilities.exceptions import AuthError, UnauthorizedError
 
 _client = None
 
@@ -19,10 +20,17 @@ def get_client() -> PortainerApi:
         token = os.getenv("PORTAINER_TOKEN", "")
         verify = os.getenv("PORTAINER_VERIFY", "True").lower() in ("true", "1", "yes")
 
-        _client = PortainerApi(
-            base_url=base_url,
-            token=token,
-            verify=verify,
-        )
+        try:
+            _client = PortainerApi(
+                base_url=base_url,
+                token=token,
+                verify=verify,
+            )
+        except (AuthError, UnauthorizedError) as e:
+            raise RuntimeError(
+                f"AUTHENTICATION ERROR: The Portainer credentials provided are not valid for '{base_url}'. "
+                f"Please check your PORTAINER_TOKEN and PORTAINER_URL environment variables. "
+                f"Error details: {str(e)}"
+            ) from e
 
     return _client
