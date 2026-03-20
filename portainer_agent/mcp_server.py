@@ -6,7 +6,7 @@ from agent_utilities.base_utilities import to_boolean
 import os
 import sys
 import logging
-from typing import Optional, List, Any
+from typing import Optional, List, Any, Dict
 
 from pydantic import Field
 from fastmcp import FastMCP
@@ -17,7 +17,7 @@ from agent_utilities.mcp_utilities import (
 )
 from portainer_agent.auth import get_client
 
-__version__ = "0.1.19"
+__version__ = "0.1.20"
 print(f"Portainer MCP v{__version__}")
 
 logger = get_logger(name="TokenMiddleware")
@@ -233,17 +233,6 @@ def register_docker_tools(mcp: FastMCP):
         return get_client().get_docker_dashboard(environment_id)
 
     @mcp.tool(
-        name="get_docker_images",
-        description="List Docker images in an environment.",
-        tags={"Docker"},
-    )
-    def get_docker_images_tool(
-        environment_id: int = Field(description="Environment ID."),
-    ) -> Any:
-        """List Docker images."""
-        return get_client().get_docker_images(environment_id)
-
-    @mcp.tool(
         name="get_container_gpus",
         description="Get GPU information for a Docker container.",
         tags={"Docker"},
@@ -254,6 +243,448 @@ def register_docker_tools(mcp: FastMCP):
     ) -> Any:
         """Get container GPUs."""
         return get_client().get_container_gpus(environment_id, container_id)
+
+    @mcp.tool(
+        name="docker_list_containers",
+        description="List containers in a Docker environment.",
+        tags={"Docker"},
+    )
+    def docker_list_containers_tool(
+        environment_id: int = Field(description="Environment ID."),
+        all_containers: bool = Field(
+            default=False,
+            alias="all",
+            description="Show all containers (default shows just running).",
+        ),
+        limit: Optional[int] = Field(
+            default=None,
+            description="Return this number of most recently created containers.",
+        ),
+        filters: Optional[str] = Field(
+            default=None,
+            description="A JSON encoded value of the filters to process on the containers list.",
+        ),
+    ) -> Any:
+        """List containers."""
+        params = {"all": all_containers}
+        if limit:
+            params["limit"] = limit
+        if filters:
+            params["filters"] = filters
+        return get_client().list_containers(environment_id, **params)
+
+    @mcp.tool(
+        name="docker_inspect_container",
+        description="Return low-level information about a container.",
+        tags={"Docker"},
+    )
+    def docker_inspect_container_tool(
+        environment_id: int = Field(description="Environment ID."),
+        container_id: str = Field(description="Container ID or name."),
+    ) -> Any:
+        """Inspect container."""
+        return get_client().inspect_container(environment_id, container_id)
+
+    @mcp.tool(
+        name="docker_get_container_logs",
+        description="Get stdout and stderr logs from a container.",
+        tags={"Docker"},
+    )
+    def docker_get_container_logs_tool(
+        environment_id: int = Field(description="Environment ID."),
+        container_id: str = Field(description="Container ID or name."),
+        tail: str = Field(
+            default="all",
+            description="Output specified number of lines at the end of logs.",
+        ),
+        since: Optional[int] = Field(
+            default=None,
+            description="Only return logs since this time, as a UNIX timestamp.",
+        ),
+        timestamps: bool = Field(default=True, description="Show timestamps in logs."),
+    ) -> Any:
+        """Get container logs."""
+        params = {"tail": tail, "timestamps": timestamps}
+        if since:
+            params["since"] = since
+        return get_client().get_container_logs(environment_id, container_id, **params)
+
+    @mcp.tool(
+        name="docker_get_container_stats",
+        description="Get resource usage statistics for a container.",
+        tags={"Docker"},
+    )
+    def docker_get_container_stats_tool(
+        environment_id: int = Field(description="Environment ID."),
+        container_id: str = Field(description="Container ID or name."),
+    ) -> Any:
+        """Get container stats."""
+        return get_client().get_container_stats(environment_id, container_id)
+
+    @mcp.tool(
+        name="docker_start_container",
+        description="Start a container.",
+        tags={"Docker"},
+    )
+    def docker_start_container_tool(
+        environment_id: int = Field(description="Environment ID."),
+        container_id: str = Field(description="Container ID or name."),
+    ) -> Any:
+        """Start container."""
+        return get_client().start_container(environment_id, container_id)
+
+    @mcp.tool(
+        name="docker_stop_container",
+        description="Stop a container.",
+        tags={"Docker"},
+    )
+    def docker_stop_container_tool(
+        environment_id: int = Field(description="Environment ID."),
+        container_id: str = Field(description="Container ID or name."),
+        timeout: Optional[int] = Field(
+            default=None,
+            description="Number of seconds to wait before killing the container.",
+        ),
+    ) -> Any:
+        """Stop container."""
+        return get_client().stop_container(
+            environment_id, container_id, timeout=timeout
+        )
+
+    @mcp.tool(
+        name="docker_restart_container",
+        description="Restart a container.",
+        tags={"Docker"},
+    )
+    def docker_restart_container_tool(
+        environment_id: int = Field(description="Environment ID."),
+        container_id: str = Field(description="Container ID or name."),
+        timeout: Optional[int] = Field(
+            default=None,
+            description="Number of seconds to wait before killing the container.",
+        ),
+    ) -> Any:
+        """Restart container."""
+        return get_client().restart_container(
+            environment_id, container_id, timeout=timeout
+        )
+
+    @mcp.tool(
+        name="docker_remove_container",
+        description="Remove a container.",
+        tags={"Docker"},
+    )
+    def docker_remove_container_tool(
+        environment_id: int = Field(description="Environment ID."),
+        container_id: str = Field(description="Container ID or name."),
+        v: bool = Field(
+            default=False,
+            description="Remove the volumes associated with the container.",
+        ),
+        force: bool = Field(
+            default=False,
+            description="If the container is running, kill it before removing it.",
+        ),
+    ) -> Any:
+        """Remove container."""
+        return get_client().remove_container(
+            environment_id, container_id, v=v, force=force
+        )
+
+    # ── Swarm Services (Proxied) ─────────────────────────────────────────
+
+    @mcp.tool(
+        name="docker_list_services",
+        description="List Swarm services in a Docker environment.",
+        tags={"Docker"},
+    )
+    def docker_list_services_tool(
+        environment_id: int = Field(description="Environment ID."),
+        filters: Optional[str] = Field(
+            default=None,
+            description="A JSON encoded value of the filters to process on the services list.",
+        ),
+    ) -> Any:
+        """List services."""
+        params = {}
+        if filters:
+            params["filters"] = filters
+        return get_client().list_services(environment_id, **params)
+
+    @mcp.tool(
+        name="docker_inspect_service",
+        description="Return low-level information about a Swarm service.",
+        tags={"Docker"},
+    )
+    def docker_inspect_service_tool(
+        environment_id: int = Field(description="Environment ID."),
+        service_id: str = Field(description="Service ID or name."),
+    ) -> Any:
+        """Inspect service."""
+        return get_client().inspect_service(environment_id, service_id)
+
+    @mcp.tool(
+        name="docker_get_service_logs",
+        description="Get stdout and stderr logs from a Swarm service.",
+        tags={"Docker"},
+    )
+    def docker_get_service_logs_tool(
+        environment_id: int = Field(description="Environment ID."),
+        service_id: str = Field(description="Service ID or name."),
+        tail: str = Field(
+            default="all",
+            description="Output specified number of lines at the end of logs.",
+        ),
+        since: Optional[int] = Field(
+            default=None,
+            description="Only return logs since this time, as a UNIX timestamp.",
+        ),
+        timestamps: bool = Field(default=True, description="Show timestamps in logs."),
+    ) -> Any:
+        """Get service logs."""
+        params = {"tail": tail, "timestamps": timestamps}
+        if since:
+            params["since"] = since
+        return get_client().get_service_logs(environment_id, service_id, **params)
+
+    # ── Images (Proxied) ─────────────────────────────────────────────────
+
+    @mcp.tool(
+        name="docker_list_images",
+        description="List images in a Docker environment.",
+        tags={"Docker"},
+    )
+    def docker_list_images_tool(
+        environment_id: int = Field(description="Environment ID."),
+        all_images: bool = Field(
+            default=False,
+            alias="all",
+            description="Show all images. Only intermediate image layers are filtered out by default.",
+        ),
+        filters: Optional[str] = Field(
+            default=None,
+            description="A JSON encoded value of the filters to process on the images list.",
+        ),
+    ) -> Any:
+        """List images."""
+        params = {"all": all_images}
+        if filters:
+            params["filters"] = filters
+        return get_client().list_images(environment_id, **params)
+
+    @mcp.tool(
+        name="docker_inspect_image",
+        description="Return low-level information about an image.",
+        tags={"Docker"},
+    )
+    def docker_inspect_image_tool(
+        environment_id: int = Field(description="Environment ID."),
+        image_name: str = Field(description="Image ID or name."),
+    ) -> Any:
+        """Inspect image."""
+        return get_client().inspect_image(environment_id, image_name)
+
+    # ── Networks (Proxied) ───────────────────────────────────────────────
+
+    @mcp.tool(
+        name="docker_list_networks",
+        description="List networks in a Docker environment.",
+        tags={"Docker"},
+    )
+    def docker_list_networks_tool(
+        environment_id: int = Field(description="Environment ID."),
+        filters: Optional[str] = Field(
+            default=None,
+            description="A JSON encoded value of the filters to process on the networks list.",
+        ),
+    ) -> Any:
+        """List networks."""
+        params = {}
+        if filters:
+            params["filters"] = filters
+        return get_client().list_networks(environment_id, **params)
+
+    @mcp.tool(
+        name="docker_inspect_network",
+        description="Return low-level information about a network.",
+        tags={"Docker"},
+    )
+    def docker_inspect_network_tool(
+        environment_id: int = Field(description="Environment ID."),
+        network_id: str = Field(description="Network ID or name."),
+    ) -> Any:
+        """Inspect network."""
+        return get_client().inspect_network(environment_id, network_id)
+
+    # ── Volumes (Proxied) ────────────────────────────────────────────────
+
+    @mcp.tool(
+        name="docker_list_volumes",
+        description="List volumes in a Docker environment.",
+        tags={"Docker"},
+    )
+    def docker_list_volumes_tool(
+        environment_id: int = Field(description="Environment ID."),
+        filters: Optional[str] = Field(
+            default=None,
+            description="A JSON encoded value of the filters to process on the volumes list.",
+        ),
+    ) -> Any:
+        """List volumes."""
+        params = {}
+        if filters:
+            params["filters"] = filters
+        return get_client().list_volumes(environment_id, **params)
+
+    @mcp.tool(
+        name="docker_inspect_volume",
+        description="Return low-level information about a volume.",
+        tags={"Docker"},
+    )
+    def docker_inspect_volume_tool(
+        environment_id: int = Field(description="Environment ID."),
+        volume_name: str = Field(description="Volume name."),
+    ) -> Any:
+        """Inspect volume."""
+        return get_client().inspect_volume(environment_id, volume_name)
+
+    # ── System (Proxied) ─────────────────────────────────────────────────
+
+    @mcp.tool(
+        name="docker_get_info",
+        description="Get system-wide information for the Docker host.",
+        tags={"Docker"},
+    )
+    def docker_get_info_tool(
+        environment_id: int = Field(description="Environment ID."),
+    ) -> Any:
+        """Get Docker info."""
+        return get_client().get_docker_info(environment_id)
+
+    @mcp.tool(
+        name="docker_get_version",
+        description="Get Docker version information.",
+        tags={"Docker"},
+    )
+    def docker_get_version_tool(
+        environment_id: int = Field(description="Environment ID."),
+    ) -> Any:
+        """Get Docker version."""
+        return get_client().get_docker_version(environment_id)
+
+    @mcp.tool(
+        name="docker_get_system_df",
+        description="Get Docker data usage information.",
+        tags={"Docker"},
+    )
+    def docker_get_system_df_tool(
+        environment_id: int = Field(description="Environment ID."),
+    ) -> Any:
+        """Get Docker df."""
+        return get_client().get_docker_df(environment_id)
+
+    # ── Creation Tools ──────────────────────────────────────────────────
+
+    @mcp.tool(
+        name="docker_create_container",
+        description="Create a new container.",
+        tags={"Docker"},
+    )
+    def docker_create_container_tool(
+        environment_id: int = Field(description="Environment ID."),
+        config: Dict = Field(
+            description="Container configuration (Docker API format)."
+        ),
+        name: Optional[str] = Field(default=None, description="Container name."),
+    ) -> Any:
+        """Create container."""
+        return get_client().create_container(environment_id, config, name=name)
+
+    @mcp.tool(
+        name="docker_create_network",
+        description="Create a new network.",
+        tags={"Docker"},
+    )
+    def docker_create_network_tool(
+        environment_id: int = Field(description="Environment ID."),
+        config: Dict = Field(description="Network configuration (Docker API format)."),
+    ) -> Any:
+        """Create network."""
+        return get_client().create_network(environment_id, config)
+
+    @mcp.tool(
+        name="docker_create_volume",
+        description="Create a new volume.",
+        tags={"Docker"},
+    )
+    def docker_create_volume_tool(
+        environment_id: int = Field(description="Environment ID."),
+        config: Dict = Field(description="Volume configuration (Docker API format)."),
+    ) -> Any:
+        """Create volume."""
+        return get_client().create_volume(environment_id, config)
+
+    # ── Exec Tools ───────────────────────────────────────────────────────
+
+    @mcp.tool(
+        name="docker_create_exec",
+        description="Create an exec instance in a container.",
+        tags={"Docker"},
+    )
+    def docker_create_exec_tool(
+        environment_id: int = Field(description="Environment ID."),
+        container_id: str = Field(description="Container ID or name."),
+        config: Dict = Field(description="Exec configuration (Docker API format)."),
+    ) -> Any:
+        """Create exec."""
+        return get_client().create_exec(environment_id, container_id, config)
+
+    @mcp.tool(
+        name="docker_start_exec",
+        description="Start an exec instance.",
+        tags={"Docker"},
+    )
+    def docker_start_exec_tool(
+        environment_id: int = Field(description="Environment ID."),
+        exec_id: str = Field(description="Exec ID."),
+        config: Dict = Field(
+            default_factory=dict, description="Start configuration (Docker API format)."
+        ),
+    ) -> Any:
+        """Start exec."""
+        return get_client().start_exec(environment_id, exec_id, config)
+
+    @mcp.tool(
+        name="docker_inspect_exec",
+        description="Inspect an exec instance.",
+        tags={"Docker"},
+    )
+    def docker_inspect_exec_tool(
+        environment_id: int = Field(description="Environment ID."),
+        exec_id: str = Field(description="Exec ID."),
+    ) -> Any:
+        """Inspect exec."""
+        return get_client().inspect_exec(environment_id, exec_id)
+
+    # ── Stack Tools ──────────────────────────────────────────────────────
+
+    @mcp.tool(
+        name="docker_get_stack_logs",
+        description="Get aggregated logs for all containers or services in a Portainer stack.",
+        tags={"Docker", "Stack"},
+    )
+    def docker_get_stack_logs_tool(
+        environment_id: int = Field(
+            description="Environment ID where the stack resides."
+        ),
+        stack_id: int = Field(description="Portainer stack ID."),
+        tail: str = Field(
+            default="100",
+            description="Output specified number of lines at the end of logs for each container/service.",
+        ),
+    ) -> Any:
+        """Get stack logs."""
+        return get_client().get_stack_logs(environment_id, stack_id, tail=tail)
 
 
 # ══════════════════════════════════════════════════════════════════════════

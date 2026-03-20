@@ -17,6 +17,17 @@ from typing import Any, Dict, List, Optional
 import requests
 import urllib3
 
+try:
+    from agent_utilities.exceptions import AuthError, UnauthorizedError
+except ImportError:
+    # Fallback for environments where agent-utilities is not installed or different
+    class AuthError(Exception):
+        pass
+
+    class UnauthorizedError(Exception):
+        pass
+
+
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 logger = logging.getLogger(__name__)
@@ -44,14 +55,10 @@ class PortainerApi:
             # Using /system/status as a lightweight validation endpoint
             response = self.session.get(f"{self.api_base}/system/status")
             if response.status_code == 401:
-                from agent_utilities.exceptions import AuthError
-
                 raise AuthError(
                     "Portainer authentication failed: Invalid token or credentials."
                 )
             elif response.status_code == 403:
-                from agent_utilities.exceptions import UnauthorizedError
-
                 raise UnauthorizedError(
                     "Portainer access forbidden: Insufficient permissions."
                 )
@@ -75,24 +82,39 @@ class PortainerApi:
         except Exception:
             return resp.text
 
-    def _post(self, endpoint: str, data: Optional[Dict] = None) -> Any:
-        resp = self.session.post(self._url(endpoint), json=data)
+    def _post(
+        self,
+        endpoint: str,
+        data: Optional[Dict] = None,
+        params: Optional[Dict] = None,
+    ) -> Any:
+        resp = self.session.post(self._url(endpoint), json=data, params=params)
         resp.raise_for_status()
         try:
             return resp.json()
         except Exception:
             return resp.text
 
-    def _put(self, endpoint: str, data: Optional[Dict] = None) -> Any:
-        resp = self.session.put(self._url(endpoint), json=data)
+    def _put(
+        self,
+        endpoint: str,
+        data: Optional[Dict] = None,
+        params: Optional[Dict] = None,
+    ) -> Any:
+        resp = self.session.put(self._url(endpoint), json=data, params=params)
         resp.raise_for_status()
         try:
             return resp.json()
         except Exception:
             return resp.text
 
-    def _patch(self, endpoint: str, data: Optional[Dict] = None) -> Any:
-        resp = self.session.patch(self._url(endpoint), json=data)
+    def _patch(
+        self,
+        endpoint: str,
+        data: Optional[Dict] = None,
+        params: Optional[Dict] = None,
+    ) -> Any:
+        resp = self.session.patch(self._url(endpoint), json=data, params=params)
         resp.raise_for_status()
         try:
             return resp.json()
@@ -246,6 +268,284 @@ class PortainerApi:
     def get_container_gpus(self, environment_id: int, container_id: str) -> Dict:
         """Get GPU info for a container."""
         return self._get(f"docker/{environment_id}/containers/{container_id}/gpus")
+
+    # ── Docker Proxy Helpers ─────────────────────────────────────────────
+
+    def _docker_url(self, endpoint_id: int, path: str) -> str:
+        """Format a Docker proxy URL."""
+        return f"endpoints/{endpoint_id}/docker/{path.lstrip('/')}"
+
+    # ── Containers (Proxied) ─────────────────────────────────────────────
+
+    def list_containers(self, endpoint_id: int, **params) -> List[Dict]:
+        """List containers in an environment."""
+        return self._get(
+            self._docker_url(endpoint_id, "containers/json"), params=params
+        )
+
+    def create_container(
+        self, endpoint_id: int, config: Dict, name: Optional[str] = None
+    ) -> Dict:
+        """Create a container."""
+        params = {"name": name} if name else {}
+        return self._post(
+            self._docker_url(endpoint_id, "containers/create"),
+            data=config,
+            params=params,
+        )
+
+    def inspect_container(self, endpoint_id: int, container_id: str) -> Dict:
+        """Inspect a container."""
+        return self._get(
+            self._docker_url(endpoint_id, f"containers/{container_id}/json")
+        )
+
+    def get_container_logs(self, endpoint_id: int, container_id: str, **params) -> str:
+        """Get container logs."""
+        # Default to showing stdout/stderr if not specified
+        if "stdout" not in params:
+            params["stdout"] = True
+        if "stderr" not in params:
+            params["stderr"] = True
+        if "timestamps" not in params:
+            params["timestamps"] = True
+        return self._get(
+            self._docker_url(endpoint_id, f"containers/{container_id}/logs"),
+            params=params,
+        )
+
+    def get_container_stats(
+        self, endpoint_id: int, container_id: str, stream: bool = False
+    ) -> Any:
+        """Get container stats."""
+        return self._get(
+            self._docker_url(endpoint_id, f"containers/{container_id}/stats"),
+            params={"stream": stream},
+        )
+
+    def start_container(self, endpoint_id: int, container_id: str) -> bool:
+        """Start a container."""
+        self._post(self._docker_url(endpoint_id, f"containers/{container_id}/start"))
+        return True
+
+    def stop_container(
+        self, endpoint_id: int, container_id: str, timeout: Optional[int] = None
+    ) -> bool:
+        """Stop a container."""
+        params = {"t": timeout} if timeout else {}
+        self._post(
+            self._docker_url(endpoint_id, f"containers/{container_id}/stop"),
+            params=params,
+        )
+        return True
+
+    def restart_container(
+        self, endpoint_id: int, container_id: str, timeout: Optional[int] = None
+    ) -> bool:
+        """Restart a container."""
+        params = {"t": timeout} if timeout else {}
+        self._post(
+            self._docker_url(endpoint_id, f"containers/{container_id}/restart"),
+            params=params,
+        )
+        return True
+
+    def remove_container(self, endpoint_id: int, container_id: str, **params) -> bool:
+        """Remove a container."""
+        return self._delete(
+            self._docker_url(endpoint_id, f"containers/{container_id}"), params=params
+        )
+
+    def prune_containers(
+        self, endpoint_id: int, filters: Optional[Dict] = None
+    ) -> Dict:
+        """Delete unused containers."""
+        params = {"filters": filters} if filters else {}
+        return self._post(
+            self._docker_url(endpoint_id, "containers/prune"), data=params
+        )
+
+    # ── Swarm Services (Proxied) ─────────────────────────────────────────
+
+    def list_services(self, endpoint_id: int, **params) -> List[Dict]:
+        """List Swarm services."""
+        return self._get(self._docker_url(endpoint_id, "services"), params=params)
+
+    def inspect_service(self, endpoint_id: int, service_id: str) -> Dict:
+        """Inspect a Swarm service."""
+        return self._get(self._docker_url(endpoint_id, f"services/{service_id}"))
+
+    def get_service_logs(self, endpoint_id: int, service_id: str, **params) -> str:
+        """Get Swarm service logs."""
+        if "stdout" not in params:
+            params["stdout"] = True
+        if "stderr" not in params:
+            params["stderr"] = True
+        if "timestamps" not in params:
+            params["timestamps"] = True
+        return self._get(
+            self._docker_url(endpoint_id, f"services/{service_id}/logs"), params=params
+        )
+
+    def remove_service(self, endpoint_id: int, service_id: str) -> bool:
+        """Remove a Swarm service."""
+        return self._delete(self._docker_url(endpoint_id, f"services/{service_id}"))
+
+    # ── Images (Proxied) ─────────────────────────────────────────────────
+
+    def list_images(self, endpoint_id: int, **params) -> List[Dict]:
+        """List images in an environment."""
+        return self._get(self._docker_url(endpoint_id, "images/json"), params=params)
+
+    def inspect_image(self, endpoint_id: int, image_name: str) -> Dict:
+        """Inspect an image."""
+        return self._get(self._docker_url(endpoint_id, f"images/{image_name}/json"))
+
+    def get_image_history(self, endpoint_id: int, image_name: str) -> List[Dict]:
+        """Get image history."""
+        return self._get(self._docker_url(endpoint_id, f"images/{image_name}/history"))
+
+    def remove_image(self, endpoint_id: int, image_name: str, **params) -> bool:
+        """Remove an image."""
+        return self._delete(
+            self._docker_url(endpoint_id, f"images/{image_name}"), params=params
+        )
+
+    def prune_images(self, endpoint_id: int, filters: Optional[Dict] = None) -> Dict:
+        """Delete unused images."""
+        params = {"filters": filters} if filters else {}
+        return self._post(self._docker_url(endpoint_id, "images/prune"), data=params)
+
+    # ── Networks (Proxied) ───────────────────────────────────────────────
+
+    def list_networks(self, endpoint_id: int, **params) -> List[Dict]:
+        """List networks."""
+        return self._get(self._docker_url(endpoint_id, "networks"), params=params)
+
+    def inspect_network(self, endpoint_id: int, network_id: str) -> Dict:
+        """Inspect a network."""
+        return self._get(self._docker_url(endpoint_id, f"networks/{network_id}"))
+
+    def create_network(self, endpoint_id: int, config: Dict) -> Dict:
+        """Create a network."""
+        return self._post(self._docker_url(endpoint_id, "networks/create"), data=config)
+
+    def remove_network(self, endpoint_id: int, network_id: str) -> bool:
+        """Remove a network."""
+        return self._delete(self._docker_url(endpoint_id, f"networks/{network_id}"))
+
+    def prune_networks(self, endpoint_id: int, filters: Optional[Dict] = None) -> Dict:
+        """Delete unused networks."""
+        params = {"filters": filters} if filters else {}
+        return self._post(self._docker_url(endpoint_id, "networks/prune"), data=params)
+
+    # ── Volumes (Proxied) ────────────────────────────────────────────────
+
+    def list_volumes(self, endpoint_id: int, **params) -> Dict:
+        """List volumes."""
+        return self._get(self._docker_url(endpoint_id, "volumes"), params=params)
+
+    def inspect_volume(self, endpoint_id: int, volume_name: str) -> Dict:
+        """Inspect a volume."""
+        return self._get(self._docker_url(endpoint_id, f"volumes/{volume_name}"))
+
+    def create_volume(self, endpoint_id: int, config: Dict) -> Dict:
+        """Create a volume."""
+        return self._post(self._docker_url(endpoint_id, "volumes/create"), data=config)
+
+    def remove_volume(
+        self, endpoint_id: int, volume_name: str, force: bool = False
+    ) -> bool:
+        """Remove a volume."""
+        return self._delete(
+            self._docker_url(endpoint_id, f"volumes/{volume_name}"),
+            params={"force": force},
+        )
+
+    def prune_volumes(self, endpoint_id: int, filters: Optional[Dict] = None) -> Dict:
+        """Delete unused volumes."""
+        params = {"filters": filters} if filters else {}
+        return self._post(self._docker_url(endpoint_id, "volumes/prune"), data=params)
+
+    # ── Exec (Proxied) ───────────────────────────────────────────────────
+
+    def create_exec(self, endpoint_id: int, container_id: str, config: Dict) -> Dict:
+        """Create an exec instance."""
+        return self._post(
+            self._docker_url(endpoint_id, f"containers/{container_id}/exec"),
+            data=config,
+        )
+
+    def start_exec(self, endpoint_id: int, exec_id: str, config: Dict) -> Any:
+        """Start an exec instance."""
+        return self._post(
+            self._docker_url(endpoint_id, f"exec/{exec_id}/start"), data=config
+        )
+
+    def inspect_exec(self, endpoint_id: int, exec_id: str) -> Dict:
+        """Inspect an exec instance."""
+        return self._get(self._docker_url(endpoint_id, f"exec/{exec_id}/json"))
+
+    # ── System (Proxied) ─────────────────────────────────────────────────
+
+    def get_docker_info(self, endpoint_id: int) -> Dict:
+        """Get Docker system information."""
+        return self._get(self._docker_url(endpoint_id, "info"))
+
+    def get_docker_version(self, endpoint_id: int) -> Dict:
+        """Get Docker version information."""
+        return self._get(self._docker_url(endpoint_id, "version"))
+
+    def get_docker_events(self, endpoint_id: int, **params) -> Any:
+        """Get Docker events."""
+        return self._get(self._docker_url(endpoint_id, "events"), params=params)
+
+    def get_docker_df(self, endpoint_id: int) -> Dict:
+        """Get Docker data usage information."""
+        return self._get(self._docker_url(endpoint_id, "system/df"))
+
+    # ── Stack Logs (Aggregated) ──────────────────────────────────────────
+
+    def get_stack_logs(self, endpoint_id: int, stack_id: int, **params) -> str:
+        """Get logs for all containers/services in a stack."""
+        stack = self.get_stack(stack_id)
+        stack_name = stack.get("Name")
+        stack_type = stack.get("Type")  # 1: Swarm, 2: Standalone (Compose)
+
+        logs = []
+        if stack_type == 1:
+            # Swarm stack: find services by label
+            services = self.list_services(
+                endpoint_id,
+                filters=f'{{"label": ["com.docker.stack.namespace={stack_name}"]}}',
+            )
+            for svc in services:
+                svc_id = svc.get("ID")
+                svc_name = svc.get("Spec", {}).get("Name", svc_id)
+                svc_logs = self.get_service_logs(endpoint_id, svc_id, **params)
+                logs.append(f"--- Service: {svc_name} ---\n{svc_logs}")
+        else:
+            # Standalone stack: find containers by label
+            # Portainer uses com.docker.compose.project or com.docker.stack.namespace for compose too sometimes
+            # But usually it's com.docker.compose.project
+            filters = f'{{"label": ["com.docker.compose.project={stack_name}"]}}'
+            containers = self.list_containers(endpoint_id, filters=filters, all=True)
+            if not containers:
+                # Fallback to stack name label
+                filters = f'{{"label": ["com.portainer.stack.name={stack_name}"]}}'
+                containers = self.list_containers(
+                    endpoint_id, filters=filters, all=True
+                )
+
+            for container in containers:
+                container_id = container.get("Id")
+                container_name = container.get("Names", [container_id])[0].lstrip("/")
+                container_logs = self.get_container_logs(
+                    endpoint_id, container_id, **params
+                )
+                logs.append(f"--- Container: {container_name} ---\n{container_logs}")
+
+        return "\n\n".join(logs)
 
     # ══════════════════════════════════════════════════════════════════════
     #  STACKS endpoints
