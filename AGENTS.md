@@ -148,11 +148,11 @@ uvicorn portainer_agent.agent_server:app --reload  # If using FastAPI
   import os
   import sys
   from typing import List, Optional, Dict
-  
+
   # Third-party
   from pydantic import BaseModel
   import requests
-  
+
   # Local
   from portainer_agent.auth import PortainerAuth
   from portainer_agent.portainer_api import PortainerAPI

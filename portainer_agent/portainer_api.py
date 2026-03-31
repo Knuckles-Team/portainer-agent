@@ -1,5 +1,5 @@
 #!/usr/bin/python
-               
+
 """
 Portainer API Wrapper — Complete REST client for the Portainer CE API v2.39.0.
 
@@ -20,7 +20,7 @@ import urllib3
 try:
     from agent_utilities.exceptions import AuthError, UnauthorizedError
 except ImportError:
-                                                                                   
+
     class AuthError(Exception):
         pass
 
@@ -50,10 +50,7 @@ class PortainerApi:
             self.session.headers.update({"X-API-Key": token})
         self.session.headers.update({"Accept": "application/json"})
 
-                                                                         
         self.session.headers.update({"Accept": "application/json"})
-
-                                                                           
 
     def _url(self, endpoint: str) -> str:
         return f"{self.api_base}/{endpoint.strip('/')}"
@@ -124,10 +121,6 @@ class PortainerApi:
             params["start"] = offset
         return self._get(endpoint, params=params)
 
-                                                                            
-                     
-                                                                            
-
     def authenticate(self, username: str, password: str) -> Dict:
         """Authenticate and get a JWT token."""
         return self._post("auth", data={"Username": username, "Password": password})
@@ -139,10 +132,6 @@ class PortainerApi:
     def validate_oauth(self, code: str) -> Dict:
         """Validate an OAuth code."""
         return self._post("auth/oauth/validate", data={"Code": code})
-
-                                                                            
-                                         
-                                                                            
 
     def get_endpoints(
         self, limit: Optional[int] = None, offset: Optional[int] = None, **filters
@@ -206,8 +195,6 @@ class PortainerApi:
         """Remove edge environment association."""
         return self._put(f"endpoints/{endpoint_id}/association")
 
-                                                                           
-
     def get_endpoint_groups(self) -> Any:
         """List all endpoint groups."""
         return self._get("endpoint_groups")
@@ -237,10 +224,6 @@ class PortainerApi:
         """Remove an environment from a group."""
         return self._delete(f"endpoint_groups/{group_id}/endpoints/{endpoint_id}")
 
-                                                                            
-                       
-                                                                            
-
     def get_docker_dashboard(self, environment_id: int) -> Dict:
         """Get Docker dashboard data for an environment."""
         return self._get(f"docker/{environment_id}/dashboard")
@@ -253,13 +236,9 @@ class PortainerApi:
         """Get GPU info for a container."""
         return self._get(f"docker/{environment_id}/containers/{container_id}/gpus")
 
-                                                                           
-
     def _docker_url(self, endpoint_id: int, path: str) -> str:
         """Format a Docker proxy URL."""
         return f"endpoints/{endpoint_id}/docker/{path.lstrip('/')}"
-
-                                                                           
 
     def list_containers(self, endpoint_id: int, **params) -> List[Dict]:
         """List containers in an environment."""
@@ -286,7 +265,7 @@ class PortainerApi:
 
     def get_container_logs(self, endpoint_id: int, container_id: str, **params) -> str:
         """Get container logs."""
-                                                           
+
         if "stdout" not in params:
             params["stdout"] = True
         if "stderr" not in params:
@@ -349,8 +328,6 @@ class PortainerApi:
             self._docker_url(endpoint_id, "containers/prune"), data=params
         )
 
-                                                                           
-
     def list_services(self, endpoint_id: int, **params) -> List[Dict]:
         """List Swarm services."""
         return self._get(self._docker_url(endpoint_id, "services"), params=params)
@@ -375,8 +352,6 @@ class PortainerApi:
         """Remove a Swarm service."""
         return self._delete(self._docker_url(endpoint_id, f"services/{service_id}"))
 
-                                                                           
-
     def list_images(self, endpoint_id: int, **params) -> List[Dict]:
         """List images in an environment."""
         return self._get(self._docker_url(endpoint_id, "images/json"), params=params)
@@ -400,8 +375,6 @@ class PortainerApi:
         params = {"filters": filters} if filters else {}
         return self._post(self._docker_url(endpoint_id, "images/prune"), data=params)
 
-                                                                           
-
     def list_networks(self, endpoint_id: int, **params) -> List[Dict]:
         """List networks."""
         return self._get(self._docker_url(endpoint_id, "networks"), params=params)
@@ -422,8 +395,6 @@ class PortainerApi:
         """Delete unused networks."""
         params = {"filters": filters} if filters else {}
         return self._post(self._docker_url(endpoint_id, "networks/prune"), data=params)
-
-                                                                           
 
     def list_volumes(self, endpoint_id: int, **params) -> Dict:
         """List volumes."""
@@ -451,8 +422,6 @@ class PortainerApi:
         params = {"filters": filters} if filters else {}
         return self._post(self._docker_url(endpoint_id, "volumes/prune"), data=params)
 
-                                                                           
-
     def create_exec(self, endpoint_id: int, container_id: str, config: Dict) -> Dict:
         """Create an exec instance."""
         return self._post(
@@ -470,8 +439,6 @@ class PortainerApi:
         """Inspect an exec instance."""
         return self._get(self._docker_url(endpoint_id, f"exec/{exec_id}/json"))
 
-                                                                           
-
     def get_docker_info(self, endpoint_id: int) -> Dict:
         """Get Docker system information."""
         return self._get(self._docker_url(endpoint_id, "info"))
@@ -488,17 +455,15 @@ class PortainerApi:
         """Get Docker data usage information."""
         return self._get(self._docker_url(endpoint_id, "system/df"))
 
-                                                                           
-
     def get_stack_logs(self, endpoint_id: int, stack_id: int, **params) -> str:
         """Get logs for all containers/services in a stack."""
         stack = self.get_stack(stack_id)
         stack_name = stack.get("Name")
-        stack_type = stack.get("Type")                                     
+        stack_type = stack.get("Type")
 
         logs = []
         if stack_type == 1:
-                                                 
+
             services = self.list_services(
                 endpoint_id,
                 filters=f'{{"label": ["com.docker.stack.namespace={stack_name}"]}}',
@@ -509,13 +474,11 @@ class PortainerApi:
                 svc_logs = self.get_service_logs(endpoint_id, svc_id, **params)
                 logs.append(f"--- Service: {svc_name} ---\n{svc_logs}")
         else:
-                                                        
-                                                                                                               
-                                                         
+
             filters = f'{{"label": ["com.docker.compose.project={stack_name}"]}}'
             containers = self.list_containers(endpoint_id, filters=filters, all=True)
             if not containers:
-                                              
+
                 filters = f'{{"label": ["com.portainer.stack.name={stack_name}"]}}'
                 containers = self.list_containers(
                     endpoint_id, filters=filters, all=True
@@ -530,10 +493,6 @@ class PortainerApi:
                 logs.append(f"--- Container: {container_name} ---\n{container_logs}")
 
         return "\n\n".join(logs)
-
-                                                                            
-                       
-                                                                            
 
     def get_stacks(self, **filters) -> Any:
         """List all stacks."""
@@ -650,10 +609,6 @@ class PortainerApi:
         return self._put(
             f"stacks/{stack_id}/associate?endpointId={endpoint_id}", data=kwargs
         )
-
-                                                                            
-                           
-                                                                            
 
     def get_kubernetes_config(self) -> Dict:
         """Get Kubernetes global configuration."""
@@ -841,8 +796,6 @@ class PortainerApi:
         """List Kubernetes cron jobs."""
         return self._get(f"kubernetes/{environment_id}/cron_jobs")
 
-                                                                           
-
     def get_helm_releases(self, endpoint_id: int) -> Any:
         """List Helm releases for an environment."""
         return self._get(f"endpoints/{endpoint_id}/kubernetes/helm")
@@ -871,10 +824,6 @@ class PortainerApi:
             data={"Revision": revision},
         )
 
-                                                                            
-                     
-                                                                            
-
     def get_edge_groups(self) -> Any:
         """List edge groups."""
         return self._get("edge_groups")
@@ -895,8 +844,6 @@ class PortainerApi:
     def delete_edge_group(self, group_id: int) -> bool:
         """Delete an edge group."""
         return self._delete(f"edge_groups/{group_id}")
-
-                                                                           
 
     def get_edge_jobs(self) -> Any:
         """List edge jobs."""
@@ -932,8 +879,6 @@ class PortainerApi:
     def get_edge_job_task_logs(self, job_id: int, task_id: int) -> Dict:
         """Get logs for an edge job task."""
         return self._get(f"edge_jobs/{job_id}/tasks/{task_id}/logs")
-
-                                                                           
 
     def get_edge_stacks(self) -> Any:
         """List edge stacks."""
@@ -983,10 +928,6 @@ class PortainerApi:
         """Get edge stack deployment status."""
         return self._get(f"edge_stacks/{stack_id}/status")
 
-                                                                            
-                          
-                                                                            
-
     def get_templates(self) -> Any:
         """List app templates."""
         return self._get("templates")
@@ -998,8 +939,6 @@ class PortainerApi:
     def get_helm_templates(self) -> Any:
         """List Helm chart templates."""
         return self._get("templates/helm")
-
-                                                                           
 
     def get_custom_templates(self) -> Any:
         """List custom templates."""
@@ -1060,10 +999,6 @@ class PortainerApi:
     def git_fetch_custom_template(self, template_id: int) -> Dict:
         """Fetch latest version of a custom template from Git."""
         return self._put(f"custom_templates/{template_id}/git_fetch")
-
-                                                                            
-                                      
-                                                                            
 
     def get_users(self) -> Any:
         """List all users."""
@@ -1128,8 +1063,6 @@ class PortainerApi:
         """Delete an API token."""
         return self._delete(f"users/{user_id}/tokens/{key_id}")
 
-                                                                           
-
     def get_teams(self) -> Any:
         """List all teams."""
         return self._get("teams")
@@ -1154,8 +1087,6 @@ class PortainerApi:
         """List memberships for a team."""
         return self._get(f"teams/{team_id}/memberships")
 
-                                                                           
-
     def get_team_memberships(self) -> Any:
         """List all team memberships."""
         return self._get("team_memberships")
@@ -1175,13 +1106,9 @@ class PortainerApi:
         """Delete a team membership."""
         return self._delete(f"team_memberships/{membership_id}")
 
-                                                                           
-
     def get_roles(self) -> Any:
         """List all roles."""
         return self._get("roles")
-
-                                                                           
 
     def get_resource_controls(self) -> Any:
         """List all resource controls."""
@@ -1201,10 +1128,6 @@ class PortainerApi:
     def delete_resource_control(self, control_id: int) -> bool:
         """Delete a resource control."""
         return self._delete(f"resource_controls/{control_id}")
-
-                                                                            
-                           
-                                                                            
 
     def get_registries(self) -> Any:
         """List all Docker registries."""
@@ -1237,10 +1160,6 @@ class PortainerApi:
         """Test registry connectivity."""
         return self._get("registries/ping")
 
-                                                                            
-                       
-                                                                            
-
     def get_status(self) -> Dict:
         """Get Portainer instance status."""
         return self._get("status")
@@ -1265,8 +1184,6 @@ class PortainerApi:
         """Trigger a system upgrade."""
         return self._post("system/upgrade")
 
-                                                                           
-
     def get_settings(self) -> Dict:
         """Get Portainer settings."""
         return self._get("settings")
@@ -1279,8 +1196,6 @@ class PortainerApi:
         """Get public (unauthenticated) settings."""
         return self._get("settings/public")
 
-                                                                            
-
     def get_ssl_settings(self) -> Dict:
         """Get SSL settings."""
         return self._get("ssl")
@@ -1288,8 +1203,6 @@ class PortainerApi:
     def update_ssl_settings(self, **kwargs) -> Dict:
         """Update SSL settings."""
         return self._put("ssl", data=kwargs)
-
-                                                                           
 
     def backup(self, password: str = "") -> Any:
         """Create a backup of Portainer data."""
@@ -1306,8 +1219,6 @@ class PortainerApi:
         resp.raise_for_status()
         return True
 
-                                                                           
-
     def get_tags(self) -> Any:
         """List all tags."""
         return self._get("tags")
@@ -1320,19 +1231,13 @@ class PortainerApi:
         """Delete a tag."""
         return self._delete(f"tags/{tag_id}")
 
-                                                                           
-
     def check_ldap(self, **kwargs) -> Dict:
         """Check LDAP connectivity."""
         return self._post("ldap/check", data=kwargs)
 
-                                                                           
-
     def get_motd(self) -> Dict:
         """Get the message of the day."""
         return self._get("motd")
-
-                                                                           
 
     def get_webhooks(self) -> Any:
         """List all webhooks."""
@@ -1358,8 +1263,6 @@ class PortainerApi:
         """Delete a webhook."""
         return self._delete(f"webhooks/{webhook_id}")
 
-                                                                           
-
     def preview_git_file(
         self, repo_url: str, file_path: str = "docker-compose.yml", **kwargs
     ) -> Dict:
@@ -1370,8 +1273,6 @@ class PortainerApi:
             **kwargs,
         }
         return self._post("gitops/repo/file/preview", data=data)
-
-                                                                           
 
     def get_user_helm_repositories(self, user_id: int) -> Any:
         """List Helm repositories for a user."""
