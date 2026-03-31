@@ -21,7 +21,7 @@
 ![PyPI - Wheel](https://img.shields.io/pypi/wheel/portainer-agent)
 ![PyPI - Implementation](https://img.shields.io/pypi/implementation/portainer-agent)
 
-*Version: 0.1.22*
+*Version: 0.1.23*
 
 ## Overview
 
@@ -41,7 +41,7 @@ The MCP Server can be run in two modes: `stdio` (for local testing) or `http` (f
 
 *   `PORTAINER_URL`: The URL of the target Portainer service.
 *   `PORTAINER_TOKEN`: The API token or access token.
-*   `PORTAINER_VERIFY`: Verify SSL certificate (default: True).
+*   `PORTAINER_SSL_VERIFY`: Verify SSL certificate (default: True).
 
 #### Run in stdio mode (default):
 ```bash
@@ -156,5 +156,5 @@ stateDiagram-v2
   DomainNode --> [*]: Domain Result
 ```
 
-- **RouterNode**: A fast, lightweight LLM (e.g., `gpt-4o-mini`) that classifies the user's query into one of the specialized domains.
+- **RouterNode**: A fast, lightweight LLM (e.g., `nvidia/nemotron-3-super`) that classifies the user's query into one of the specialized domains.
 - **DomainNode**: The executor node. For the selected domain, it dynamically sets environment variables to temporarily enable ONLY the tools relevant to that domain, creating a highly focused sub-agent (e.g., `gpt-4o`) to complete the request. This preserves LLM context and prevents tool hallucination.

@@ -1,10 +1,11 @@
 #!/usr/bin/python
-# coding: utf-8
+
 import os
 import logging
 
 import sys
 import warnings
+from pathlib import Path
 from agent_utilities import (
     build_system_prompt_from_workspace,
     create_agent_parser,
@@ -13,7 +14,7 @@ from agent_utilities import (
     load_identity,
 )
 
-__version__ = "0.1.22"
+__version__ = "0.1.23"
 
 logging.basicConfig(
     level=logging.INFO,
@@ -22,7 +23,7 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# Load identity and system prompt from workspace
+
 initialize_workspace()
 meta = load_identity()
 DEFAULT_AGENT_NAME = os.getenv(
@@ -46,20 +47,37 @@ def agent_template(mcp_url: str = None, mcp_config: str = None, **kwargs):
     from agent_utilities import create_graph_agent
     from portainer_agent.graph_config import TAG_PROMPTS, TAG_ENV_VARS
 
-    # In-process MCP loading: if no external URL/Config, load the local FastMCP instance
-    mcp_toolsets = []
+    effective_mcp_config = mcp_config or os.getenv("MCP_CONFIG") or "mcp_config.json"
     effective_mcp_url = mcp_url or os.getenv("MCP_URL")
-    effective_mcp_config = mcp_config or os.getenv("MCP_CONFIG")
 
-    if not effective_mcp_url and not effective_mcp_config:
+    mcp_toolsets = []
+    if effective_mcp_config:
+        from pydantic_ai.mcp import load_mcp_servers
+
         try:
-            from portainer_agent.mcp_server import get_mcp_instance
 
-            mcp, _, _, _ = get_mcp_instance()
-            mcp_toolsets.append(mcp)
-            logger.info("Portainer Agent: Using in-process MCP instance.")
-        except (ImportError, Exception) as e:
-            logger.warning(f"Portainer Agent: Could not load in-process MCP: {e}")
+            config_path = effective_mcp_config
+            if not os.path.isabs(config_path) and "/" not in config_path:
+                from agent_utilities import get_workspace_path
+
+                pkg = "portainer_agent"
+                local_pkg_config = Path.cwd() / pkg / config_path
+                if local_pkg_config.exists():
+                    config_path = str(local_pkg_config)
+                else:
+                    ws_config = get_workspace_path(config_path)
+                    if ws_config.exists():
+                        config_path = str(ws_config)
+
+            if os.path.exists(config_path):
+                mcp_toolsets = load_mcp_servers(config_path)
+                logger.info(
+                    f"Portainer Agent: Loaded {len(mcp_toolsets)} MCP servers from {config_path}"
+                )
+        except Exception as e:
+            logger.error(
+                f"Portainer Agent: Failed to load MCP config {effective_mcp_config}: {e}"
+            )
 
     return create_graph_agent(
         mcp_url=effective_mcp_url,
@@ -74,7 +92,6 @@ def agent_template(mcp_url: str = None, mcp_config: str = None, **kwargs):
 
 def agent_server():
 
-    # Suppress RequestsDependencyWarning and FastMCP DeprecationWarnings
     warnings.filterwarnings("ignore", message=".*urllib3.*or chardet.*")
     warnings.filterwarnings("ignore", category=DeprecationWarning, module="fastmcp")
 
@@ -87,7 +104,6 @@ def agent_server():
         logging.getLogger().setLevel(logging.DEBUG)
         logger.debug("Debug mode enabled")
 
-    # Create graph and config using standardized template
     graph_bundle = agent_template(
         provider=args.provider,
         agent_model=args.model_id,
@@ -98,7 +114,6 @@ def agent_server():
         ssl_verify=not args.insecure,
     )
 
-    # Start server using the pre-built graph bundle
     create_graph_agent_server(
         graph_bundle=graph_bundle,
         host=args.host,
@@ -112,10 +127,6 @@ def agent_server():
         otel_protocol=args.otel_protocol,
         debug=args.debug,
     )
-
-
-if __name__ == "__main__":
-    agent_server()
 
 
 if __name__ == "__main__":

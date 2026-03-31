@@ -1,6 +1,9 @@
 #!/usr/bin/python
-# coding: utf-8
 
+
+import warnings
+
+warnings.filterwarnings("ignore", message=".*urllib3.*or chardet.*")
 from dotenv import load_dotenv, find_dotenv
 from agent_utilities.base_utilities import to_boolean
 import os
@@ -16,8 +19,8 @@ from agent_utilities.mcp_utilities import (
 )
 from portainer_agent.auth import get_client
 
-__version__ = "0.1.22"
-print(f"Portainer MCP v{__version__}")
+__version__ = "0.1.23"
+
 
 logger = get_logger(name="TokenMiddleware")
 logger.setLevel(logging.DEBUG)
@@ -39,11 +42,6 @@ def register_prompts(mcp: FastMCP):
     def environment_health_prompt() -> str:
         """Generate an environment health check prompt."""
         return "Check the health of all Portainer environments. List all endpoints, check their status, and report any issues."
-
-
-# ══════════════════════════════════════════════════════════════════════════
-#  AUTH tools
-# ══════════════════════════════════════════════════════════════════════════
 
 
 def register_auth_tools(mcp: FastMCP):
@@ -78,11 +76,6 @@ def register_auth_tools(mcp: FastMCP):
     ) -> Any:
         """Validate OAuth."""
         return get_client().validate_oauth(code=code)
-
-
-# ══════════════════════════════════════════════════════════════════════════
-#  ENVIRONMENT tools
-# ══════════════════════════════════════════════════════════════════════════
 
 
 def register_environment_tools(mcp: FastMCP):
@@ -212,11 +205,6 @@ def register_environment_tools(mcp: FastMCP):
     ) -> Any:
         """Delete group."""
         return get_client().delete_endpoint_group(group_id)
-
-
-# ══════════════════════════════════════════════════════════════════════════
-#  DOCKER tools
-# ══════════════════════════════════════════════════════════════════════════
 
 
 def register_docker_tools(mcp: FastMCP):
@@ -390,8 +378,6 @@ def register_docker_tools(mcp: FastMCP):
             environment_id, container_id, v=v, force=force
         )
 
-    # ── Swarm Services (Proxied) ─────────────────────────────────────────
-
     @mcp.tool(
         name="docker_list_services",
         description="List Swarm services in a Docker environment.",
@@ -446,8 +432,6 @@ def register_docker_tools(mcp: FastMCP):
             params["since"] = since
         return get_client().get_service_logs(environment_id, service_id, **params)
 
-    # ── Images (Proxied) ─────────────────────────────────────────────────
-
     @mcp.tool(
         name="docker_list_images",
         description="List images in a Docker environment.",
@@ -483,8 +467,6 @@ def register_docker_tools(mcp: FastMCP):
         """Inspect image."""
         return get_client().inspect_image(environment_id, image_name)
 
-    # ── Networks (Proxied) ───────────────────────────────────────────────
-
     @mcp.tool(
         name="docker_list_networks",
         description="List networks in a Docker environment.",
@@ -515,8 +497,6 @@ def register_docker_tools(mcp: FastMCP):
         """Inspect network."""
         return get_client().inspect_network(environment_id, network_id)
 
-    # ── Volumes (Proxied) ────────────────────────────────────────────────
-
     @mcp.tool(
         name="docker_list_volumes",
         description="List volumes in a Docker environment.",
@@ -546,8 +526,6 @@ def register_docker_tools(mcp: FastMCP):
     ) -> Any:
         """Inspect volume."""
         return get_client().inspect_volume(environment_id, volume_name)
-
-    # ── System (Proxied) ─────────────────────────────────────────────────
 
     @mcp.tool(
         name="docker_get_info",
@@ -581,8 +559,6 @@ def register_docker_tools(mcp: FastMCP):
     ) -> Any:
         """Get Docker df."""
         return get_client().get_docker_df(environment_id)
-
-    # ── Creation Tools ──────────────────────────────────────────────────
 
     @mcp.tool(
         name="docker_create_container",
@@ -622,8 +598,6 @@ def register_docker_tools(mcp: FastMCP):
     ) -> Any:
         """Create volume."""
         return get_client().create_volume(environment_id, config)
-
-    # ── Exec Tools ───────────────────────────────────────────────────────
 
     @mcp.tool(
         name="docker_create_exec",
@@ -665,8 +639,6 @@ def register_docker_tools(mcp: FastMCP):
         """Inspect exec."""
         return get_client().inspect_exec(environment_id, exec_id)
 
-    # ── Stack Tools ──────────────────────────────────────────────────────
-
     @mcp.tool(
         name="docker_get_stack_logs",
         description="Get aggregated logs for all containers or services in a Portainer stack.",
@@ -684,11 +656,6 @@ def register_docker_tools(mcp: FastMCP):
     ) -> Any:
         """Get stack logs."""
         return get_client().get_stack_logs(environment_id, stack_id, tail=tail)
-
-
-# ══════════════════════════════════════════════════════════════════════════
-#  STACK tools
-# ══════════════════════════════════════════════════════════════════════════
 
 
 def register_stack_tools(mcp: FastMCP):
@@ -824,11 +791,6 @@ def register_stack_tools(mcp: FastMCP):
     ) -> Any:
         """Redeploy from Git."""
         return get_client().redeploy_stack_git(stack_id, endpoint_id)
-
-
-# ══════════════════════════════════════════════════════════════════════════
-#  KUBERNETES tools
-# ══════════════════════════════════════════════════════════════════════════
 
 
 def register_kubernetes_tools(mcp: FastMCP):
@@ -993,11 +955,6 @@ def register_kubernetes_tools(mcp: FastMCP):
         return get_client().delete_helm_release(endpoint_id, release_name)
 
 
-# ══════════════════════════════════════════════════════════════════════════
-#  EDGE tools
-# ══════════════════════════════════════════════════════════════════════════
-
-
 def register_edge_tools(mcp: FastMCP):
     @mcp.tool(
         name="get_edge_groups",
@@ -1124,11 +1081,6 @@ def register_edge_tools(mcp: FastMCP):
         return get_client().delete_edge_job(job_id)
 
 
-# ══════════════════════════════════════════════════════════════════════════
-#  TEMPLATE tools
-# ══════════════════════════════════════════════════════════════════════════
-
-
 def register_template_tools(mcp: FastMCP):
     @mcp.tool(
         name="get_templates",
@@ -1210,11 +1162,6 @@ def register_template_tools(mcp: FastMCP):
     def get_helm_templates_tool() -> Any:
         """List Helm templates."""
         return get_client().get_helm_templates()
-
-
-# ══════════════════════════════════════════════════════════════════════════
-#  USER tools
-# ══════════════════════════════════════════════════════════════════════════
 
 
 def register_user_tools(mcp: FastMCP):
@@ -1323,11 +1270,6 @@ def register_user_tools(mcp: FastMCP):
         return get_client().get_user_tokens(user_id)
 
 
-# ══════════════════════════════════════════════════════════════════════════
-#  REGISTRY tools
-# ══════════════════════════════════════════════════════════════════════════
-
-
 def register_registry_tools(mcp: FastMCP):
     @mcp.tool(
         name="get_registries",
@@ -1381,11 +1323,6 @@ def register_registry_tools(mcp: FastMCP):
     ) -> Any:
         """Delete registry."""
         return get_client().delete_registry(registry_id)
-
-
-# ══════════════════════════════════════════════════════════════════════════
-#  SYSTEM tools
-# ══════════════════════════════════════════════════════════════════════════
 
 
 def register_system_tools(mcp: FastMCP):
@@ -1500,11 +1437,6 @@ def register_system_tools(mcp: FastMCP):
         return get_client().backup(password=password)
 
 
-# ══════════════════════════════════════════════════════════════════════════
-#  MCP Server entry point
-# ══════════════════════════════════════════════════════════════════════════
-
-
 def get_mcp_instance() -> tuple[Any, Any, Any, Any]:
     """Initialize and return the MCP instance, args, and middlewares."""
     load_dotenv(find_dotenv())
@@ -1514,7 +1446,6 @@ def get_mcp_instance() -> tuple[Any, Any, Any, Any]:
         instructions="Portainer MCP Server — Manage Docker environments, stacks, Kubernetes clusters, registries, users, edge devices, and system settings.",
     )
 
-    # Register tool groups with env-var toggles
     if to_boolean(os.getenv("AUTHTOOL", "True")):
         register_auth_tools(mcp)
     if to_boolean(os.getenv("ENVIRONMENTTOOL", "True")):
@@ -1546,11 +1477,6 @@ def get_mcp_instance() -> tuple[Any, Any, Any, Any]:
 
 def mcp_server() -> None:
     mcp, args, middlewares, registered_tags = get_mcp_instance()
-    print(f"{args.name or 'portainer-agent'} MCP v{__version__}", file=sys.stderr)
-    print("\nStarting MCP Server", file=sys.stderr)
-    print(f"  Transport: {args.transport.upper()}", file=sys.stderr)
-    print(f"  Auth: {args.auth_type}", file=sys.stderr)
-    print(f"  Dynamic Tags Loaded: {len(set(registered_tags))}", file=sys.stderr)
 
     if args.transport == "stdio":
         mcp.run(transport="stdio")
