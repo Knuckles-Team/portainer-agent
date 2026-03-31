@@ -19,7 +19,7 @@ from agent_utilities.mcp_utilities import (
 )
 from portainer_agent.auth import get_client
 
-__version__ = "0.1.25"
+__version__ = "0.1.26"
 
 
 logger = get_logger(name="TokenMiddleware")
