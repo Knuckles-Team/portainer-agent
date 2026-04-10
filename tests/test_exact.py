@@ -5,8 +5,10 @@ os.environ["PORTAINER_TOKEN"] = "TEST"
 os.environ["PORTAINER_SSL_VERIFY"] = "False"
 
 
-from portainer_agent.agent_server import agent_template
-from agent_utilities.graph_orchestration import run_graph
+from agent_utilities.graph_orchestration import (
+    run_graph,
+    initialize_graph_from_workspace,
+)
 import asyncio
 
 
@@ -18,35 +20,50 @@ async def test_exact():
 
     try:
         print("=== EXACT QUERY TEST ===")
-        graph_bundle = agent_template(
-            provider="openai",
-            agent_model="nvidia/nemotron-3-super",
-            base_url="http://10.0.133.133:1234/v1",
+        # Use the centralized workspace initialization
+        graph, config = initialize_graph_from_workspace(
+            base_url="http://10.0.0.18:1234/v1",
             api_key="llama",
         )
-
-        graph, config = graph_bundle
 
         query = "List the running stacks in portainer"
         print(f"Executing: {query}")
         result = await run_graph(graph=graph, config=config, query=query)
 
+        # Handle GraphResponse object (Pydantic model) or dict
+        if hasattr(result, "model_dump"):
+            res_dict = result.model_dump()
+        elif isinstance(result, dict):
+            res_dict = result
+        else:
+            # Fallback for unexpected types
+            res_dict = {"results": {"output": str(result)}}
+
         print("\n=== EXECUTION COMPLETED ===")
-        print(f"Success: {result.get('error') is None}")
-        print(f"Domain: {result.get('domain')}")
-        print(f"Run ID: {result.get('run_id')}")
+        print(f"Success: {res_dict.get('error') is None}")
+        print(f"Domain: {res_dict.get('domain')}")
+        print(
+            f"Run ID: {res_dict.get('run_id') or res_dict.get('metadata', {}).get('run_id')}"
+        )
 
-        if "results" in result and isinstance(result["results"], dict):
+        results = res_dict.get("results", {})
+        if isinstance(results, dict):
             print("\n=== RESULTS BY DOMAIN ===")
-            for domain, domain_result in result["results"].items():
+            for domain, domain_result in results.items():
                 print(f"\n{domain.upper()} RESULT:")
-                print(f"Type: {type(domain_result)}")
-                if isinstance(domain_result, str):
 
+                content = domain_result
+                if isinstance(content, dict):
+                    import json
+
+                    print(json.dumps(content, indent=2))
+                    continue
+
+                if isinstance(content, str):
                     import json
 
                     try:
-                        parsed = json.loads(domain_result)
+                        parsed = json.loads(content)
                         if isinstance(parsed, list):
                             print(f"Found {len(parsed)} items:")
                             for i, item in enumerate(parsed[:3]):
@@ -56,15 +73,10 @@ async def test_exact():
                         else:
                             print(f"{json.dumps(parsed, indent=2)}")
                     except json.JSONDecodeError:
-
-                        print(
-                            domain_result[:500]
-                            + ("..." if len(domain_result) > 500 else "")
-                        )
+                        print(content[:500] + ("..." if len(content) > 500 else ""))
                 else:
                     print(
-                        str(domain_result)[:500]
-                        + ("..." if len(str(domain_result)) > 500 else "")
+                        str(content)[:500] + ("..." if len(str(content)) > 500 else "")
                     )
 
     except Exception as e:
