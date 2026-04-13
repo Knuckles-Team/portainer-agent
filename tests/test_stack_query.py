@@ -12,7 +12,7 @@ import asyncio
 async def test_query():
     try:
         graph_bundle = initialize_graph_from_workspace(
-            agent_model="google/gemma-4-31b",
+            agent_model="nvidia/nemotron-3-super",
             base_url="http://10.0.0.18:1234/v1",
             api_key="llama",
         )
