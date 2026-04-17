@@ -6,6 +6,7 @@ with warnings.catch_warnings():
     warnings.simplefilter("ignore")
     try:
         from requests.exceptions import RequestsDependencyWarning
+
         warnings.filterwarnings("ignore", category=RequestsDependencyWarning)
     except ImportError:
         pass
@@ -32,7 +33,7 @@ from agent_utilities.mcp_utilities import (
 )
 from portainer_agent.auth import get_client
 
-__version__ = "0.1.28"
+__version__ = "0.1.29"
 
 
 logger = get_logger(name="TokenMiddleware")
