@@ -12,8 +12,8 @@ from pydantic import BaseModel
 
 class ValidationResult(BaseModel):
     is_valid: bool
-    feedback: str = None
-    score: float = None
+    feedback: str | None = None
+    score: float | None = None
 
 
 try:

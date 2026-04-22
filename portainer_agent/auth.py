@@ -2,12 +2,14 @@
 
 
 import os
+
 import urllib3
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
-from portainer_agent.portainer_api import PortainerApi
 from agent_utilities.exceptions import AuthError, UnauthorizedError
+
+from portainer_agent.portainer_api import PortainerApi
 
 _client = None
 

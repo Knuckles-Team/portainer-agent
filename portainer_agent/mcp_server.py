@@ -18,19 +18,20 @@ warnings.filterwarnings("ignore", message=".*urllib3.*or charset_normalizer.*")
 import warnings
 
 warnings.filterwarnings("ignore", message=".*urllib3.*or chardet.*")
-from dotenv import load_dotenv, find_dotenv
-from agent_utilities.base_utilities import to_boolean
+import logging
 import os
 import sys
-import logging
-from typing import Optional, List, Any, Dict
+from typing import Any
 
-from pydantic import Field
-from fastmcp import FastMCP
-from fastmcp.utilities.logging import get_logger
+from agent_utilities.base_utilities import to_boolean
 from agent_utilities.mcp_utilities import (
     create_mcp_server,
 )
+from dotenv import find_dotenv, load_dotenv
+from fastmcp import FastMCP
+from fastmcp.utilities.logging import get_logger
+from pydantic import Field
+
 from portainer_agent.auth import get_client
 
 __version__ = "0.1.29"
@@ -99,10 +100,8 @@ def register_environment_tools(mcp: FastMCP):
         tags={"Environment"},
     )
     def get_endpoints_tool(
-        limit: Optional[int] = Field(default=None, description="Max results."),
-        offset: Optional[int] = Field(
-            default=None, description="Offset for pagination."
-        ),
+        limit: int | None = Field(default=None, description="Max results."),
+        offset: int | None = Field(default=None, description="Offset for pagination."),
     ) -> Any:
         """List environments."""
         return get_client().get_endpoints(limit=limit, offset=offset)
@@ -140,10 +139,10 @@ def register_environment_tools(mcp: FastMCP):
     )
     def update_endpoint_tool(
         endpoint_id: int = Field(description="Environment ID."),
-        name: Optional[str] = Field(default=None, description="New name."),
-        url: Optional[str] = Field(default=None, description="New URL."),
-        public_url: Optional[str] = Field(default=None, description="Public URL."),
-        group_id: Optional[int] = Field(default=None, description="Group ID."),
+        name: str | None = Field(default=None, description="New name."),
+        url: str | None = Field(default=None, description="New URL."),
+        public_url: str | None = Field(default=None, description="Public URL."),
+        group_id: int | None = Field(default=None, description="Group ID."),
     ) -> Any:
         """Update environment."""
         kwargs = {}
@@ -257,11 +256,11 @@ def register_docker_tools(mcp: FastMCP):
             alias="all",
             description="Show all containers (default shows just running).",
         ),
-        limit: Optional[int] = Field(
+        limit: int | None = Field(
             default=None,
             description="Return this number of most recently created containers.",
         ),
-        filters: Optional[str] = Field(
+        filters: str | None = Field(
             default=None,
             description="A JSON encoded value of the filters to process on the containers list.",
         ),
@@ -298,7 +297,7 @@ def register_docker_tools(mcp: FastMCP):
             default="all",
             description="Output specified number of lines at the end of logs.",
         ),
-        since: Optional[int] = Field(
+        since: int | None = Field(
             default=None,
             description="Only return logs since this time, as a UNIX timestamp.",
         ),
@@ -342,7 +341,7 @@ def register_docker_tools(mcp: FastMCP):
     def docker_stop_container_tool(
         environment_id: int = Field(description="Environment ID."),
         container_id: str = Field(description="Container ID or name."),
-        timeout: Optional[int] = Field(
+        timeout: int | None = Field(
             default=None,
             description="Number of seconds to wait before killing the container.",
         ),
@@ -360,7 +359,7 @@ def register_docker_tools(mcp: FastMCP):
     def docker_restart_container_tool(
         environment_id: int = Field(description="Environment ID."),
         container_id: str = Field(description="Container ID or name."),
-        timeout: Optional[int] = Field(
+        timeout: int | None = Field(
             default=None,
             description="Number of seconds to wait before killing the container.",
         ),
@@ -399,13 +398,13 @@ def register_docker_tools(mcp: FastMCP):
     )
     def docker_list_services_tool(
         environment_id: int = Field(description="Environment ID."),
-        filters: Optional[str] = Field(
+        filters: str | None = Field(
             default=None,
             description="A JSON encoded value of the filters to process on the services list.",
         ),
     ) -> Any:
         """List services."""
-        params = {}
+        params: dict[str, Any] = {}
         if filters:
             params["filters"] = filters
         return get_client().list_services(environment_id, **params)
@@ -434,7 +433,7 @@ def register_docker_tools(mcp: FastMCP):
             default="all",
             description="Output specified number of lines at the end of logs.",
         ),
-        since: Optional[int] = Field(
+        since: int | None = Field(
             default=None,
             description="Only return logs since this time, as a UNIX timestamp.",
         ),
@@ -458,7 +457,7 @@ def register_docker_tools(mcp: FastMCP):
             alias="all",
             description="Show all images. Only intermediate image layers are filtered out by default.",
         ),
-        filters: Optional[str] = Field(
+        filters: str | None = Field(
             default=None,
             description="A JSON encoded value of the filters to process on the images list.",
         ),
@@ -488,13 +487,13 @@ def register_docker_tools(mcp: FastMCP):
     )
     def docker_list_networks_tool(
         environment_id: int = Field(description="Environment ID."),
-        filters: Optional[str] = Field(
+        filters: str | None = Field(
             default=None,
             description="A JSON encoded value of the filters to process on the networks list.",
         ),
     ) -> Any:
         """List networks."""
-        params = {}
+        params: dict[str, Any] = {}
         if filters:
             params["filters"] = filters
         return get_client().list_networks(environment_id, **params)
@@ -518,13 +517,13 @@ def register_docker_tools(mcp: FastMCP):
     )
     def docker_list_volumes_tool(
         environment_id: int = Field(description="Environment ID."),
-        filters: Optional[str] = Field(
+        filters: str | None = Field(
             default=None,
             description="A JSON encoded value of the filters to process on the volumes list.",
         ),
     ) -> Any:
         """List volumes."""
-        params = {}
+        params: dict[str, Any] = {}
         if filters:
             params["filters"] = filters
         return get_client().list_volumes(environment_id, **params)
@@ -581,10 +580,10 @@ def register_docker_tools(mcp: FastMCP):
     )
     def docker_create_container_tool(
         environment_id: int = Field(description="Environment ID."),
-        config: Dict = Field(
+        config: dict = Field(
             description="Container configuration (Docker API format)."
         ),
-        name: Optional[str] = Field(default=None, description="Container name."),
+        name: str | None = Field(default=None, description="Container name."),
     ) -> Any:
         """Create container."""
         return get_client().create_container(environment_id, config, name=name)
@@ -596,7 +595,7 @@ def register_docker_tools(mcp: FastMCP):
     )
     def docker_create_network_tool(
         environment_id: int = Field(description="Environment ID."),
-        config: Dict = Field(description="Network configuration (Docker API format)."),
+        config: dict = Field(description="Network configuration (Docker API format)."),
     ) -> Any:
         """Create network."""
         return get_client().create_network(environment_id, config)
@@ -608,7 +607,7 @@ def register_docker_tools(mcp: FastMCP):
     )
     def docker_create_volume_tool(
         environment_id: int = Field(description="Environment ID."),
-        config: Dict = Field(description="Volume configuration (Docker API format)."),
+        config: dict = Field(description="Volume configuration (Docker API format)."),
     ) -> Any:
         """Create volume."""
         return get_client().create_volume(environment_id, config)
@@ -621,7 +620,7 @@ def register_docker_tools(mcp: FastMCP):
     def docker_create_exec_tool(
         environment_id: int = Field(description="Environment ID."),
         container_id: str = Field(description="Container ID or name."),
-        config: Dict = Field(description="Exec configuration (Docker API format)."),
+        config: dict = Field(description="Exec configuration (Docker API format)."),
     ) -> Any:
         """Create exec."""
         return get_client().create_exec(environment_id, container_id, config)
@@ -634,7 +633,7 @@ def register_docker_tools(mcp: FastMCP):
     def docker_start_exec_tool(
         environment_id: int = Field(description="Environment ID."),
         exec_id: str = Field(description="Exec ID."),
-        config: Dict = Field(
+        config: dict = Field(
             default_factory=dict, description="Start configuration (Docker API format)."
         ),
     ) -> Any:
@@ -748,7 +747,7 @@ def register_stack_tools(mcp: FastMCP):
     def update_stack_tool(
         stack_id: int = Field(description="Stack ID."),
         endpoint_id: int = Field(description="Environment ID."),
-        file_content: Optional[str] = Field(
+        file_content: str | None = Field(
             default=None, description="Updated compose file content."
         ),
     ) -> Any:
@@ -1029,7 +1028,7 @@ def register_edge_tools(mcp: FastMCP):
     def create_edge_stack_tool(
         name: str = Field(description="Stack name."),
         file_content: str = Field(description="Docker Compose YAML content."),
-        edge_groups: List[int] = Field(
+        edge_groups: list[int] = Field(
             description="List of edge group IDs to deploy to."
         ),
     ) -> Any:
@@ -1382,10 +1381,10 @@ def register_system_tools(mcp: FastMCP):
         tags={"System"},
     )
     def update_settings_tool(
-        authentication_method: Optional[int] = Field(
+        authentication_method: int | None = Field(
             default=None, description="Auth method: 1=internal, 2=LDAP, 3=OAuth."
         ),
-        enable_telemetry: Optional[bool] = Field(
+        enable_telemetry: bool | None = Field(
             default=None, description="Enable telemetry."
         ),
     ) -> Any:
