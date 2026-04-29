@@ -26,9 +26,12 @@ from typing import Any
 from agent_utilities.base_utilities import to_boolean
 from agent_utilities.mcp_utilities import (
     create_mcp_server,
+    ctx_confirm_destructive,
+    ctx_progress,
+    ctx_set_state,
 )
 from dotenv import find_dotenv, load_dotenv
-from fastmcp import FastMCP
+from fastmcp import Context, FastMCP
 from fastmcp.utilities.logging import get_logger
 from pydantic import Field
 
@@ -65,20 +68,37 @@ def register_auth_tools(mcp: FastMCP):
         description="Authenticate against Portainer with username and password to get a JWT token.",
         tags={"Auth"},
     )
-    def authenticate_tool(
+    async def authenticate_tool(
         username: str = Field(description="Username."),
         password: str = Field(description="Password."),
+        ctx: Context = Field(
+            description="MCP context for progress reporting", default=None
+        ),
     ) -> Any:
         """Authenticate."""
-        return get_client().authenticate(username=username, password=password)
+        result = get_client().authenticate(username=username, password=password)
+        await ctx_set_state(
+            ctx,
+            "portainer",
+            "auth_token",
+            result.get("jwt") if isinstance(result, dict) else None,
+        )
+        return result
 
     @mcp.tool(
         name="logout",
         description="Logout and invalidate the current authentication token.",
         tags={"Auth"},
     )
-    def logout_tool() -> Any:
+    async def logout_tool(
+        ctx: Context = Field(
+            description="MCP context for progress reporting", default=None
+        ),
+    ) -> Any:
         """Logout."""
+        if not await ctx_confirm_destructive(ctx, "logout"):
+            return {"status": "cancelled", "message": "Operation cancelled by user"}
+        await ctx_progress(ctx, 0, 100)
         return get_client().logout()
 
     @mcp.tool(
@@ -88,6 +108,9 @@ def register_auth_tools(mcp: FastMCP):
     )
     def validate_oauth_tool(
         code: str = Field(description="OAuth code."),
+        ctx: Context = Field(
+            description="MCP context for progress reporting", default=None
+        ),
     ) -> Any:
         """Validate OAuth."""
         return get_client().validate_oauth(code=code)
@@ -102,6 +125,9 @@ def register_environment_tools(mcp: FastMCP):
     def get_endpoints_tool(
         limit: int | None = Field(default=None, description="Max results."),
         offset: int | None = Field(default=None, description="Offset for pagination."),
+        ctx: Context = Field(
+            description="MCP context for progress reporting", default=None
+        ),
     ) -> Any:
         """List environments."""
         return get_client().get_endpoints(limit=limit, offset=offset)
@@ -113,6 +139,9 @@ def register_environment_tools(mcp: FastMCP):
     )
     def get_endpoint_tool(
         endpoint_id: int = Field(description="Environment/endpoint ID."),
+        ctx: Context = Field(
+            description="MCP context for progress reporting", default=None
+        ),
     ) -> Any:
         """Get environment."""
         return get_client().get_endpoint(endpoint_id)
@@ -126,6 +155,9 @@ def register_environment_tools(mcp: FastMCP):
         name: str = Field(description="Environment name."),
         endpoint_type: int = Field(description="Environment type (1-7)."),
         url: str = Field(default="", description="URL of the Docker/Kubernetes host."),
+        ctx: Context = Field(
+            description="MCP context for progress reporting", default=None
+        ),
     ) -> Any:
         """Create environment."""
         return get_client().create_endpoint(
@@ -143,9 +175,12 @@ def register_environment_tools(mcp: FastMCP):
         url: str | None = Field(default=None, description="New URL."),
         public_url: str | None = Field(default=None, description="Public URL."),
         group_id: int | None = Field(default=None, description="Group ID."),
+        ctx: Context = Field(
+            description="MCP context for progress reporting", default=None
+        ),
     ) -> Any:
         """Update environment."""
-        kwargs = {}
+        kwargs: dict[str, Any] = {}
         if name:
             kwargs["Name"] = name
         if url:
@@ -161,10 +196,16 @@ def register_environment_tools(mcp: FastMCP):
         description="Delete an environment (endpoint).",
         tags={"Environment"},
     )
-    def delete_endpoint_tool(
+    async def delete_endpoint_tool(
         endpoint_id: int = Field(description="Environment ID to delete."),
+        ctx: Context = Field(
+            description="MCP context for progress reporting", default=None
+        ),
     ) -> Any:
         """Delete environment."""
+        if not await ctx_confirm_destructive(ctx, "delete endpoint"):
+            return {"status": "cancelled", "message": "Operation cancelled by user"}
+        await ctx_progress(ctx, 0, 100)
         return get_client().delete_endpoint(endpoint_id)
 
     @mcp.tool(
@@ -174,6 +215,9 @@ def register_environment_tools(mcp: FastMCP):
     )
     def snapshot_endpoint_tool(
         endpoint_id: int = Field(description="Environment ID."),
+        ctx: Context = Field(
+            description="MCP context for progress reporting", default=None
+        ),
     ) -> Any:
         """Snapshot environment."""
         return get_client().snapshot_endpoint(endpoint_id)
@@ -183,7 +227,11 @@ def register_environment_tools(mcp: FastMCP):
         description="Take a snapshot of all environments.",
         tags={"Environment"},
     )
-    def snapshot_all_endpoints_tool() -> Any:
+    def snapshot_all_endpoints_tool(
+        ctx: Context = Field(
+            description="MCP context for progress reporting", default=None
+        ),
+    ) -> Any:
         """Snapshot all environments."""
         return get_client().snapshot_all_endpoints()
 
@@ -192,7 +240,11 @@ def register_environment_tools(mcp: FastMCP):
         description="List all environment groups.",
         tags={"Environment"},
     )
-    def get_endpoint_groups_tool() -> Any:
+    def get_endpoint_groups_tool(
+        ctx: Context = Field(
+            description="MCP context for progress reporting", default=None
+        ),
+    ) -> Any:
         """List groups."""
         return get_client().get_endpoint_groups()
 
@@ -204,6 +256,9 @@ def register_environment_tools(mcp: FastMCP):
     def create_endpoint_group_tool(
         name: str = Field(description="Group name."),
         description: str = Field(default="", description="Group description."),
+        ctx: Context = Field(
+            description="MCP context for progress reporting", default=None
+        ),
     ) -> Any:
         """Create group."""
         return get_client().create_endpoint_group(name=name, description=description)
@@ -213,10 +268,16 @@ def register_environment_tools(mcp: FastMCP):
         description="Delete an environment group.",
         tags={"Environment"},
     )
-    def delete_endpoint_group_tool(
+    async def delete_endpoint_group_tool(
         group_id: int = Field(description="Group ID."),
+        ctx: Context = Field(
+            description="MCP context for progress reporting", default=None
+        ),
     ) -> Any:
         """Delete group."""
+        if not await ctx_confirm_destructive(ctx, "delete endpoint group"):
+            return {"status": "cancelled", "message": "Operation cancelled by user"}
+        await ctx_progress(ctx, 0, 100)
         return get_client().delete_endpoint_group(group_id)
 
 
@@ -228,6 +289,9 @@ def register_docker_tools(mcp: FastMCP):
     )
     def get_docker_dashboard_tool(
         environment_id: int = Field(description="Environment ID."),
+        ctx: Context = Field(
+            description="MCP context for progress reporting", default=None
+        ),
     ) -> Any:
         """Get Docker dashboard."""
         return get_client().get_docker_dashboard(environment_id)
@@ -240,6 +304,9 @@ def register_docker_tools(mcp: FastMCP):
     def get_container_gpus_tool(
         environment_id: int = Field(description="Environment ID."),
         container_id: str = Field(description="Container ID."),
+        ctx: Context = Field(
+            description="MCP context for progress reporting", default=None
+        ),
     ) -> Any:
         """Get container GPUs."""
         return get_client().get_container_gpus(environment_id, container_id)
@@ -264,9 +331,12 @@ def register_docker_tools(mcp: FastMCP):
             default=None,
             description="A JSON encoded value of the filters to process on the containers list.",
         ),
+        ctx: Context = Field(
+            description="MCP context for progress reporting", default=None
+        ),
     ) -> Any:
         """List containers."""
-        params = {"all": all_containers}
+        params: dict[str, Any] = {"all": all_containers}
         if limit:
             params["limit"] = limit
         if filters:
@@ -281,6 +351,9 @@ def register_docker_tools(mcp: FastMCP):
     def docker_inspect_container_tool(
         environment_id: int = Field(description="Environment ID."),
         container_id: str = Field(description="Container ID or name."),
+        ctx: Context = Field(
+            description="MCP context for progress reporting", default=None
+        ),
     ) -> Any:
         """Inspect container."""
         return get_client().inspect_container(environment_id, container_id)
@@ -302,6 +375,9 @@ def register_docker_tools(mcp: FastMCP):
             description="Only return logs since this time, as a UNIX timestamp.",
         ),
         timestamps: bool = Field(default=True, description="Show timestamps in logs."),
+        ctx: Context = Field(
+            description="MCP context for progress reporting", default=None
+        ),
     ) -> Any:
         """Get container logs."""
         params = {"tail": tail, "timestamps": timestamps}
@@ -317,6 +393,9 @@ def register_docker_tools(mcp: FastMCP):
     def docker_get_container_stats_tool(
         environment_id: int = Field(description="Environment ID."),
         container_id: str = Field(description="Container ID or name."),
+        ctx: Context = Field(
+            description="MCP context for progress reporting", default=None
+        ),
     ) -> Any:
         """Get container stats."""
         return get_client().get_container_stats(environment_id, container_id)
@@ -329,6 +408,9 @@ def register_docker_tools(mcp: FastMCP):
     def docker_start_container_tool(
         environment_id: int = Field(description="Environment ID."),
         container_id: str = Field(description="Container ID or name."),
+        ctx: Context = Field(
+            description="MCP context for progress reporting", default=None
+        ),
     ) -> Any:
         """Start container."""
         return get_client().start_container(environment_id, container_id)
@@ -338,15 +420,21 @@ def register_docker_tools(mcp: FastMCP):
         description="Stop a container.",
         tags={"Docker"},
     )
-    def docker_stop_container_tool(
+    async def docker_stop_container_tool(
         environment_id: int = Field(description="Environment ID."),
         container_id: str = Field(description="Container ID or name."),
         timeout: int | None = Field(
             default=None,
             description="Number of seconds to wait before killing the container.",
         ),
+        ctx: Context = Field(
+            description="MCP context for progress reporting", default=None
+        ),
     ) -> Any:
         """Stop container."""
+        if not await ctx_confirm_destructive(ctx, "docker stop container"):
+            return {"status": "cancelled", "message": "Operation cancelled by user"}
+        await ctx_progress(ctx, 0, 100)
         return get_client().stop_container(
             environment_id, container_id, timeout=timeout
         )
@@ -356,15 +444,21 @@ def register_docker_tools(mcp: FastMCP):
         description="Restart a container.",
         tags={"Docker"},
     )
-    def docker_restart_container_tool(
+    async def docker_restart_container_tool(
         environment_id: int = Field(description="Environment ID."),
         container_id: str = Field(description="Container ID or name."),
         timeout: int | None = Field(
             default=None,
             description="Number of seconds to wait before killing the container.",
         ),
+        ctx: Context = Field(
+            description="MCP context for progress reporting", default=None
+        ),
     ) -> Any:
         """Restart container."""
+        if not await ctx_confirm_destructive(ctx, "docker restart container"):
+            return {"status": "cancelled", "message": "Operation cancelled by user"}
+        await ctx_progress(ctx, 0, 100)
         return get_client().restart_container(
             environment_id, container_id, timeout=timeout
         )
@@ -374,7 +468,7 @@ def register_docker_tools(mcp: FastMCP):
         description="Remove a container.",
         tags={"Docker"},
     )
-    def docker_remove_container_tool(
+    async def docker_remove_container_tool(
         environment_id: int = Field(description="Environment ID."),
         container_id: str = Field(description="Container ID or name."),
         v: bool = Field(
@@ -385,8 +479,14 @@ def register_docker_tools(mcp: FastMCP):
             default=False,
             description="If the container is running, kill it before removing it.",
         ),
+        ctx: Context = Field(
+            description="MCP context for progress reporting", default=None
+        ),
     ) -> Any:
         """Remove container."""
+        if not await ctx_confirm_destructive(ctx, "docker remove container"):
+            return {"status": "cancelled", "message": "Operation cancelled by user"}
+        await ctx_progress(ctx, 0, 100)
         return get_client().remove_container(
             environment_id, container_id, v=v, force=force
         )
@@ -401,6 +501,9 @@ def register_docker_tools(mcp: FastMCP):
         filters: str | None = Field(
             default=None,
             description="A JSON encoded value of the filters to process on the services list.",
+        ),
+        ctx: Context = Field(
+            description="MCP context for progress reporting", default=None
         ),
     ) -> Any:
         """List services."""
@@ -417,6 +520,9 @@ def register_docker_tools(mcp: FastMCP):
     def docker_inspect_service_tool(
         environment_id: int = Field(description="Environment ID."),
         service_id: str = Field(description="Service ID or name."),
+        ctx: Context = Field(
+            description="MCP context for progress reporting", default=None
+        ),
     ) -> Any:
         """Inspect service."""
         return get_client().inspect_service(environment_id, service_id)
@@ -438,6 +544,9 @@ def register_docker_tools(mcp: FastMCP):
             description="Only return logs since this time, as a UNIX timestamp.",
         ),
         timestamps: bool = Field(default=True, description="Show timestamps in logs."),
+        ctx: Context = Field(
+            description="MCP context for progress reporting", default=None
+        ),
     ) -> Any:
         """Get service logs."""
         params = {"tail": tail, "timestamps": timestamps}
@@ -461,9 +570,12 @@ def register_docker_tools(mcp: FastMCP):
             default=None,
             description="A JSON encoded value of the filters to process on the images list.",
         ),
+        ctx: Context = Field(
+            description="MCP context for progress reporting", default=None
+        ),
     ) -> Any:
         """List images."""
-        params = {"all": all_images}
+        params: dict[str, Any] = {"all": all_images}
         if filters:
             params["filters"] = filters
         return get_client().list_images(environment_id, **params)
@@ -476,6 +588,9 @@ def register_docker_tools(mcp: FastMCP):
     def docker_inspect_image_tool(
         environment_id: int = Field(description="Environment ID."),
         image_name: str = Field(description="Image ID or name."),
+        ctx: Context = Field(
+            description="MCP context for progress reporting", default=None
+        ),
     ) -> Any:
         """Inspect image."""
         return get_client().inspect_image(environment_id, image_name)
@@ -490,6 +605,9 @@ def register_docker_tools(mcp: FastMCP):
         filters: str | None = Field(
             default=None,
             description="A JSON encoded value of the filters to process on the networks list.",
+        ),
+        ctx: Context = Field(
+            description="MCP context for progress reporting", default=None
         ),
     ) -> Any:
         """List networks."""
@@ -506,6 +624,9 @@ def register_docker_tools(mcp: FastMCP):
     def docker_inspect_network_tool(
         environment_id: int = Field(description="Environment ID."),
         network_id: str = Field(description="Network ID or name."),
+        ctx: Context = Field(
+            description="MCP context for progress reporting", default=None
+        ),
     ) -> Any:
         """Inspect network."""
         return get_client().inspect_network(environment_id, network_id)
@@ -520,6 +641,9 @@ def register_docker_tools(mcp: FastMCP):
         filters: str | None = Field(
             default=None,
             description="A JSON encoded value of the filters to process on the volumes list.",
+        ),
+        ctx: Context = Field(
+            description="MCP context for progress reporting", default=None
         ),
     ) -> Any:
         """List volumes."""
@@ -536,6 +660,9 @@ def register_docker_tools(mcp: FastMCP):
     def docker_inspect_volume_tool(
         environment_id: int = Field(description="Environment ID."),
         volume_name: str = Field(description="Volume name."),
+        ctx: Context = Field(
+            description="MCP context for progress reporting", default=None
+        ),
     ) -> Any:
         """Inspect volume."""
         return get_client().inspect_volume(environment_id, volume_name)
@@ -547,6 +674,9 @@ def register_docker_tools(mcp: FastMCP):
     )
     def docker_get_info_tool(
         environment_id: int = Field(description="Environment ID."),
+        ctx: Context = Field(
+            description="MCP context for progress reporting", default=None
+        ),
     ) -> Any:
         """Get Docker info."""
         return get_client().get_docker_info(environment_id)
@@ -558,6 +688,9 @@ def register_docker_tools(mcp: FastMCP):
     )
     def docker_get_version_tool(
         environment_id: int = Field(description="Environment ID."),
+        ctx: Context = Field(
+            description="MCP context for progress reporting", default=None
+        ),
     ) -> Any:
         """Get Docker version."""
         return get_client().get_docker_version(environment_id)
@@ -569,6 +702,9 @@ def register_docker_tools(mcp: FastMCP):
     )
     def docker_get_system_df_tool(
         environment_id: int = Field(description="Environment ID."),
+        ctx: Context = Field(
+            description="MCP context for progress reporting", default=None
+        ),
     ) -> Any:
         """Get Docker df."""
         return get_client().get_docker_df(environment_id)
@@ -584,6 +720,9 @@ def register_docker_tools(mcp: FastMCP):
             description="Container configuration (Docker API format)."
         ),
         name: str | None = Field(default=None, description="Container name."),
+        ctx: Context = Field(
+            description="MCP context for progress reporting", default=None
+        ),
     ) -> Any:
         """Create container."""
         return get_client().create_container(environment_id, config, name=name)
@@ -596,6 +735,9 @@ def register_docker_tools(mcp: FastMCP):
     def docker_create_network_tool(
         environment_id: int = Field(description="Environment ID."),
         config: dict = Field(description="Network configuration (Docker API format)."),
+        ctx: Context = Field(
+            description="MCP context for progress reporting", default=None
+        ),
     ) -> Any:
         """Create network."""
         return get_client().create_network(environment_id, config)
@@ -608,6 +750,9 @@ def register_docker_tools(mcp: FastMCP):
     def docker_create_volume_tool(
         environment_id: int = Field(description="Environment ID."),
         config: dict = Field(description="Volume configuration (Docker API format)."),
+        ctx: Context = Field(
+            description="MCP context for progress reporting", default=None
+        ),
     ) -> Any:
         """Create volume."""
         return get_client().create_volume(environment_id, config)
@@ -621,6 +766,9 @@ def register_docker_tools(mcp: FastMCP):
         environment_id: int = Field(description="Environment ID."),
         container_id: str = Field(description="Container ID or name."),
         config: dict = Field(description="Exec configuration (Docker API format)."),
+        ctx: Context = Field(
+            description="MCP context for progress reporting", default=None
+        ),
     ) -> Any:
         """Create exec."""
         return get_client().create_exec(environment_id, container_id, config)
@@ -636,6 +784,9 @@ def register_docker_tools(mcp: FastMCP):
         config: dict = Field(
             default_factory=dict, description="Start configuration (Docker API format)."
         ),
+        ctx: Context = Field(
+            description="MCP context for progress reporting", default=None
+        ),
     ) -> Any:
         """Start exec."""
         return get_client().start_exec(environment_id, exec_id, config)
@@ -648,6 +799,9 @@ def register_docker_tools(mcp: FastMCP):
     def docker_inspect_exec_tool(
         environment_id: int = Field(description="Environment ID."),
         exec_id: str = Field(description="Exec ID."),
+        ctx: Context = Field(
+            description="MCP context for progress reporting", default=None
+        ),
     ) -> Any:
         """Inspect exec."""
         return get_client().inspect_exec(environment_id, exec_id)
@@ -657,7 +811,7 @@ def register_docker_tools(mcp: FastMCP):
         description="Get aggregated logs for all containers or services in a Portainer stack.",
         tags={"Docker", "Stack"},
     )
-    def docker_get_stack_logs_tool(
+    async def docker_get_stack_logs_tool(
         environment_id: int = Field(
             description="Environment ID where the stack resides."
         ),
@@ -666,8 +820,13 @@ def register_docker_tools(mcp: FastMCP):
             default="100",
             description="Output specified number of lines at the end of logs for each container/service.",
         ),
+        ctx: Context = Field(
+            description="MCP context for progress reporting", default=None
+        ),
     ) -> Any:
+        await ctx_progress(ctx, 0, 100)
         """Get stack logs."""
+        await ctx_progress(ctx, 100, 100)
         return get_client().get_stack_logs(environment_id, stack_id, tail=tail)
 
 
@@ -677,8 +836,14 @@ def register_stack_tools(mcp: FastMCP):
         description="List all stacks across all environments.",
         tags={"Stack"},
     )
-    def get_stacks_tool() -> Any:
+    async def get_stacks_tool(
+        ctx: Context = Field(
+            description="MCP context for progress reporting", default=None
+        ),
+    ) -> Any:
+        await ctx_progress(ctx, 0, 100)
         """List stacks."""
+        await ctx_progress(ctx, 100, 100)
         return get_client().get_stacks()
 
     @mcp.tool(
@@ -686,10 +851,15 @@ def register_stack_tools(mcp: FastMCP):
         description="Get details of a specific stack by ID.",
         tags={"Stack"},
     )
-    def get_stack_tool(
+    async def get_stack_tool(
         stack_id: int = Field(description="Stack ID."),
+        ctx: Context = Field(
+            description="MCP context for progress reporting", default=None
+        ),
     ) -> Any:
+        await ctx_progress(ctx, 0, 100)
         """Get stack."""
+        await ctx_progress(ctx, 100, 100)
         return get_client().get_stack(stack_id)
 
     @mcp.tool(
@@ -697,10 +867,15 @@ def register_stack_tools(mcp: FastMCP):
         description="Get the Docker Compose/manifest file content for a stack.",
         tags={"Stack"},
     )
-    def get_stack_file_tool(
+    async def get_stack_file_tool(
         stack_id: int = Field(description="Stack ID."),
+        ctx: Context = Field(
+            description="MCP context for progress reporting", default=None
+        ),
     ) -> Any:
+        await ctx_progress(ctx, 0, 100)
         """Get stack file."""
+        await ctx_progress(ctx, 100, 100)
         return get_client().get_stack_file(stack_id)
 
     @mcp.tool(
@@ -708,12 +883,17 @@ def register_stack_tools(mcp: FastMCP):
         description="Create a standalone Docker Compose stack from compose file content.",
         tags={"Stack"},
     )
-    def create_standalone_stack_tool(
+    async def create_standalone_stack_tool(
         name: str = Field(description="Stack name."),
         file_content: str = Field(description="Docker Compose YAML content."),
         endpoint_id: int = Field(description="Target environment ID."),
+        ctx: Context = Field(
+            description="MCP context for progress reporting", default=None
+        ),
     ) -> Any:
+        await ctx_progress(ctx, 0, 100)
         """Create standalone stack."""
+        await ctx_progress(ctx, 100, 100)
         return get_client().create_standalone_stack_from_string(
             name=name, file_content=file_content, endpoint_id=endpoint_id
         )
@@ -723,15 +903,20 @@ def register_stack_tools(mcp: FastMCP):
         description="Create a standalone Docker Compose stack from a Git repository.",
         tags={"Stack"},
     )
-    def create_standalone_stack_from_repo_tool(
+    async def create_standalone_stack_from_repo_tool(
         name: str = Field(description="Stack name."),
         repo_url: str = Field(description="Git repository URL."),
         endpoint_id: int = Field(description="Target environment ID."),
         compose_file: str = Field(
             default="docker-compose.yml", description="Path to compose file in repo."
         ),
+        ctx: Context = Field(
+            description="MCP context for progress reporting", default=None
+        ),
     ) -> Any:
+        await ctx_progress(ctx, 0, 100)
         """Create stack from repo."""
+        await ctx_progress(ctx, 100, 100)
         return get_client().create_standalone_stack_from_repository(
             name=name,
             repo_url=repo_url,
@@ -744,17 +929,22 @@ def register_stack_tools(mcp: FastMCP):
         description="Update a stack's configuration.",
         tags={"Stack"},
     )
-    def update_stack_tool(
+    async def update_stack_tool(
         stack_id: int = Field(description="Stack ID."),
         endpoint_id: int = Field(description="Environment ID."),
         file_content: str | None = Field(
             default=None, description="Updated compose file content."
         ),
+        ctx: Context = Field(
+            description="MCP context for progress reporting", default=None
+        ),
     ) -> Any:
+        await ctx_progress(ctx, 0, 100)
         """Update stack."""
         kwargs = {}
         if file_content:
             kwargs["StackFileContent"] = file_content
+        await ctx_progress(ctx, 100, 100)
         return get_client().update_stack(stack_id, endpoint_id, **kwargs)
 
     @mcp.tool(
@@ -762,11 +952,17 @@ def register_stack_tools(mcp: FastMCP):
         description="Delete a stack.",
         tags={"Stack"},
     )
-    def delete_stack_tool(
+    async def delete_stack_tool(
         stack_id: int = Field(description="Stack ID."),
         endpoint_id: int = Field(description="Environment ID."),
+        ctx: Context = Field(
+            description="MCP context for progress reporting", default=None
+        ),
     ) -> Any:
         """Delete stack."""
+        if not await ctx_confirm_destructive(ctx, "delete stack"):
+            return {"status": "cancelled", "message": "Operation cancelled by user"}
+        await ctx_progress(ctx, 0, 100)
         return get_client().delete_stack(stack_id, endpoint_id)
 
     @mcp.tool(
@@ -774,11 +970,16 @@ def register_stack_tools(mcp: FastMCP):
         description="Start a stopped stack.",
         tags={"Stack"},
     )
-    def start_stack_tool(
+    async def start_stack_tool(
         stack_id: int = Field(description="Stack ID."),
         endpoint_id: int = Field(description="Environment ID."),
+        ctx: Context = Field(
+            description="MCP context for progress reporting", default=None
+        ),
     ) -> Any:
+        await ctx_progress(ctx, 0, 100)
         """Start stack."""
+        await ctx_progress(ctx, 100, 100)
         return get_client().start_stack(stack_id, endpoint_id)
 
     @mcp.tool(
@@ -786,11 +987,17 @@ def register_stack_tools(mcp: FastMCP):
         description="Stop a running stack.",
         tags={"Stack"},
     )
-    def stop_stack_tool(
+    async def stop_stack_tool(
         stack_id: int = Field(description="Stack ID."),
         endpoint_id: int = Field(description="Environment ID."),
+        ctx: Context = Field(
+            description="MCP context for progress reporting", default=None
+        ),
     ) -> Any:
         """Stop stack."""
+        if not await ctx_confirm_destructive(ctx, "stop stack"):
+            return {"status": "cancelled", "message": "Operation cancelled by user"}
+        await ctx_progress(ctx, 0, 100)
         return get_client().stop_stack(stack_id, endpoint_id)
 
     @mcp.tool(
@@ -798,11 +1005,16 @@ def register_stack_tools(mcp: FastMCP):
         description="Redeploy a stack from its Git repository (pull latest and redeploy).",
         tags={"Stack"},
     )
-    def redeploy_stack_git_tool(
+    async def redeploy_stack_git_tool(
         stack_id: int = Field(description="Stack ID."),
         endpoint_id: int = Field(description="Environment ID."),
+        ctx: Context = Field(
+            description="MCP context for progress reporting", default=None
+        ),
     ) -> Any:
+        await ctx_progress(ctx, 0, 100)
         """Redeploy from Git."""
+        await ctx_progress(ctx, 100, 100)
         return get_client().redeploy_stack_git(stack_id, endpoint_id)
 
 
@@ -814,6 +1026,9 @@ def register_kubernetes_tools(mcp: FastMCP):
     )
     def get_k8s_dashboard_tool(
         environment_id: int = Field(description="Environment ID."),
+        ctx: Context = Field(
+            description="MCP context for progress reporting", default=None
+        ),
     ) -> Any:
         """Get K8s dashboard."""
         return get_client().get_kubernetes_dashboard(environment_id)
@@ -825,6 +1040,9 @@ def register_kubernetes_tools(mcp: FastMCP):
     )
     def get_k8s_namespaces_tool(
         environment_id: int = Field(description="Environment ID."),
+        ctx: Context = Field(
+            description="MCP context for progress reporting", default=None
+        ),
     ) -> Any:
         """List namespaces."""
         return get_client().get_kubernetes_namespaces(environment_id)
@@ -836,6 +1054,9 @@ def register_kubernetes_tools(mcp: FastMCP):
     )
     def get_k8s_applications_tool(
         environment_id: int = Field(description="Environment ID."),
+        ctx: Context = Field(
+            description="MCP context for progress reporting", default=None
+        ),
     ) -> Any:
         """List applications."""
         return get_client().get_kubernetes_applications(environment_id)
@@ -847,6 +1068,9 @@ def register_kubernetes_tools(mcp: FastMCP):
     )
     def get_k8s_services_tool(
         environment_id: int = Field(description="Environment ID."),
+        ctx: Context = Field(
+            description="MCP context for progress reporting", default=None
+        ),
     ) -> Any:
         """List services."""
         return get_client().get_kubernetes_services(environment_id)
@@ -858,6 +1082,9 @@ def register_kubernetes_tools(mcp: FastMCP):
     )
     def get_k8s_ingresses_tool(
         environment_id: int = Field(description="Environment ID."),
+        ctx: Context = Field(
+            description="MCP context for progress reporting", default=None
+        ),
     ) -> Any:
         """List ingresses."""
         return get_client().get_kubernetes_ingresses(environment_id)
@@ -869,6 +1096,9 @@ def register_kubernetes_tools(mcp: FastMCP):
     )
     def get_k8s_configmaps_tool(
         environment_id: int = Field(description="Environment ID."),
+        ctx: Context = Field(
+            description="MCP context for progress reporting", default=None
+        ),
     ) -> Any:
         """List configmaps."""
         return get_client().get_kubernetes_configmaps(environment_id)
@@ -880,6 +1110,9 @@ def register_kubernetes_tools(mcp: FastMCP):
     )
     def get_k8s_secrets_tool(
         environment_id: int = Field(description="Environment ID."),
+        ctx: Context = Field(
+            description="MCP context for progress reporting", default=None
+        ),
     ) -> Any:
         """List secrets."""
         return get_client().get_kubernetes_secrets(environment_id)
@@ -891,6 +1124,9 @@ def register_kubernetes_tools(mcp: FastMCP):
     )
     def get_k8s_volumes_tool(
         environment_id: int = Field(description="Environment ID."),
+        ctx: Context = Field(
+            description="MCP context for progress reporting", default=None
+        ),
     ) -> Any:
         """List volumes."""
         return get_client().get_kubernetes_volumes(environment_id)
@@ -902,6 +1138,9 @@ def register_kubernetes_tools(mcp: FastMCP):
     )
     def get_k8s_events_tool(
         environment_id: int = Field(description="Environment ID."),
+        ctx: Context = Field(
+            description="MCP context for progress reporting", default=None
+        ),
     ) -> Any:
         """List events."""
         return get_client().get_kubernetes_events(environment_id)
@@ -913,6 +1152,9 @@ def register_kubernetes_tools(mcp: FastMCP):
     )
     def get_k8s_nodes_limits_tool(
         environment_id: int = Field(description="Environment ID."),
+        ctx: Context = Field(
+            description="MCP context for progress reporting", default=None
+        ),
     ) -> Any:
         """Get node limits."""
         return get_client().get_kubernetes_nodes_limits(environment_id)
@@ -924,6 +1166,9 @@ def register_kubernetes_tools(mcp: FastMCP):
     )
     def get_k8s_metrics_nodes_tool(
         environment_id: int = Field(description="Environment ID."),
+        ctx: Context = Field(
+            description="MCP context for progress reporting", default=None
+        ),
     ) -> Any:
         """Get node metrics."""
         return get_client().get_kubernetes_metrics_nodes(environment_id)
@@ -935,6 +1180,9 @@ def register_kubernetes_tools(mcp: FastMCP):
     )
     def get_helm_releases_tool(
         endpoint_id: int = Field(description="Environment ID."),
+        ctx: Context = Field(
+            description="MCP context for progress reporting", default=None
+        ),
     ) -> Any:
         """List Helm releases."""
         return get_client().get_helm_releases(endpoint_id)
@@ -949,6 +1197,9 @@ def register_kubernetes_tools(mcp: FastMCP):
         chart_name: str = Field(description="Helm chart name."),
         release_name: str = Field(default="", description="Name for the Helm release."),
         namespace: str = Field(default="default", description="Target namespace."),
+        ctx: Context = Field(
+            description="MCP context for progress reporting", default=None
+        ),
     ) -> Any:
         """Install Helm chart."""
         return get_client().install_helm_chart(
@@ -960,11 +1211,17 @@ def register_kubernetes_tools(mcp: FastMCP):
         description="Delete (uninstall) a Helm release.",
         tags={"Kubernetes"},
     )
-    def delete_helm_release_tool(
+    async def delete_helm_release_tool(
         endpoint_id: int = Field(description="Environment ID."),
         release_name: str = Field(description="Helm release name."),
+        ctx: Context = Field(
+            description="MCP context for progress reporting", default=None
+        ),
     ) -> Any:
         """Delete Helm release."""
+        if not await ctx_confirm_destructive(ctx, "delete helm release"):
+            return {"status": "cancelled", "message": "Operation cancelled by user"}
+        await ctx_progress(ctx, 0, 100)
         return get_client().delete_helm_release(endpoint_id, release_name)
 
 
@@ -974,7 +1231,11 @@ def register_edge_tools(mcp: FastMCP):
         description="List all edge groups.",
         tags={"Edge"},
     )
-    def get_edge_groups_tool() -> Any:
+    def get_edge_groups_tool(
+        ctx: Context = Field(
+            description="MCP context for progress reporting", default=None
+        ),
+    ) -> Any:
         """List edge groups."""
         return get_client().get_edge_groups()
 
@@ -985,6 +1246,9 @@ def register_edge_tools(mcp: FastMCP):
     )
     def create_edge_group_tool(
         name: str = Field(description="Edge group name."),
+        ctx: Context = Field(
+            description="MCP context for progress reporting", default=None
+        ),
     ) -> Any:
         """Create edge group."""
         return get_client().create_edge_group(name=name)
@@ -994,10 +1258,16 @@ def register_edge_tools(mcp: FastMCP):
         description="Delete an edge group.",
         tags={"Edge"},
     )
-    def delete_edge_group_tool(
+    async def delete_edge_group_tool(
         group_id: int = Field(description="Edge group ID."),
+        ctx: Context = Field(
+            description="MCP context for progress reporting", default=None
+        ),
     ) -> Any:
         """Delete edge group."""
+        if not await ctx_confirm_destructive(ctx, "delete edge group"):
+            return {"status": "cancelled", "message": "Operation cancelled by user"}
+        await ctx_progress(ctx, 0, 100)
         return get_client().delete_edge_group(group_id)
 
     @mcp.tool(
@@ -1005,8 +1275,14 @@ def register_edge_tools(mcp: FastMCP):
         description="List all edge stacks deployed to edge groups.",
         tags={"Edge"},
     )
-    def get_edge_stacks_tool() -> Any:
+    async def get_edge_stacks_tool(
+        ctx: Context = Field(
+            description="MCP context for progress reporting", default=None
+        ),
+    ) -> Any:
+        await ctx_progress(ctx, 0, 100)
         """List edge stacks."""
+        await ctx_progress(ctx, 100, 100)
         return get_client().get_edge_stacks()
 
     @mcp.tool(
@@ -1014,10 +1290,15 @@ def register_edge_tools(mcp: FastMCP):
         description="Get details of a specific edge stack.",
         tags={"Edge"},
     )
-    def get_edge_stack_tool(
+    async def get_edge_stack_tool(
         stack_id: int = Field(description="Edge stack ID."),
+        ctx: Context = Field(
+            description="MCP context for progress reporting", default=None
+        ),
     ) -> Any:
+        await ctx_progress(ctx, 0, 100)
         """Get edge stack."""
+        await ctx_progress(ctx, 100, 100)
         return get_client().get_edge_stack(stack_id)
 
     @mcp.tool(
@@ -1025,14 +1306,19 @@ def register_edge_tools(mcp: FastMCP):
         description="Create an edge stack from compose file content.",
         tags={"Edge"},
     )
-    def create_edge_stack_tool(
+    async def create_edge_stack_tool(
         name: str = Field(description="Stack name."),
         file_content: str = Field(description="Docker Compose YAML content."),
         edge_groups: list[int] = Field(
             description="List of edge group IDs to deploy to."
         ),
+        ctx: Context = Field(
+            description="MCP context for progress reporting", default=None
+        ),
     ) -> Any:
+        await ctx_progress(ctx, 0, 100)
         """Create edge stack."""
+        await ctx_progress(ctx, 100, 100)
         return get_client().create_edge_stack_from_string(
             name=name, file_content=file_content, edge_groups=edge_groups
         )
@@ -1042,10 +1328,16 @@ def register_edge_tools(mcp: FastMCP):
         description="Delete an edge stack.",
         tags={"Edge"},
     )
-    def delete_edge_stack_tool(
+    async def delete_edge_stack_tool(
         stack_id: int = Field(description="Edge stack ID."),
+        ctx: Context = Field(
+            description="MCP context for progress reporting", default=None
+        ),
     ) -> Any:
         """Delete edge stack."""
+        if not await ctx_confirm_destructive(ctx, "delete edge stack"):
+            return {"status": "cancelled", "message": "Operation cancelled by user"}
+        await ctx_progress(ctx, 0, 100)
         return get_client().delete_edge_stack(stack_id)
 
     @mcp.tool(
@@ -1053,7 +1345,11 @@ def register_edge_tools(mcp: FastMCP):
         description="List all edge jobs.",
         tags={"Edge"},
     )
-    def get_edge_jobs_tool() -> Any:
+    def get_edge_jobs_tool(
+        ctx: Context = Field(
+            description="MCP context for progress reporting", default=None
+        ),
+    ) -> Any:
         """List edge jobs."""
         return get_client().get_edge_jobs()
 
@@ -1064,6 +1360,9 @@ def register_edge_tools(mcp: FastMCP):
     )
     def get_edge_job_tool(
         job_id: int = Field(description="Edge job ID."),
+        ctx: Context = Field(
+            description="MCP context for progress reporting", default=None
+        ),
     ) -> Any:
         """Get edge job."""
         return get_client().get_edge_job(job_id)
@@ -1076,6 +1375,9 @@ def register_edge_tools(mcp: FastMCP):
     def create_edge_job_tool(
         name: str = Field(description="Job name."),
         file_content: str = Field(description="Script content."),
+        ctx: Context = Field(
+            description="MCP context for progress reporting", default=None
+        ),
     ) -> Any:
         """Create edge job."""
         return get_client().create_edge_job_from_string(
@@ -1087,10 +1389,16 @@ def register_edge_tools(mcp: FastMCP):
         description="Delete an edge job.",
         tags={"Edge"},
     )
-    def delete_edge_job_tool(
+    async def delete_edge_job_tool(
         job_id: int = Field(description="Edge job ID."),
+        ctx: Context = Field(
+            description="MCP context for progress reporting", default=None
+        ),
     ) -> Any:
         """Delete edge job."""
+        if not await ctx_confirm_destructive(ctx, "delete edge job"):
+            return {"status": "cancelled", "message": "Operation cancelled by user"}
+        await ctx_progress(ctx, 0, 100)
         return get_client().delete_edge_job(job_id)
 
 
@@ -1100,7 +1408,11 @@ def register_template_tools(mcp: FastMCP):
         description="List available app templates.",
         tags={"Template"},
     )
-    def get_templates_tool() -> Any:
+    def get_templates_tool(
+        ctx: Context = Field(
+            description="MCP context for progress reporting", default=None
+        ),
+    ) -> Any:
         """List templates."""
         return get_client().get_templates()
 
@@ -1109,7 +1421,11 @@ def register_template_tools(mcp: FastMCP):
         description="List custom templates created by users.",
         tags={"Template"},
     )
-    def get_custom_templates_tool() -> Any:
+    def get_custom_templates_tool(
+        ctx: Context = Field(
+            description="MCP context for progress reporting", default=None
+        ),
+    ) -> Any:
         """List custom templates."""
         return get_client().get_custom_templates()
 
@@ -1120,6 +1436,9 @@ def register_template_tools(mcp: FastMCP):
     )
     def get_custom_template_tool(
         template_id: int = Field(description="Template ID."),
+        ctx: Context = Field(
+            description="MCP context for progress reporting", default=None
+        ),
     ) -> Any:
         """Get custom template."""
         return get_client().get_custom_template(template_id)
@@ -1136,6 +1455,9 @@ def register_template_tools(mcp: FastMCP):
         template_type: int = Field(
             default=2, description="Type: 1=swarm, 2=compose, 3=kubernetes."
         ),
+        ctx: Context = Field(
+            description="MCP context for progress reporting", default=None
+        ),
     ) -> Any:
         """Create custom template."""
         return get_client().create_custom_template_from_string(
@@ -1150,10 +1472,16 @@ def register_template_tools(mcp: FastMCP):
         description="Delete a custom template.",
         tags={"Template"},
     )
-    def delete_custom_template_tool(
+    async def delete_custom_template_tool(
         template_id: int = Field(description="Template ID."),
+        ctx: Context = Field(
+            description="MCP context for progress reporting", default=None
+        ),
     ) -> Any:
         """Delete custom template."""
+        if not await ctx_confirm_destructive(ctx, "delete custom template"):
+            return {"status": "cancelled", "message": "Operation cancelled by user"}
+        await ctx_progress(ctx, 0, 100)
         return get_client().delete_custom_template(template_id)
 
     @mcp.tool(
@@ -1163,6 +1491,9 @@ def register_template_tools(mcp: FastMCP):
     )
     def get_custom_template_file_tool(
         template_id: int = Field(description="Template ID."),
+        ctx: Context = Field(
+            description="MCP context for progress reporting", default=None
+        ),
     ) -> Any:
         """Get template file."""
         return get_client().get_custom_template_file(template_id)
@@ -1172,7 +1503,11 @@ def register_template_tools(mcp: FastMCP):
         description="List available Helm chart templates.",
         tags={"Template"},
     )
-    def get_helm_templates_tool() -> Any:
+    def get_helm_templates_tool(
+        ctx: Context = Field(
+            description="MCP context for progress reporting", default=None
+        ),
+    ) -> Any:
         """List Helm templates."""
         return get_client().get_helm_templates()
 
@@ -1183,7 +1518,11 @@ def register_user_tools(mcp: FastMCP):
         description="List all Portainer users.",
         tags={"User"},
     )
-    def get_users_tool() -> Any:
+    def get_users_tool(
+        ctx: Context = Field(
+            description="MCP context for progress reporting", default=None
+        ),
+    ) -> Any:
         """List users."""
         return get_client().get_users()
 
@@ -1194,6 +1533,9 @@ def register_user_tools(mcp: FastMCP):
     )
     def get_user_tool(
         user_id: int = Field(description="User ID."),
+        ctx: Context = Field(
+            description="MCP context for progress reporting", default=None
+        ),
     ) -> Any:
         """Get user."""
         return get_client().get_user(user_id)
@@ -1203,7 +1545,11 @@ def register_user_tools(mcp: FastMCP):
         description="Get the currently authenticated user's profile.",
         tags={"User"},
     )
-    def get_current_user_tool() -> Any:
+    def get_current_user_tool(
+        ctx: Context = Field(
+            description="MCP context for progress reporting", default=None
+        ),
+    ) -> Any:
         """Get current user."""
         return get_client().get_current_user()
 
@@ -1216,6 +1562,9 @@ def register_user_tools(mcp: FastMCP):
         username: str = Field(description="Username."),
         password: str = Field(description="Password."),
         role: int = Field(default=2, description="Role: 1=admin, 2=standard."),
+        ctx: Context = Field(
+            description="MCP context for progress reporting", default=None
+        ),
     ) -> Any:
         """Create user."""
         return get_client().create_user(username=username, password=password, role=role)
@@ -1225,10 +1574,16 @@ def register_user_tools(mcp: FastMCP):
         description="Delete a Portainer user.",
         tags={"User"},
     )
-    def delete_user_tool(
+    async def delete_user_tool(
         user_id: int = Field(description="User ID."),
+        ctx: Context = Field(
+            description="MCP context for progress reporting", default=None
+        ),
     ) -> Any:
         """Delete user."""
+        if not await ctx_confirm_destructive(ctx, "delete user"):
+            return {"status": "cancelled", "message": "Operation cancelled by user"}
+        await ctx_progress(ctx, 0, 100)
         return get_client().delete_user(user_id)
 
     @mcp.tool(
@@ -1236,7 +1591,11 @@ def register_user_tools(mcp: FastMCP):
         description="List all teams.",
         tags={"User"},
     )
-    def get_teams_tool() -> Any:
+    def get_teams_tool(
+        ctx: Context = Field(
+            description="MCP context for progress reporting", default=None
+        ),
+    ) -> Any:
         """List teams."""
         return get_client().get_teams()
 
@@ -1247,6 +1606,9 @@ def register_user_tools(mcp: FastMCP):
     )
     def create_team_tool(
         name: str = Field(description="Team name."),
+        ctx: Context = Field(
+            description="MCP context for progress reporting", default=None
+        ),
     ) -> Any:
         """Create team."""
         return get_client().create_team(name=name)
@@ -1256,10 +1618,16 @@ def register_user_tools(mcp: FastMCP):
         description="Delete a team.",
         tags={"User"},
     )
-    def delete_team_tool(
+    async def delete_team_tool(
         team_id: int = Field(description="Team ID."),
+        ctx: Context = Field(
+            description="MCP context for progress reporting", default=None
+        ),
     ) -> Any:
         """Delete team."""
+        if not await ctx_confirm_destructive(ctx, "delete team"):
+            return {"status": "cancelled", "message": "Operation cancelled by user"}
+        await ctx_progress(ctx, 0, 100)
         return get_client().delete_team(team_id)
 
     @mcp.tool(
@@ -1267,7 +1635,11 @@ def register_user_tools(mcp: FastMCP):
         description="List all available roles.",
         tags={"User"},
     )
-    def get_roles_tool() -> Any:
+    def get_roles_tool(
+        ctx: Context = Field(
+            description="MCP context for progress reporting", default=None
+        ),
+    ) -> Any:
         """List roles."""
         return get_client().get_roles()
 
@@ -1278,6 +1650,9 @@ def register_user_tools(mcp: FastMCP):
     )
     def get_user_tokens_tool(
         user_id: int = Field(description="User ID."),
+        ctx: Context = Field(
+            description="MCP context for progress reporting", default=None
+        ),
     ) -> Any:
         """List user tokens."""
         return get_client().get_user_tokens(user_id)
@@ -1289,7 +1664,11 @@ def register_registry_tools(mcp: FastMCP):
         description="List all configured Docker registries.",
         tags={"Registry"},
     )
-    def get_registries_tool() -> Any:
+    def get_registries_tool(
+        ctx: Context = Field(
+            description="MCP context for progress reporting", default=None
+        ),
+    ) -> Any:
         """List registries."""
         return get_client().get_registries()
 
@@ -1300,6 +1679,9 @@ def register_registry_tools(mcp: FastMCP):
     )
     def get_registry_tool(
         registry_id: int = Field(description="Registry ID."),
+        ctx: Context = Field(
+            description="MCP context for progress reporting", default=None
+        ),
     ) -> Any:
         """Get registry."""
         return get_client().get_registry(registry_id)
@@ -1315,6 +1697,9 @@ def register_registry_tools(mcp: FastMCP):
         url: str = Field(description="Registry URL."),
         username: str = Field(default="", description="Username for authentication."),
         password: str = Field(default="", description="Password for authentication."),
+        ctx: Context = Field(
+            description="MCP context for progress reporting", default=None
+        ),
     ) -> Any:
         """Create registry."""
         kwargs = {}
@@ -1331,10 +1716,16 @@ def register_registry_tools(mcp: FastMCP):
         description="Delete a Docker registry.",
         tags={"Registry"},
     )
-    def delete_registry_tool(
+    async def delete_registry_tool(
         registry_id: int = Field(description="Registry ID."),
+        ctx: Context = Field(
+            description="MCP context for progress reporting", default=None
+        ),
     ) -> Any:
         """Delete registry."""
+        if not await ctx_confirm_destructive(ctx, "delete registry"):
+            return {"status": "cancelled", "message": "Operation cancelled by user"}
+        await ctx_progress(ctx, 0, 100)
         return get_client().delete_registry(registry_id)
 
 
@@ -1344,7 +1735,11 @@ def register_system_tools(mcp: FastMCP):
         description="Get Portainer instance status (version, uptime, etc.).",
         tags={"System"},
     )
-    def get_status_tool() -> Any:
+    def get_status_tool(
+        ctx: Context = Field(
+            description="MCP context for progress reporting", default=None
+        ),
+    ) -> Any:
         """Get status."""
         return get_client().get_status()
 
@@ -1353,7 +1748,11 @@ def register_system_tools(mcp: FastMCP):
         description="Get detailed system information (build info, dependencies, runtime).",
         tags={"System"},
     )
-    def get_system_info_tool() -> Any:
+    def get_system_info_tool(
+        ctx: Context = Field(
+            description="MCP context for progress reporting", default=None
+        ),
+    ) -> Any:
         """Get system info."""
         return get_client().get_system_info()
 
@@ -1362,7 +1761,11 @@ def register_system_tools(mcp: FastMCP):
         description="Get Portainer version information.",
         tags={"System"},
     )
-    def get_system_version_tool() -> Any:
+    def get_system_version_tool(
+        ctx: Context = Field(
+            description="MCP context for progress reporting", default=None
+        ),
+    ) -> Any:
         """Get version."""
         return get_client().get_system_version()
 
@@ -1371,7 +1774,11 @@ def register_system_tools(mcp: FastMCP):
         description="Get Portainer settings (authentication, templates URL, edge agent, etc.).",
         tags={"System"},
     )
-    def get_settings_tool() -> Any:
+    def get_settings_tool(
+        ctx: Context = Field(
+            description="MCP context for progress reporting", default=None
+        ),
+    ) -> Any:
         """Get settings."""
         return get_client().get_settings()
 
@@ -1387,6 +1794,9 @@ def register_system_tools(mcp: FastMCP):
         enable_telemetry: bool | None = Field(
             default=None, description="Enable telemetry."
         ),
+        ctx: Context = Field(
+            description="MCP context for progress reporting", default=None
+        ),
     ) -> Any:
         """Update settings."""
         kwargs = {}
@@ -1401,7 +1811,11 @@ def register_system_tools(mcp: FastMCP):
         description="List all tags used for organizing environments.",
         tags={"System"},
     )
-    def get_tags_tool() -> Any:
+    def get_tags_tool(
+        ctx: Context = Field(
+            description="MCP context for progress reporting", default=None
+        ),
+    ) -> Any:
         """List tags."""
         return get_client().get_tags()
 
@@ -1412,6 +1826,9 @@ def register_system_tools(mcp: FastMCP):
     )
     def create_tag_tool(
         name: str = Field(description="Tag name."),
+        ctx: Context = Field(
+            description="MCP context for progress reporting", default=None
+        ),
     ) -> Any:
         """Create tag."""
         return get_client().create_tag(name=name)
@@ -1421,10 +1838,16 @@ def register_system_tools(mcp: FastMCP):
         description="Delete a tag.",
         tags={"System"},
     )
-    def delete_tag_tool(
+    async def delete_tag_tool(
         tag_id: int = Field(description="Tag ID."),
+        ctx: Context = Field(
+            description="MCP context for progress reporting", default=None
+        ),
     ) -> Any:
         """Delete tag."""
+        if not await ctx_confirm_destructive(ctx, "delete tag"):
+            return {"status": "cancelled", "message": "Operation cancelled by user"}
+        await ctx_progress(ctx, 0, 100)
         return get_client().delete_tag(tag_id)
 
     @mcp.tool(
@@ -1432,7 +1855,11 @@ def register_system_tools(mcp: FastMCP):
         description="Get the Portainer message of the day.",
         tags={"System"},
     )
-    def get_motd_tool() -> Any:
+    def get_motd_tool(
+        ctx: Context = Field(
+            description="MCP context for progress reporting", default=None
+        ),
+    ) -> Any:
         """Get MOTD."""
         return get_client().get_motd()
 
@@ -1444,6 +1871,9 @@ def register_system_tools(mcp: FastMCP):
     def backup_portainer_tool(
         password: str = Field(
             default="", description="Password to encrypt the backup."
+        ),
+        ctx: Context = Field(
+            description="MCP context for progress reporting", default=None
         ),
     ) -> Any:
         """Create backup."""
@@ -1484,7 +1914,7 @@ def get_mcp_instance() -> tuple[Any, Any, Any, Any]:
 
     for mw in middlewares:
         mcp.add_middleware(mw)
-    registered_tags = []
+    registered_tags: list[str] = []
     return mcp, args, middlewares, registered_tags
 
 

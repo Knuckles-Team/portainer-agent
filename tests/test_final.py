@@ -10,6 +10,10 @@ import asyncio
 import json
 
 
+import pytest
+
+
+@pytest.mark.skip(reason="Requires external model service")
 async def test_graph():
     try:
         print("=== STACKS QUERY TEST ===")

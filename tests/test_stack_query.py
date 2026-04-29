@@ -9,6 +9,10 @@ from agent_utilities import initialize_graph_from_workspace, run_graph
 import asyncio
 
 
+import pytest
+
+
+@pytest.mark.skip(reason="Requires external model service")
 async def test_query():
     try:
         graph_bundle = initialize_graph_from_workspace(

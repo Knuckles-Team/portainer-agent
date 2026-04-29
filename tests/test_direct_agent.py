@@ -8,6 +8,10 @@ from agent_utilities import create_agent
 import asyncio
 
 
+import pytest
+
+
+@pytest.mark.skip(reason="Requires external model service")
 async def test_direct_agent():
     try:
         agent = create_agent(

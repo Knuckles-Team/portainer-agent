@@ -321,7 +321,7 @@
       security:
       - ApiKeyAuth: []
       - jwt: []
-      summary: Clear the log for a specifc task on an EdgeJob
+      summary: Clear the log for a specific task on an EdgeJob
       tags:
       - edge_jobs
     get:
@@ -354,7 +354,7 @@
       security:
       - ApiKeyAuth: []
       - jwt: []
-      summary: Fetch the log for a specifc task on an EdgeJob
+      summary: Fetch the log for a specific task on an EdgeJob
       tags:
       - edge_jobs
     post:
@@ -385,7 +385,7 @@
       security:
       - ApiKeyAuth: []
       - jwt: []
-      summary: Collect the log for a specifc task on an EdgeJob
+      summary: Collect the log for a specific task on an EdgeJob
       tags:
       - edge_jobs
   /edge_jobs/create/file:

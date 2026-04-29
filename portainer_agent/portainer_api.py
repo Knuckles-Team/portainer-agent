@@ -21,10 +21,10 @@ try:
     from agent_utilities.exceptions import AuthError, UnauthorizedError
 except ImportError:
 
-    class AuthError(Exception):
+    class AuthError(Exception):  # type: ignore[no-redef]
         pass
 
-    class UnauthorizedError(Exception):
+    class UnauthorizedError(Exception):  # type: ignore[no-redef]
         pass
 
 
@@ -39,7 +39,7 @@ class PortainerApi:
     def __init__(
         self,
         base_url: str = "http://localhost:9000",
-        token: str = "",
+        token: str = "",  # nosec B107
         verify: bool = True,
     ):
         self.base_url = base_url.rstrip("/")
@@ -66,7 +66,7 @@ class PortainerApi:
     def _post(
         self,
         endpoint: str,
-        data: dict | None = None,
+        data: dict | list | None = None,
         params: dict | None = None,
     ) -> Any:
         resp = self.session.post(self._url(endpoint), json=data, params=params)
@@ -79,7 +79,7 @@ class PortainerApi:
     def _put(
         self,
         endpoint: str,
-        data: dict | None = None,
+        data: dict | list | None = None,
         params: dict | None = None,
     ) -> Any:
         resp = self.session.put(self._url(endpoint), json=data, params=params)
@@ -92,7 +92,7 @@ class PortainerApi:
     def _patch(
         self,
         endpoint: str,
-        data: dict | None = None,
+        data: dict | list | None = None,
         params: dict | None = None,
     ) -> Any:
         resp = self.session.patch(self._url(endpoint), json=data, params=params)
@@ -466,7 +466,7 @@ class PortainerApi:
                 filters=f'{{"label": ["com.docker.stack.namespace={stack_name}"]}}',
             )
             for svc in services:
-                svc_id = svc.get("ID")
+                svc_id = str(svc.get("ID", ""))
                 svc_name = svc.get("Spec", {}).get("Name", svc_id)
                 svc_logs = self.get_service_logs(endpoint_id, svc_id, **params)
                 logs.append(f"--- Service: {svc_name} ---\n{svc_logs}")
@@ -480,7 +480,7 @@ class PortainerApi:
                 )
 
             for container in containers:
-                container_id = container.get("Id")
+                container_id = str(container.get("Id", ""))
                 container_name = container.get("Names", [container_id])[0].lstrip("/")
                 container_logs = self.get_container_logs(
                     endpoint_id, container_id, **params
@@ -1199,13 +1199,13 @@ class PortainerApi:
         """Update SSL settings."""
         return self._put("ssl", data=kwargs)
 
-    def backup(self, password: str = "") -> Any:
+    def backup(self, password: str = "") -> Any:  # nosec B107
         """Create a backup of Portainer data."""
         resp = self.session.post(self._url("backup"), json={"Password": password})
         resp.raise_for_status()
         return resp.content
 
-    def restore(self, file_content: bytes, password: str = "") -> bool:
+    def restore(self, file_content: bytes, password: str = "") -> bool:  # nosec B107
         """Restore Portainer data from a backup."""
         resp = self.session.post(
             self._url("restore"),

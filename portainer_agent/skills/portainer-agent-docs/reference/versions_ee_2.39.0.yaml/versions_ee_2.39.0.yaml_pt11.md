@@ -544,7 +544,7 @@
         example: myGitUsername
         type: string
       SupportRelativePath:
-        description: Whether the stack suppors relative path volume
+        description: Whether the stack supports relative path volume
         example: false
         type: boolean
       SwarmID:

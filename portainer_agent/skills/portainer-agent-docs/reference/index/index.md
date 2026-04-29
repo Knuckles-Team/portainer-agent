@@ -54,9 +54,9 @@ API Version:  2.39.0 2.38.1 2.38.0 2.37.0 2.36.0 2.35.0 2.34.0 2.33.7 2.33.6 2.3
     * putUpdate an EdgeJob
     * getFetch a file of an EdgeJob
     * getFetch the list of tasks on an EdgeJob
-    * delClear the log for a specifc task on an EdgeJob
-    * getFetch the log for a specifc task on an EdgeJob
-    * postCollect the log for a specifc task on an EdgeJob
+    * delClear the log for a specific task on an EdgeJob
+    * getFetch the log for a specific task on an EdgeJob
+    * postCollect the log for a specific task on an EdgeJob
     * postCreate an EdgeJob from a file
     * postCreate an EdgeJob from a text
   * edge_stacks
@@ -391,7 +391,7 @@ API Version:  2.39.0 2.38.1 2.38.0 2.37.0 2.36.0 2.35.0 2.34.0 2.33.7 2.33.6 2.3
     * postUpdate a scheduled remote update procedure for Edge agents
     * postFetches the list of Active Edge Update Schedules
     * getFetches the supported versions of the agent to update/rollback
-    * getReturns informations the help create edge update schedules
+    * getReturns information the help create edge update schedules
     * getFetches the previous versions of updated agents
   * license
     * getfetches the list of licenses on Portainer

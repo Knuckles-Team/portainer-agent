@@ -353,7 +353,7 @@
       security:
       - ApiKeyAuth: []
       - jwt: []
-      summary: Returns informations the help create edge update schedules
+      summary: Returns information the help create edge update schedules
       tags:
       - edge_update_schedules
   /edge_update_schedules/previous_versions:

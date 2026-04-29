@@ -789,7 +789,7 @@
         - $ref: '#/definitions/liblicense.ProductEdition'
         description: |-
           ProductEdition was created originally with plans on having a
-          seperate portainer product for Enterprise users and Business users
+          separate portainer product for Enterprise users and Business users
           with differing features. This didn't wind up coming about, but may
           still serve useful in the future if we need to issue keys for a
           different product entirely.

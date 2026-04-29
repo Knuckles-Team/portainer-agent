@@ -16,71 +16,71 @@ class ValidationResult(BaseModel):
     score: float | None = None
 
 
-try:
-
-    model = create_model(
-        provider="openai",
-        model_id="nvidia/nemotron-3-super",
-        base_url="http://10.0.0.18:1234/v1",
-        api_key="llama",
-    )
-    print("Model created")
-
-    validator_agent_old = Agent(
-        output_type=ValidationResult,
-        instructions=(
-            "You are a quality assurance expert. Evaluate the output of the 'Stack' agent."
-            "Original Query: List the running stacks in portainer"
-            "Agent Result: Here are the stacks..."
-            "Determine if the result accurately and comprehensively addresses the query."
-            "If the result is incomplete, hallucinated, or has errors, set is_valid=False and provide feedback."
-        ),
-    )
-    print("Old style agent created")
-
-    validator_agent_new = Agent(
-        model=model,
-        output_type=ValidationResult,
-        instructions=(
-            "You are a quality assurance expert. Evaluate the output of the 'Stack' agent."
-            "Original Query: List the running stacks in portainer"
-            "Agent Result: Here are the stacks..."
-            "Determine if the result accurately and comprehensively addresses the query."
-            "If the result is incomplete, hallucinated, or has errors, set is_valid=False and provide feedback."
-        ),
-    )
-    print("New style agent created")
-
-    print("\nTesting old style agent...")
+if __name__ == "__main__":
     try:
+        model = create_model(
+            provider="openai",
+            model_id="nvidia/nemotron-3-super",
+            base_url="http://10.0.0.18:1234/v1",
+            api_key="llama",
+        )
+        print("Model created")
 
-        import asyncio
+        validator_agent_old = Agent(
+            output_type=ValidationResult,
+            instructions=(
+                "You are a quality assurance expert. Evaluate the output of the 'Stack' agent."
+                "Original Query: List the running stacks in portainer"
+                "Agent Result: Here are the stacks..."
+                "Determine if the result accurately and comprehensively addresses the query."
+                "If the result is incomplete, hallucinated, or has errors, set is_valid=False and provide feedback."
+            ),
+        )
+        print("Old style agent created")
 
-        async def test_old():
-            result = await validator_agent_old.run("Evaluate the result.")
-            print("Old style result:", result)
+        validator_agent_new = Agent(
+            model=model,
+            output_type=ValidationResult,
+            instructions=(
+                "You are a quality assurance expert. Evaluate the output of the 'Stack' agent."
+                "Original Query: List the running stacks in portainer"
+                "Agent Result: Here are the stacks..."
+                "Determine if the result accurately and comprehensively addresses the query."
+                "If the result is incomplete, hallucinated, or has errors, set is_valid=False and provide feedback."
+            ),
+        )
+        print("New style agent created")
 
-        asyncio.run(test_old())
+        print("\nTesting old style agent...")
+        try:
+
+            import asyncio
+
+            async def test_old():
+                result = await validator_agent_old.run("Evaluate the result.")
+                print("Old style result:", result)
+
+            asyncio.run(test_old())
+        except Exception as e:
+            print("Old style agent failed: {}".format(e))
+
+        print("\nTesting new style agent...")
+        try:
+            import asyncio
+
+            async def test_new():
+                result = await validator_agent_new.run("Evaluate the result.")
+                print("New style result:", result)
+
+            asyncio.run(test_new())
+        except Exception as e:
+            print("New style agent failed: {}".format(e))
+            import traceback
+
+            traceback.print_exc()
+
     except Exception as e:
-        print("Old style agent failed: {}".format(e))
-
-    print("\nTesting new style agent...")
-    try:
-        import asyncio
-
-        async def test_new():
-            result = await validator_agent_new.run("Evaluate the result.")
-            print("New style result:", result)
-
-        asyncio.run(test_new())
-    except Exception as e:
-        print("New style agent failed: {}".format(e))
+        print("Error in setup: {}".format(e))
         import traceback
 
         traceback.print_exc()
-
-except Exception as e:
-    print("Error in setup: {}".format(e))
-    import traceback
-
-    traceback.print_exc()

@@ -10,7 +10,7 @@ endpointId |  integer Stacks created before version 1.18.0 might not have an ass
 ---|---
 ##### Request Body schema: application/json
 required
-Git configs for pull and redeploy of a stack. **StackName** may only be populated for Kuberenetes stacks, and if specified with a blank string, it will be set to blank
+Git configs for pull and redeploy of a stack. **StackName** may only be populated for Kubernetes stacks, and if specified with a blank string, it will be set to blank
 Env |  Array of objects (portainer.Pair)
 ---|---
 Prune |  boolean

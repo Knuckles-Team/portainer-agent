@@ -7,7 +7,7 @@ Moreellipsischevron-down
 [![](https://docs.portainer.io/~gitbook/image?url=https%3A%2F%2F2279730396-files.gitbook.io%2F%7E%2Ffiles%2Fv0%2Fb%2Fgitbook-x-prod.appspot.com%2Fo%2Forganizations%252F-MgDK9ndL1-o2MHHFiXo%252Fsites%252Fsite_gbGqX%252Ficon%252FBp9XxrPYsEW8iW0CygKM%252FPortainer%2520-%2520P%2520Icon%2520SQUARE%2520-%2520Purple%2520%2526%2520Graphite.png%3Falt%3Dmedia%26token%3D34bdcf35-7fb8-4b6f-91cb-e9de8b772d04&width=32&dpr=3&quality=100&sign=eccdaaf2&sv=2)![](https://docs.portainer.io/~gitbook/image?url=https%3A%2F%2F2279730396-files.gitbook.io%2F%7E%2Ffiles%2Fv0%2Fb%2Fgitbook-x-prod.appspot.com%2Fo%2Forganizations%252F-MgDK9ndL1-o2MHHFiXo%252Fsites%252Fsite_gbGqX%252Ficon%252FFDKzZiw3rNqZ8FuFTT64%252FPortainer%2520-%2520P%2520Icon%2520SQUARE%2520-%2520Purple%2520%2526%2520Graphite.png%3Falt%3Dmedia%26token%3Dafbf7bd8-b9ce-4722-8101-90499e52f7fb&width=32&dpr=3&quality=100&sign=933f7d15&sv=2)Portainer Documentation](https://docs.portainer.io/)
 2.39 LTSchevron-down
   * [Welcome](https://docs.portainer.io/)
-  * [What's new in version 2.39](https://docs.portainer.io/whats-new)
+  * [What's new in version 2.39](https://docs.portainer.io/what's-new)
   * [Release Notes](https://docs.portainer.io/release-notes)
   * Getting Started
     * [Introduction](https://docs.portainer.io/start/intro)
@@ -125,7 +125,7 @@ Community Edition, five/three nodes free and Home & Student users can get suppor
 [hashtag](https://docs.portainer.io/#business-edition-customers)
 Business Edition Customers
 If you are a Professional or Enterprise tier Portainer Business Edition customer, you can log tickets directly with our team via [Request Support formarrow-up-right](https://www.portainer.io/portainer-business-support). You can report a bug, ask a question, tell us about an issue with documentation, or request a feature. Tickets are checked and resolved by Portainer staff within the SLA.
-[NextWhat's new in version 2.39chevron-right](https://docs.portainer.io/whats-new)
+[NextWhat's new in version 2.39chevron-right](https://docs.portainer.io/what's-new)
 Last updated 7 days ago
 Was this helpful?
 sun-brightdesktopmoon

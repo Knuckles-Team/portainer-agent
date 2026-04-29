@@ -1,5 +1,5 @@
 ##  [](https://api-docs.portainer.io/?edition=ee&version=2.39.0#tag/kaas/operation/provisionCluster)Provision a new CIVO, Linode or Digital Ocean cluster and create an environment
-Provision a new KaaS cluster and create an environment. This documentation is specifically for civo, digitial ocean and linode.
+Provision a new KaaS cluster and create an environment. This documentation is specifically for civo, digital ocean and linode.
 For Azure, GKE and Amazon see: **/cloud/amazon/provision** **/cloud/azure/provision** **/cloud/gke/provision**
 **Access policy** : administrator
 ##### Authorizations:

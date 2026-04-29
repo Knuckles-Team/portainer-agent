@@ -24,7 +24,7 @@ RepositoryPassword |  string Password used in basic authentication. Required whe
 RepositoryReferenceName |  string Reference name of a Git repository hosting the Stack file
 RepositoryURLrequired |  string URL of a Git repository hosting the Stack file
 RepositoryUsername |  string Username used in basic authentication. Required when RepositoryAuthentication is true and RepositoryGitCredentialID is 0
-SupportRelativePath |  boolean Whether the stack suppors relative path volume
+SupportRelativePath |  boolean Whether the stack supports relative path volume
 SwarmIDrequired |  string Swarm cluster identifier
 TLSSkipVerify |  boolean TLSSkipVerify skips SSL verification when cloning the Git repository
 ### Responses

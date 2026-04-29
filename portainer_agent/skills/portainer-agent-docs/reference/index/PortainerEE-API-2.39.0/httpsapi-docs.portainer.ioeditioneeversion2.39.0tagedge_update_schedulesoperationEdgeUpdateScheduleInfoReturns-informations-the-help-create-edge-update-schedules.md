@@ -1,4 +1,4 @@
-##  [](https://api-docs.portainer.io/?edition=ee&version=2.39.0#tag/edge_update_schedules/operation/EdgeUpdateScheduleInfo)Returns informations the help create edge update schedules
+##  [](https://api-docs.portainer.io/?edition=ee&version=2.39.0#tag/edge_update_schedules/operation/EdgeUpdateScheduleInfo)Returns information the help create edge update schedules
 **Access policy** : administrator
 ##### Authorizations:
 _ApiKeyAuth_ _jwt_

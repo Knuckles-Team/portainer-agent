@@ -280,7 +280,7 @@
       - application/json
       description: |-
         Provision a new KaaS cluster and create an environment.
-        This documentation is specifically for civo, digitial ocean and linode.
+        This documentation is specifically for civo, digital ocean and linode.
 
         For Azure, GKE and Amazon see:
         **/cloud/amazon/provision**

@@ -12,6 +12,10 @@ from agent_utilities.graph_orchestration import (
 import asyncio
 
 
+import pytest
+
+
+@pytest.mark.skip(reason="Requires external model service")
 async def test_exact():
     import logging
 

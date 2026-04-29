@@ -1,4 +1,4 @@
-##  [](https://api-docs.portainer.io/?edition=ee&version=2.39.0#tag/edge_jobs/operation/EdgeJobTasksClear)Clear the log for a specifc task on an EdgeJob
+##  [](https://api-docs.portainer.io/?edition=ee&version=2.39.0#tag/edge_jobs/operation/EdgeJobTasksClear)Clear the log for a specific task on an EdgeJob
 **Access policy** : administrator
 ##### Authorizations:
 _ApiKeyAuth_ _jwt_

@@ -599,7 +599,7 @@ definitions:
       RemoveVolumes:
         description: |-
           RemoveVolumes is a flag indicating if the agent must remove the named volumes declared
-          in the compose file and anonymouse volumes attached to containers
+          in the compose file and anonymous volumes attached to containers
           This flag drives `docker compose down --volumes` option
           Used only for EE
         type: boolean

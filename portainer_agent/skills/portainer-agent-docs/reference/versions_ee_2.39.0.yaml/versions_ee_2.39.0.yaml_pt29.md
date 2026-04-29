@@ -259,7 +259,7 @@
         name: endpointId
         type: integer
       - description: Git configs for pull and redeploy of a stack. **StackName** may
-          only be populated for Kuberenetes stacks, and if specified with a blank
+          only be populated for Kubernetes stacks, and if specified with a blank
           string, it will be set to blank
         in: body
         name: body
