@@ -267,3 +267,12 @@ stateDiagram-v2
 ## Cursor / Copilot Rules
 No Cursor rules found in .cursor/rules/ or .cursorrules
 No Copilot rules found in .github/copilot-instructions.md
+
+
+## Testing with Timeout
+
+To run tests with a timeout to prevent hanging, use the `pytest-timeout` plugin. You can combine it with the `-k` flag to run specific tests:
+
+```bash
+uv run pytest --timeout=60 -k "test_name_pattern"
+```
