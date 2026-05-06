@@ -1,0 +1,30 @@
+{
+  "mcpServers": {
+    "portainer-agent": {
+      "command": "uv",
+      "args": [
+        "run",
+        "portainer-mcp"
+      ],
+      "env": {
+        "PORTAINER_SSL_VERIFY": "<YOUR_PORTAINER_SSL_VERIFY>",
+        "PORTAINER_TOKEN": "<YOUR_PORTAINER_TOKEN>",
+        "PORTAINER_URL": "<YOUR_PORTAINER_URL>",
+        "AGENT_DESCRIPTION": "<YOUR_AGENT_DESCRIPTION>",
+        "AGENT_SYSTEM_PROMPT": "<YOUR_AGENT_SYSTEM_PROMPT>",
+        "AUTHTOOL": "True",
+        "DEFAULT_AGENT_NAME": "<YOUR_DEFAULT_AGENT_NAME>",
+        "DOCKERTOOL": "True",
+        "EDGETOOL": "True",
+        "ENVIRONMENTTOOL": "True",
+        "KUBERNETESTOOL": "True",
+        "PORTAINER_VERIFY": "<YOUR_PORTAINER_VERIFY>",
+        "REGISTRYTOOL": "True",
+        "STACKTOOL": "True",
+        "SYSTEMTOOL": "True",
+        "TEMPLATETOOL": "True",
+        "USERTOOL": "True"
+      }
+    }
+  }
+}

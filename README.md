@@ -21,7 +21,7 @@
 ![PyPI - Wheel](https://img.shields.io/pypi/wheel/portainer-agent)
 ![PyPI - Implementation](https://img.shields.io/pypi/implementation/portainer-agent)
 
-*Version: 0.5.0*
+*Version: 0.6.0*
 
 ## Overview
 
@@ -158,3 +158,80 @@ stateDiagram-v2
 
 - **RouterNode**: A fast, lightweight LLM (e.g., `nvidia/nemotron-3-super`) that classifies the user's query into one of the specialized domains.
 - **DomainNode**: The executor node. For the selected domain, it dynamically sets environment variables to temporarily enable ONLY the tools relevant to that domain, creating a highly focused sub-agent (e.g., `gpt-4o`) to complete the request. This preserves LLM context and prevents tool hallucination.
+
+
+## MCP Configuration Examples
+
+### 1. Standard IO (stdio) Deployment
+
+```json
+{
+  "mcpServers": {
+    "portainer-agent": {
+      "command": "uv",
+      "args": [
+        "run",
+        "portainer-mcp"
+      ],
+      "env": {
+        "AGENT_DESCRIPTION": "<YOUR_AGENT_DESCRIPTION>",
+        "AGENT_SYSTEM_PROMPT": "<YOUR_AGENT_SYSTEM_PROMPT>",
+        "AUTHTOOL": "True",
+        "DEFAULT_AGENT_NAME": "<YOUR_DEFAULT_AGENT_NAME>",
+        "DOCKERTOOL": "True",
+        "EDGETOOL": "True",
+        "ENVIRONMENTTOOL": "True",
+        "KUBERNETESTOOL": "True",
+        "PORTAINER_TOKEN": "<YOUR_PORTAINER_TOKEN>",
+        "PORTAINER_URL": "<YOUR_PORTAINER_URL>",
+        "PORTAINER_VERIFY": "<YOUR_PORTAINER_VERIFY>",
+        "REGISTRYTOOL": "True",
+        "STACKTOOL": "True",
+        "SYSTEMTOOL": "True",
+        "TEMPLATETOOL": "True",
+        "USERTOOL": "True"
+      }
+    }
+  }
+}
+```
+
+### 2. Streamable HTTP (SSE) Deployment
+
+```json
+{
+  "mcpServers": {
+    "portainer-agent": {
+      "command": "uv",
+      "args": [
+        "run",
+        "portainer-mcp",
+        "--transport",
+        "http",
+        "--host",
+        "0.0.0.0",
+        "--port",
+        "8000"
+      ],
+      "env": {
+        "AGENT_DESCRIPTION": "<YOUR_AGENT_DESCRIPTION>",
+        "AGENT_SYSTEM_PROMPT": "<YOUR_AGENT_SYSTEM_PROMPT>",
+        "AUTHTOOL": "True",
+        "DEFAULT_AGENT_NAME": "<YOUR_DEFAULT_AGENT_NAME>",
+        "DOCKERTOOL": "True",
+        "EDGETOOL": "True",
+        "ENVIRONMENTTOOL": "True",
+        "KUBERNETESTOOL": "True",
+        "PORTAINER_TOKEN": "<YOUR_PORTAINER_TOKEN>",
+        "PORTAINER_URL": "<YOUR_PORTAINER_URL>",
+        "PORTAINER_VERIFY": "<YOUR_PORTAINER_VERIFY>",
+        "REGISTRYTOOL": "True",
+        "STACKTOOL": "True",
+        "SYSTEMTOOL": "True",
+        "TEMPLATETOOL": "True",
+        "USERTOOL": "True"
+      }
+    }
+  }
+}
+```
