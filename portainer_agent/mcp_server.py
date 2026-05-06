@@ -37,7 +37,7 @@ from pydantic import Field
 
 from portainer_agent.auth import get_client
 
-__version__ = "0.7.0"
+__version__ = "0.7.1"
 
 
 logger = get_logger(name="TokenMiddleware")
