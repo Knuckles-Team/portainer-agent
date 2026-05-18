@@ -1,7 +1,7 @@
 import pytest
 from unittest.mock import patch, MagicMock
 import inspect
-from portainer_agent.portainer_api import PortainerApi
+from portainer_agent.api_client import PortainerApi
 import requests
 from typing import Any
 

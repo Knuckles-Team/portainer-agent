@@ -23,7 +23,7 @@ def _mock_session():
         yield session
 
 def test_portainer_brute_force(_mock_session):
-    from portainer_agent.portainer_api import PortainerApi
+    from portainer_agent.api_client import PortainerApi
 
     api_instance = PortainerApi(base_url="http://test", token="test")
 

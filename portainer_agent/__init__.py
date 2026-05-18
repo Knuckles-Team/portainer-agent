@@ -7,7 +7,7 @@ import inspect
 __all__: list[str] = []
 
 CORE_MODULES = [
-    "portainer_agent.portainer_api",
+    "portainer_agent.api_client",
 ]
 
 OPTIONAL_MODULES = {
