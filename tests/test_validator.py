@@ -6,8 +6,8 @@ os.environ["PORTAINER_SSL_VERIFY"] = "False"
 
 
 from agent_utilities.core.model_factory import create_model
-from pydantic_ai import Agent
 from pydantic import BaseModel
+from pydantic_ai import Agent
 
 
 class ValidationResult(BaseModel):
@@ -53,7 +53,6 @@ if __name__ == "__main__":
 
         print("\nTesting old style agent...")
         try:
-
             import asyncio
 
             async def test_old():
@@ -62,7 +61,7 @@ if __name__ == "__main__":
 
             asyncio.run(test_old())
         except Exception as e:
-            print("Old style agent failed: {}".format(e))
+            print(f"Old style agent failed: {e}")
 
         print("\nTesting new style agent...")
         try:
@@ -74,13 +73,13 @@ if __name__ == "__main__":
 
             asyncio.run(test_new())
         except Exception as e:
-            print("New style agent failed: {}".format(e))
+            print(f"New style agent failed: {e}")
             import traceback
 
             traceback.print_exc()
 
     except Exception as e:
-        print("Error in setup: {}".format(e))
+        print(f"Error in setup: {e}")
         import traceback
 
         traceback.print_exc()

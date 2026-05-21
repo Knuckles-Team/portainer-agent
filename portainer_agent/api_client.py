@@ -272,6 +272,8 @@ class PortainerApi:
             params["stderr"] = True
         if "timestamps" not in params:
             params["timestamps"] = True
+        if "tail" not in params:
+            params["tail"] = 50
         return self._get(
             self._docker_url(endpoint_id, f"containers/{container_id}/logs"),
             params=params,
@@ -342,6 +344,8 @@ class PortainerApi:
             params["stderr"] = True
         if "timestamps" not in params:
             params["timestamps"] = True
+        if "tail" not in params:
+            params["tail"] = 50
         return self._get(
             self._docker_url(endpoint_id, f"services/{service_id}/logs"), params=params
         )
@@ -574,11 +578,13 @@ class PortainerApi:
 
     def start_stack(self, stack_id: int, endpoint_id: int) -> dict:
         """Start a stopped stack."""
-        return self._post(f"stacks/{stack_id}/start", data={"endpointId": endpoint_id})
+        return self._post(
+            f"stacks/{stack_id}/start", params={"endpointId": endpoint_id}
+        )
 
     def stop_stack(self, stack_id: int, endpoint_id: int) -> dict:
         """Stop a running stack."""
-        return self._post(f"stacks/{stack_id}/stop", data={"endpointId": endpoint_id})
+        return self._post(f"stacks/{stack_id}/stop", params={"endpointId": endpoint_id})
 
     def migrate_stack(
         self, stack_id: int, endpoint_id: int, target_endpoint_id: int, **kwargs

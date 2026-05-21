@@ -4,11 +4,10 @@ os.environ["PORTAINER_URL"] = "http://portainer.arpa"
 os.environ["PORTAINER_TOKEN"] = "ptr_P444Nokxd9Tn4yr47e26yc5PmGGaR3zVcfvaPUPxmZg="
 os.environ["PORTAINER_SSL_VERIFY"] = "False"
 
-from agent_utilities import create_agent
 import asyncio
 
-
 import pytest
+from agent_utilities import create_agent
 
 
 @pytest.mark.skip(reason="Requires external model service")

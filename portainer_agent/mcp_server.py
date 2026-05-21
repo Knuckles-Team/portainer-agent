@@ -1,6 +1,11 @@
 #!/usr/bin/python
 import warnings
 
+from fastmcp import FastMCP
+from fastmcp.dependencies import Depends
+from fastmcp.utilities.logging import get_logger
+from pydantic import Field
+
 # Filter RequestsDependencyWarning early to prevent log spam
 with warnings.catch_warnings():
     warnings.simplefilter("ignore")
@@ -22,16 +27,12 @@ from typing import Any
 from agent_utilities.base_utilities import to_boolean
 from agent_utilities.mcp_utilities import create_mcp_server
 from dotenv import find_dotenv, load_dotenv
-from fastmcp import FastMCP
-from fastmcp.dependencies import Depends
-from fastmcp.utilities.logging import get_logger
-from pydantic import Field
 from starlette.requests import Request
 from starlette.responses import JSONResponse
 
 from portainer_agent.auth import get_client
 
-__version__ = "0.11.0"
+__version__ = "0.11.1"
 
 logger = get_logger(name="portainer-agent")
 logger.setLevel(logging.INFO)
@@ -48,13 +49,7 @@ def register_auth_tools(mcp: FastMCP):
         code: str | None = Field(default=None, description="code"),
         client=Depends(get_client),
     ) -> dict:
-        """Manage auth operations.
-
-        Actions:
-          - 'authenticate': Authenticate and get a JWT token.
-          - 'logout': Logout and invalidate the current token.
-          - 'validate_oauth': Validate an OAuth code.
-        """
+        """Manage auth operations."""
         kwargs: dict[str, Any]
         if action == "authenticate":
             kwargs = {"username": username, "password": password}
@@ -89,20 +84,7 @@ def register_environment_tools(mcp: FastMCP):
         group_id: int | None = Field(default=None, description="group id"),
         client=Depends(get_client),
     ) -> dict:
-        """Manage environment operations.
-
-        Actions:
-          - 'get_endpoints': List all environments (endpoints).
-          - 'get_endpoint': Get a specific environment by ID.
-          - 'create_endpoint': Create a new environment. Types: 1=Docker, 2=AgentOnDocker, 3=Azure, 4=EdgeAgent, 5=KubernetesLocal, 6=AgentOnKubernetes, 7=EdgeAgentOnKubernetes.
-          - 'update_endpoint': Update an environment.
-          - 'delete_endpoint': Delete a single environment.
-          - 'snapshot_endpoint': Take a snapshot of a specific environment.
-          - 'snapshot_all_endpoints': Take a snapshot of all environments.
-          - 'get_endpoint_groups': List all endpoint groups.
-          - 'create_endpoint_group': Create an endpoint group.
-          - 'delete_endpoint_group': Delete an endpoint group.
-        """
+        """Manage environment operations."""
         kwargs: dict[str, Any]
         if action == "get_endpoints":
             kwargs = {"limit": limit, "offset": offset}
@@ -160,42 +142,29 @@ def register_docker_tools(mcp: FastMCP):
             description="Action to perform. Must be one of: 'get_docker_dashboard', 'get_container_gpus', 'docker_list_containers', 'docker_inspect_container', 'docker_get_container_logs', 'docker_get_container_stats', 'docker_start_container', 'docker_stop_container', 'docker_restart_container', 'docker_remove_container', 'docker_list_services', 'docker_inspect_service', 'docker_get_service_logs', 'docker_list_images', 'docker_inspect_image', 'docker_list_networks', 'docker_inspect_network', 'docker_list_volumes', 'docker_inspect_volume', 'docker_get_info', 'docker_get_version', 'docker_get_system_df', 'docker_create_container', 'docker_create_network', 'docker_create_volume', 'docker_create_exec', 'docker_start_exec', 'docker_inspect_exec', 'docker_get_stack_logs'"
         ),
         environment_id: int | None = Field(default=None, description="environment id"),
+        endpoint_id: int | None = Field(
+            default=None, description="endpoint id (alias for environment id)"
+        ),
         container_id: str | None = Field(default=None, description="container id"),
+        stack_id: int | None = Field(default=None, description="stack id"),
+        service_id: str | None = Field(default=None, description="service id"),
+        exec_id: str | None = Field(default=None, description="exec instance id"),
+        cmd: list[str] | None = Field(
+            default=None, description="Command to run in exec"
+        ),
+        detach: bool | None = Field(
+            default=None, description="Detach from the command"
+        ),
+        tty: bool | None = Field(default=None, description="Allocate a pseudo-TTY"),
+        tail: int | None = Field(
+            default=None, description="Number of log lines to tail"
+        ),
         client=Depends(get_client),
     ) -> dict:
-        """Manage docker operations.
+        """Manage docker operations."""
+        if environment_id is None and endpoint_id is not None:
+            environment_id = endpoint_id
 
-        Actions:
-          - 'get_docker_dashboard': Get Docker dashboard data for an environment.
-          - 'get_container_gpus': Get GPU info for a container.
-          - 'docker_list_containers': Call docker_list_containers
-          - 'docker_inspect_container': Call docker_inspect_container
-          - 'docker_get_container_logs': Call docker_get_container_logs
-          - 'docker_get_container_stats': Call docker_get_container_stats
-          - 'docker_start_container': Call docker_start_container
-          - 'docker_stop_container': Call docker_stop_container
-          - 'docker_restart_container': Call docker_restart_container
-          - 'docker_remove_container': Call docker_remove_container
-          - 'docker_list_services': Call docker_list_services
-          - 'docker_inspect_service': Call docker_inspect_service
-          - 'docker_get_service_logs': Call docker_get_service_logs
-          - 'docker_list_images': Call docker_list_images
-          - 'docker_inspect_image': Call docker_inspect_image
-          - 'docker_list_networks': Call docker_list_networks
-          - 'docker_inspect_network': Call docker_inspect_network
-          - 'docker_list_volumes': Call docker_list_volumes
-          - 'docker_inspect_volume': Call docker_inspect_volume
-          - 'docker_get_info': Call docker_get_info
-          - 'docker_get_version': Call docker_get_version
-          - 'docker_get_system_df': Call docker_get_system_df
-          - 'docker_create_container': Call docker_create_container
-          - 'docker_create_network': Call docker_create_network
-          - 'docker_create_volume': Call docker_create_volume
-          - 'docker_create_exec': Call docker_create_exec
-          - 'docker_start_exec': Call docker_start_exec
-          - 'docker_inspect_exec': Call docker_inspect_exec
-          - 'docker_get_stack_logs': Call docker_get_stack_logs
-        """
         kwargs: dict[str, Any]
         if action == "get_docker_dashboard":
             kwargs = {"environment_id": environment_id}
@@ -210,48 +179,91 @@ def register_docker_tools(mcp: FastMCP):
             return client.get_container_gpus(**kwargs)
         if action == "docker_list_containers":
             kwargs = {}
+            if environment_id is not None:
+                kwargs["endpoint_id"] = environment_id
             kwargs = {k: v for k, v in kwargs.items() if v is not None}
-            return client.docker_list_containers(**kwargs)
+            return {"data": client.list_containers(**kwargs)}
         if action == "docker_inspect_container":
             kwargs = {}
+            if environment_id is not None:
+                kwargs["endpoint_id"] = environment_id
+            if container_id is not None:
+                kwargs["container_id"] = container_id
             kwargs = {k: v for k, v in kwargs.items() if v is not None}
-            return client.docker_inspect_container(**kwargs)
+            return {"data": client.inspect_container(**kwargs)}
         if action == "docker_get_container_logs":
             kwargs = {}
+            if environment_id is not None:
+                kwargs["endpoint_id"] = environment_id
+            if container_id is not None:
+                kwargs["container_id"] = container_id
+            if tail is not None:
+                kwargs["tail"] = tail
             kwargs = {k: v for k, v in kwargs.items() if v is not None}
-            return client.docker_get_container_logs(**kwargs)
+            return {"data": client.get_container_logs(**kwargs)}
         if action == "docker_get_container_stats":
             kwargs = {}
+            if environment_id is not None:
+                kwargs["endpoint_id"] = environment_id
+            if container_id is not None:
+                kwargs["container_id"] = container_id
             kwargs = {k: v for k, v in kwargs.items() if v is not None}
-            return client.docker_get_container_stats(**kwargs)
+            return {"data": client.get_container_stats(**kwargs)}
         if action == "docker_start_container":
             kwargs = {}
+            if environment_id is not None:
+                kwargs["endpoint_id"] = environment_id
+            if container_id is not None:
+                kwargs["container_id"] = container_id
             kwargs = {k: v for k, v in kwargs.items() if v is not None}
-            return client.docker_start_container(**kwargs)
+            return {"data": client.start_container(**kwargs)}
         if action == "docker_stop_container":
             kwargs = {}
+            if environment_id is not None:
+                kwargs["endpoint_id"] = environment_id
+            if container_id is not None:
+                kwargs["container_id"] = container_id
             kwargs = {k: v for k, v in kwargs.items() if v is not None}
-            return client.docker_stop_container(**kwargs)
+            return {"data": client.stop_container(**kwargs)}
         if action == "docker_restart_container":
             kwargs = {}
+            if environment_id is not None:
+                kwargs["endpoint_id"] = environment_id
+            if container_id is not None:
+                kwargs["container_id"] = container_id
             kwargs = {k: v for k, v in kwargs.items() if v is not None}
-            return client.docker_restart_container(**kwargs)
+            return {"data": client.restart_container(**kwargs)}
         if action == "docker_remove_container":
             kwargs = {}
+            if environment_id is not None:
+                kwargs["endpoint_id"] = environment_id
+            if container_id is not None:
+                kwargs["container_id"] = container_id
             kwargs = {k: v for k, v in kwargs.items() if v is not None}
-            return client.docker_remove_container(**kwargs)
+            return {"data": client.remove_container(**kwargs)}
         if action == "docker_list_services":
-            kwargs = {}
+            kwargs = {"endpoint_id": environment_id}
             kwargs = {k: v for k, v in kwargs.items() if v is not None}
-            return client.docker_list_services(**kwargs)
+            res = client.list_services(**kwargs)
+            return {"data": res} if isinstance(res, list) else res
         if action == "docker_inspect_service":
             kwargs = {}
+            if environment_id is not None:
+                kwargs["endpoint_id"] = environment_id
+            if service_id is not None:
+                kwargs["service_id"] = service_id
             kwargs = {k: v for k, v in kwargs.items() if v is not None}
-            return client.docker_inspect_service(**kwargs)
+            return {"data": client.inspect_service(**kwargs)}
         if action == "docker_get_service_logs":
             kwargs = {}
+            if environment_id is not None:
+                kwargs["endpoint_id"] = environment_id
+            if service_id is not None:
+                kwargs["service_id"] = service_id
+            if tail is not None:
+                kwargs["tail"] = tail
             kwargs = {k: v for k, v in kwargs.items() if v is not None}
-            return client.docker_get_service_logs(**kwargs)
+            return {"data": client.get_service_logs(**kwargs)}
         if action == "docker_list_images":
             kwargs = {}
             kwargs = {k: v for k, v in kwargs.items() if v is not None}
@@ -302,20 +314,44 @@ def register_docker_tools(mcp: FastMCP):
             return client.docker_create_volume(**kwargs)
         if action == "docker_create_exec":
             kwargs = {}
-            kwargs = {k: v for k, v in kwargs.items() if v is not None}
-            return client.docker_create_exec(**kwargs)
+            if environment_id is not None:
+                kwargs["endpoint_id"] = environment_id
+            if container_id is not None:
+                kwargs["container_id"] = container_id
+            config: dict[str, Any] = {}
+            if cmd is not None:
+                config["Cmd"] = cmd
+            if detach is not None:
+                config["Detach"] = detach
+            if tty is not None:
+                config["Tty"] = tty
+            kwargs["config"] = config
+            return {"data": client.create_exec(**kwargs)}
         if action == "docker_start_exec":
             kwargs = {}
-            kwargs = {k: v for k, v in kwargs.items() if v is not None}
-            return client.docker_start_exec(**kwargs)
+            if environment_id is not None:
+                kwargs["endpoint_id"] = environment_id
+            if exec_id is not None:
+                kwargs["exec_id"] = exec_id
+            exec_config: dict[str, Any] = {}
+            if detach is not None:
+                exec_config["Detach"] = detach
+            if tty is not None:
+                exec_config["Tty"] = tty
+            kwargs["config"] = exec_config
+            return {"data": client.start_exec(**kwargs)}
         if action == "docker_inspect_exec":
             kwargs = {}
-            kwargs = {k: v for k, v in kwargs.items() if v is not None}
-            return client.docker_inspect_exec(**kwargs)
+            if environment_id is not None:
+                kwargs["endpoint_id"] = environment_id
+            if exec_id is not None:
+                kwargs["exec_id"] = exec_id
+            return {"data": client.inspect_exec(**kwargs)}
         if action == "docker_get_stack_logs":
-            kwargs = {}
+            kwargs = {"endpoint_id": environment_id, "stack_id": stack_id}
             kwargs = {k: v for k, v in kwargs.items() if v is not None}
-            return client.docker_get_stack_logs(**kwargs)
+            res = client.get_stack_logs(**kwargs)
+            return {"data": res} if isinstance(res, str) else res
         raise ValueError(
             f"Unknown action: {action}. Must be one of: get_docker_dashboard', 'get_container_gpus', 'docker_list_containers', 'docker_inspect_container', 'docker_get_container_logs', 'docker_get_container_stats', 'docker_start_container', 'docker_stop_container', 'docker_restart_container', 'docker_remove_container', 'docker_list_services', 'docker_inspect_service', 'docker_get_service_logs', 'docker_list_images', 'docker_inspect_image', 'docker_list_networks', 'docker_inspect_network', 'docker_list_volumes', 'docker_inspect_volume', 'docker_get_info', 'docker_get_version', 'docker_get_system_df', 'docker_create_container', 'docker_create_network', 'docker_create_volume', 'docker_create_exec', 'docker_start_exec', 'docker_inspect_exec', 'docker_get_stack_logs"
         )
@@ -329,27 +365,24 @@ def register_stack_tools(mcp: FastMCP):
         ),
         stack_id: int | None = Field(default=None, description="stack id"),
         endpoint_id: int | None = Field(default=None, description="endpoint id"),
+        stack_file_content: str | None = Field(
+            default=None, description="compose file content for update_stack"
+        ),
+        env: list | None = Field(
+            default=None, description="environment variables list for update_stack"
+        ),
+        prune: bool | None = Field(
+            default=None, description="whether to prune for update_stack"
+        ),
         client=Depends(get_client),
     ) -> dict:
-        """Manage stack operations.
-
-        Actions:
-          - 'get_stacks': List all stacks.
-          - 'get_stack': Get a specific stack.
-          - 'get_stack_file': Get the compose file content for a stack.
-          - 'create_standalone_stack': Call create_standalone_stack
-          - 'create_standalone_stack_from_repo': Call create_standalone_stack_from_repo
-          - 'update_stack': Update a stack.
-          - 'delete_stack': Delete a stack.
-          - 'start_stack': Start a stopped stack.
-          - 'stop_stack': Stop a running stack.
-          - 'redeploy_stack_git': Redeploy a stack from its Git config.
-        """
+        """Manage stack operations."""
         kwargs: dict[str, Any]
         if action == "get_stacks":
             kwargs = {}
             kwargs = {k: v for k, v in kwargs.items() if v is not None}
-            return client.get_stacks(**kwargs)
+            res = client.get_stacks(**kwargs)
+            return {"data": res} if isinstance(res, list) else res
         if action == "get_stack":
             kwargs = {"stack_id": stack_id}
             kwargs = {k: v for k, v in kwargs.items() if v is not None}
@@ -367,7 +400,13 @@ def register_stack_tools(mcp: FastMCP):
             kwargs = {k: v for k, v in kwargs.items() if v is not None}
             return client.create_standalone_stack_from_repo(**kwargs)
         if action == "update_stack":
-            kwargs = {"stack_id": stack_id, "endpoint_id": endpoint_id}
+            kwargs = {
+                "stack_id": stack_id,
+                "endpoint_id": endpoint_id,
+                "StackFileContent": stack_file_content,
+                "Env": env,
+                "Prune": prune,
+            }
             kwargs = {k: v for k, v in kwargs.items() if v is not None}
             return client.update_stack(**kwargs)
         if action == "delete_stack":
@@ -402,24 +441,7 @@ def register_kubernetes_tools(mcp: FastMCP):
         release_name: str | None = Field(default=None, description="release name"),
         client=Depends(get_client),
     ) -> dict:
-        """Manage kubernetes operations.
-
-        Actions:
-          - 'get_k8s_dashboard': Call get_k8s_dashboard
-          - 'get_k8s_namespaces': Call get_k8s_namespaces
-          - 'get_k8s_applications': Call get_k8s_applications
-          - 'get_k8s_services': Call get_k8s_services
-          - 'get_k8s_ingresses': Call get_k8s_ingresses
-          - 'get_k8s_configmaps': Call get_k8s_configmaps
-          - 'get_k8s_secrets': Call get_k8s_secrets
-          - 'get_k8s_volumes': Call get_k8s_volumes
-          - 'get_k8s_events': Call get_k8s_events
-          - 'get_k8s_nodes_limits': Call get_k8s_nodes_limits
-          - 'get_k8s_metrics_nodes': Call get_k8s_metrics_nodes
-          - 'get_helm_releases': List Helm releases for an environment.
-          - 'install_helm_chart': Install a Helm chart.
-          - 'delete_helm_release': Delete a Helm release.
-        """
+        """Manage kubernetes operations."""
         kwargs: dict[str, Any]
         if action == "get_k8s_dashboard":
             kwargs = {}
@@ -500,21 +522,7 @@ def register_edge_tools(mcp: FastMCP):
         stack_id: int | None = Field(default=None, description="stack id"),
         client=Depends(get_client),
     ) -> dict:
-        """Manage edge operations.
-
-        Actions:
-          - 'get_edge_groups': List edge groups.
-          - 'create_edge_group': Create an edge group.
-          - 'delete_edge_group': Delete an edge group.
-          - 'get_edge_stacks': List edge stacks.
-          - 'get_edge_stack': Get a specific edge stack.
-          - 'create_edge_stack': Call create_edge_stack
-          - 'delete_edge_stack': Delete an edge stack.
-          - 'get_edge_jobs': List edge jobs.
-          - 'get_edge_job': Get a specific edge job.
-          - 'create_edge_job': Call create_edge_job
-          - 'delete_edge_job': Delete an edge job.
-        """
+        """Manage edge operations."""
         kwargs: dict[str, Any]
         if action == "get_edge_groups":
             kwargs = {}
@@ -574,17 +582,7 @@ def register_template_tools(mcp: FastMCP):
         template_id: int | None = Field(default=None, description="template id"),
         client=Depends(get_client),
     ) -> dict:
-        """Manage template operations.
-
-        Actions:
-          - 'get_templates': List app templates.
-          - 'get_custom_templates': List custom templates.
-          - 'get_custom_template': Get a specific custom template.
-          - 'create_custom_template': Call create_custom_template
-          - 'delete_custom_template': Delete a custom template.
-          - 'get_custom_template_file': Get custom template compose file content.
-          - 'get_helm_templates': List Helm chart templates.
-        """
+        """Manage template operations."""
         kwargs: dict[str, Any]
         if action == "get_templates":
             kwargs = {}
@@ -633,20 +631,7 @@ def register_user_tools(mcp: FastMCP):
         team_id: int | None = Field(default=None, description="team id"),
         client=Depends(get_client),
     ) -> dict:
-        """Manage user operations.
-
-        Actions:
-          - 'get_users': List all users.
-          - 'get_user': Get a specific user.
-          - 'get_current_user': Get the currently authenticated user.
-          - 'create_user': Create a user. Roles: 1=admin, 2=standard.
-          - 'delete_user': Delete a user.
-          - 'get_teams': List all teams.
-          - 'create_team': Create a team.
-          - 'delete_team': Delete a team.
-          - 'get_roles': List all roles.
-          - 'get_user_tokens': List API tokens for a user.
-        """
+        """Manage user operations."""
         kwargs: dict[str, Any]
         if action == "get_users":
             kwargs = {}
@@ -709,14 +694,7 @@ def register_registry_tools(mcp: FastMCP):
         url: str | None = Field(default=None, description="url"),
         client=Depends(get_client),
     ) -> dict:
-        """Manage registry operations.
-
-        Actions:
-          - 'get_registries': List all Docker registries.
-          - 'get_registry': Get a specific registry.
-          - 'create_registry': Create a registry. Types: 1=Quay, 2=Azure, 3=Custom, 4=GitLab, 5=ProGet, 6=DockerHub, 7=ECR, 8=GitHub.
-          - 'delete_registry': Delete a registry.
-        """
+        """Manage registry operations."""
         kwargs: dict[str, Any]
         if action == "get_registries":
             kwargs = {}

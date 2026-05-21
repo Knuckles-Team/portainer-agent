@@ -5,14 +5,13 @@ os.environ["PORTAINER_TOKEN"] = "TEST"
 os.environ["PORTAINER_SSL_VERIFY"] = "False"
 
 
-from agent_utilities.graph_orchestration import (
-    run_graph,
-    initialize_graph_from_workspace,
-)
 import asyncio
 
-
 import pytest
+from agent_utilities.graph_orchestration import (
+    initialize_graph_from_workspace,
+    run_graph,
+)
 
 
 @pytest.mark.skip(reason="Requires external model service")
@@ -71,7 +70,7 @@ async def test_exact():
                         if isinstance(parsed, list):
                             print(f"Found {len(parsed)} items:")
                             for i, item in enumerate(parsed[:3]):
-                                print(f"  {i+1}. {json.dumps(item, indent=2)}")
+                                print(f"  {i + 1}. {json.dumps(item, indent=2)}")
                             if len(parsed) > 3:
                                 print(f"  ... and {len(parsed) - 3} more items")
                         else:
@@ -84,7 +83,7 @@ async def test_exact():
                     )
 
     except Exception as e:
-        print(f"\n=== ERROR ===")
+        print("\n=== ERROR ===")
         print(f"Error: {e}")
         import traceback
 

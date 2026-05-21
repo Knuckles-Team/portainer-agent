@@ -5,11 +5,10 @@ os.environ["PORTAINER_TOKEN"] = "ptr_P444Nokxd9Tn4yr47e26yc5PmGGaR3zVcfvaPUPxmZg
 os.environ["PORTAINER_SSL_VERIFY"] = "False"
 
 
-from agent_utilities import initialize_graph_from_workspace, run_graph
 import asyncio
 
-
 import pytest
+from agent_utilities import initialize_graph_from_workspace, run_graph
 
 
 @pytest.mark.skip(reason="Requires external model service")

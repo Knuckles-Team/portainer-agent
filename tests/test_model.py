@@ -15,10 +15,10 @@ if __name__ == "__main__":
             base_url="http://10.0.0.18:1234/v1",
             api_key="llama",
         )
-        print("Model created successfully: {}".format(model))
-        print("Model type: {}".format(type(model)))
+        print(f"Model created successfully: {model}")
+        print(f"Model type: {type(model)}")
     except Exception as e:
-        print("Error creating model: {}".format(e))
+        print(f"Error creating model: {e}")
         import traceback
 
         traceback.print_exc()

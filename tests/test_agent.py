@@ -24,7 +24,7 @@ if __name__ == "__main__":
         print("Agent created successfully")
 
     except Exception as e:
-        print("Error: {}".format(e))
+        print(f"Error: {e}")
         import traceback
 
         traceback.print_exc()

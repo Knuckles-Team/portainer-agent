@@ -18,7 +18,6 @@
         "EDGETOOL": "True",
         "ENVIRONMENTTOOL": "True",
         "KUBERNETESTOOL": "True",
-        "PORTAINER_VERIFY": "<YOUR_PORTAINER_VERIFY>",
         "REGISTRYTOOL": "True",
         "STACKTOOL": "True",
         "SYSTEMTOOL": "True",

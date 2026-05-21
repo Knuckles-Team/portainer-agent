@@ -5,12 +5,11 @@ os.environ["PORTAINER_TOKEN"] = "ptr_P444Nokxd9Tn4yr47e26yc5PmGGaR3zVcfvaPUPxmZg
 os.environ["PORTAINER_SSL_VERIFY"] = "False"
 
 
-from agent_utilities import initialize_graph_from_workspace, run_graph
 import asyncio
 import json
 
-
 import pytest
+from agent_utilities import initialize_graph_from_workspace, run_graph
 
 
 @pytest.mark.skip(reason="Requires external model service")
@@ -41,19 +40,17 @@ async def test_graph():
                 print(f"\n{domain.upper()} RESULT:")
                 print(f"Type: {type(domain_result)}")
                 if isinstance(domain_result, str):
-
                     try:
                         parsed = json.loads(domain_result)
                         if isinstance(parsed, list):
                             print(f"Found {len(parsed)} items:")
                             for i, item in enumerate(parsed[:5]):
-                                print(f"  {i+1}. {json.dumps(item, indent=2)}")
+                                print(f"  {i + 1}. {json.dumps(item, indent=2)}")
                             if len(parsed) > 5:
                                 print(f"  ... and {len(parsed) - 5} more items")
                         else:
                             print(f"{json.dumps(parsed, indent=2)}")
                     except json.JSONDecodeError:
-
                         print(
                             domain_result[:500]
                             + ("..." if len(domain_result) > 500 else "")
@@ -71,7 +68,7 @@ async def test_graph():
         print("\n=== TEST COMPLETED ===")
 
     except Exception as e:
-        print(f"\n=== ERROR ===")
+        print("\n=== ERROR ===")
         print(f"Error: {e}")
         import traceback
 

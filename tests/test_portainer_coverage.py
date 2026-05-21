@@ -1,9 +1,11 @@
-import pytest
-from unittest.mock import patch, MagicMock
 import inspect
-from portainer_agent.api_client import PortainerApi
-import requests
 from typing import Any
+from unittest.mock import MagicMock, patch
+
+import pytest
+
+from portainer_agent.api_client import PortainerApi
+
 
 @pytest.fixture
 def _mock_session():
@@ -22,6 +24,7 @@ def _mock_session():
 
         yield session
 
+
 def test_api_brute_force(_mock_session):
     client = PortainerApi(base_url="http://test.portainer.com", token="mock_token")
 
@@ -37,7 +40,11 @@ def test_api_brute_force(_mock_session):
             if param.name == "kwargs":
                 continue
             # Guessing values
-            if "endpoint_id" in param.name or "environment_id" in param.name or "id" in param.name:
+            if (
+                "endpoint_id" in param.name
+                or "environment_id" in param.name
+                or "id" in param.name
+            ):
                 kwargs[param.name] = 123
             elif "name" in param.name:
                 kwargs[param.name] = "testname"
@@ -56,12 +63,23 @@ def test_api_brute_force(_mock_session):
 
         try:
             # Also add some generic kwargs
-            kwargs.update({"endpoint_id": 1, "environment_id": 1, "id": 1, "name": "test", "namespace": "test"})
+            kwargs.update(
+                {
+                    "endpoint_id": 1,
+                    "environment_id": 1,
+                    "id": 1,
+                    "name": "test",
+                    "namespace": "test",
+                }
+            )
 
             # Check for positional arguments
             pos_args = []
             for param in sig.parameters.values():
-                if param.default == inspect.Parameter.empty and param.kind in (inspect.Parameter.POSITIONAL_OR_KEYWORD, inspect.Parameter.POSITIONAL_ONLY):
+                if param.default == inspect.Parameter.empty and param.kind in (
+                    inspect.Parameter.POSITIONAL_OR_KEYWORD,
+                    inspect.Parameter.POSITIONAL_ONLY,
+                ):
                     pos_args.append(kwargs.get(param.name, "test"))
                     if param.name in kwargs:
                         del kwargs[param.name]
@@ -70,9 +88,11 @@ def test_api_brute_force(_mock_session):
         except Exception as e:
             print(f"Failed calling {name}: {e}")
 
+
 def test_mcp_server_coverage(_mock_session):
-    from portainer_agent.mcp_server import get_mcp_instance
     import asyncio
+
+    from portainer_agent.mcp_server import get_mcp_instance
 
     # Mock get_client to return our client
     client = PortainerApi(base_url="http://test.portainer.com", token="mock_token")
@@ -83,12 +103,18 @@ def test_mcp_server_coverage(_mock_session):
 
         async def run_tools():
             # list_tools might be async
-            tool_objs = await mcp.list_tools() if inspect.iscoroutinefunction(mcp.list_tools) else mcp.list_tools()
+            tool_objs = (
+                await mcp.list_tools()
+                if inspect.iscoroutinefunction(mcp.list_tools)
+                else mcp.list_tools()
+            )
             tools = [t.name for t in tool_objs]
             for tool_name in tools:
                 print(f"Testing MCP tool: {tool_name}")
                 try:
-                    await mcp.call_tool(tool_name, {"endpoint_id": 1, "id": 1, "name": "test"})
+                    await mcp.call_tool(
+                        tool_name, {"endpoint_id": 1, "id": 1, "name": "test"}
+                    )
                 except Exception:
                     pass
 
