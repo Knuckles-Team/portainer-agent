@@ -93,32 +93,7 @@ Configure your IDE's `mcp.json` to launch the MCP server via `uvx`:
 ```
 
 #### Streamable-HTTP Transport (Recommended for production deployments)
-Configure your client's `mcp.json` to launch the Streamable-HTTP server via `uvx` with explicit host and port definition:
-
-```json
-{
-  "mcpServers": {
-    "portainer-agent": {
-      "command": "uvx",
-      "args": [
-        "--from",
-        "portainer-agent",
-        "portainer-mcp"
-      ],
-      "env": {
-        "TRANSPORT": "streamable-http",
-        "HOST": "0.0.0.0",
-        "PORT": "8000",
-        "PORTAINER_ENDPOINT": "your_portainer_endpoint_here",
-        "PORTAINER_USERNAME": "your_portainer_username_here",
-        "PORTAINER_PASSWORD": "your_portainer_password_here"
-      }
-    }
-  }
-}
-```
-
-Alternatively, connect to a pre-deployed remote or local Streamable-HTTP instance:
+To run the server as a long-running Streamable-HTTP service:
 
 ```json
 {
