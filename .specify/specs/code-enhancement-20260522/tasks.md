@@ -1,0 +1,81 @@
+# Tasks: Code Enhancement: portainer-agent
+
+Generated: 2026-05-22T22:48:58.812496+00:00
+Skipped informational: 3
+
+- [ ] [P] **T001** [Project Analysis] Detected 1 agent skill(s) — will grade in CE-026
+  - Priority: P2-Medium | Effort: Medium
+- [ ] [P] **T002** [Dependency Audit] Minor update: pytest-xdist 3.6.0 (constraint — not installed) -> 3.8.0
+  - Priority: P3-Low | Effort: Small
+- [ ] [P] **T003** [Dependency Audit] Minor update: agent-utilities 0.2.40 (installed) -> 0.16.0
+  - Priority: P3-Low | Effort: Small
+- [ ] [P] **T004** [Codebase Optimization] 2 functions exceed 200 lines (actionable refactoring targets): register_docker_t
+  - Priority: P2-Medium | Effort: Large
+- [ ] [P] **T005** [Codebase Optimization] Monolithic: mcp_server.py (862L) — 7 functions with high complexity (worst: regi
+  - Priority: P1-High | Effort: Large
+- [ ] [P] **T006** [Codebase Optimization] 7 functions with nesting depth >4
+  - Priority: P2-Medium | Effort: Medium
+- [ ] [P] **T007** [Test Coverage] 12 tests without assertions
+  - Priority: P2-Medium | Effort: Medium
+- [ ] [P] **T008** [Test Coverage] Test suite lacks intent diversity (only one type)
+  - Priority: P2-Medium | Effort: Medium
+- [ ] [P] **T009** [Test Coverage] 12 potential doc-test drift items
+  - Priority: P2-Medium | Effort: Medium
+- [ ] [P] **T010** [Documentation & Governance] README.md missing sections: usage|quick start
+  - Priority: P4-Enhancement | Effort: Small
+- [ ] [P] **T011** [Documentation & Governance] 2 broken internal links in README.md
+  - Priority: P4-Enhancement | Effort: Medium
+- [ ] [P] **T012** [Documentation & Governance] README missing: Has a Table of Contents
+  - Priority: P4-Enhancement | Effort: Small
+- [ ] [P] **T013** [Documentation & Governance] README missing: Has usage examples with code blocks
+  - Priority: P4-Enhancement | Effort: Small
+- [ ] [P] **T014** [Architecture & Design Patterns] SRP: 2 modules exceed 500 lines (god modules)
+  - Priority: P2-Medium | Effort: Large
+- [ ] [P] **T015** [Architecture & Design Patterns] SRP: 7 classes have >15 methods
+  - Priority: P2-Medium | Effort: Medium
+- [ ] [P] **T016** [Architecture & Design Patterns] No discernible layer architecture (no domain/service/adapter separation)
+  - Priority: P2-Medium | Effort: Medium
+- [ ] [P] **T017** [Architecture & Design Patterns] Low dependency injection ratio: 6%
+  - Priority: P2-Medium | Effort: Medium
+- [ ] [P] **T018** [Concept Traceability] Low traceability ratio: 0% concepts fully traced
+  - Priority: P4-Enhancement | Effort: Medium
+- [ ] [P] **T019** [Concept Traceability] 31 test functions missing concept markers
+  - Priority: P4-Enhancement | Effort: Small
+- [ ] [P] **T020** [Concept Traceability] 44 significant functions (>10 lines) missing concept markers in docstrings
+  - Priority: P4-Enhancement | Effort: Small
+- [ ] [P] **T021** [Linting & Formatting] Total lint findings: 5 (high/error: 0, medium/warning: 0, low: 5)
+  - Priority: P4-Enhancement | Effort: Medium
+- [ ] [P] **T022** [Pre-Commit Compliance] Pre-commit config found. Execution skipped in offline environment to prevent git
+  - Priority: P3-Low | Effort: Medium
+- [ ] [P] **T023** [Directory Organization] 1 directories with >40 files: portainer_agent/skills/portainer-agent-docs/refere
+  - Priority: P2-Medium | Effort: Medium
+- [ ] [P] **T024** [Directory Organization] 1 directories with >20 files: portainer_agent/skills/portainer-agent-docs/refere
+  - Priority: P2-Medium | Effort: Medium
+- [ ] [P] **T025** [Directory Organization] Monolithic directory: portainer_agent/skills/portainer-agent-docs/reference/inde
+  - Priority: P2-Medium | Effort: Large
+- [ ] [P] **T026** [Changelog Audit] CHANGELOG.md exists but could not be parsed — check format compliance
+  - Priority: P3-Low | Effort: Medium
+- [ ] [P] **T027** [Changelog Audit] No changelog entries within the last 30 days
+  - Priority: P3-Low | Effort: Medium
+- [ ] [P] **T028** [Changelog Audit] keepachangelog not installed — pip install 'universal-skills[code-enhancer]'
+  - Priority: P3-Low | Effort: Small
+- [ ] [P] **T029** [Pytest Quality] 1 test files exceed 500 lines — split into focused modules
+  - Priority: P2-Medium | Effort: Large
+- [ ] [P] **T030** [Pytest Quality] Test directory lacks subdirectory organization (consider unit/, integration/, e2
+  - Priority: P2-Medium | Effort: Medium
+- [ ] [P] **T031** [Pytest Quality] Missing conftest.py for shared fixtures
+  - Priority: P2-Medium | Effort: Small
+- [ ] [P] **T032** [Pytest Quality] Low fixture usage: only 10% of tests use fixtures
+  - Priority: P2-Medium | Effort: Medium
+- [ ] [P] **T033** [Pytest Quality] No @pytest.mark.parametrize usage — consider data-driven tests
+  - Priority: P2-Medium | Effort: Medium
+- [ ] [P] **T034** [Pytest Quality] No shared fixtures in conftest.py
+  - Priority: P2-Medium | Effort: Medium
+- [ ] [P] **T035** [Pytest Quality] 12 tests have no assertions
+  - Priority: P2-Medium | Effort: Medium
+- [ ] [P] **T036** [Environment Variables] Only 29% of env vars documented in README.md
+  - Priority: P2-Medium | Effort: Medium
+- [ ] [P] **T037** [Environment Variables] Undocumented env vars: AUTHTOOL, AUTH_TYPE, DOCKERTOOL, EDGETOOL, ENVIRONMENTTOO
+  - Priority: P2-Medium | Effort: Medium
+- [ ] [P] **T038** [Environment Variables] 3 Python env vars not in .env.example: PORTAINER_SSL_VERIFY, PORTAINER_TOKEN, PO
+  - Priority: P2-Medium | Effort: Medium
