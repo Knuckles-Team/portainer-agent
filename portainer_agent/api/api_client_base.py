@@ -21,14 +21,21 @@ logger = logging.getLogger(__name__)
 
 
 class BaseApiClient:
+    # Default timeout in seconds for all HTTP requests.
+    # Prevents indefinite blocking when Portainer waits on Docker daemon
+    # operations (e.g., stack rm on crash-looping containers).
+    DEFAULT_TIMEOUT = 30
+
     def __init__(
         self,
         base_url: str = "http://localhost:9000",
         token: str = "",  # nosec B107
         verify: bool = True,
+        timeout: int | None = None,
     ):
         self.base_url = base_url.rstrip("/")
         self.api_base = f"{self.base_url}/api"
+        self.timeout = timeout or self.DEFAULT_TIMEOUT
         self.session = requests.Session()
         self.session.verify = verify
         if token:
@@ -38,8 +45,12 @@ class BaseApiClient:
     def _url(self, endpoint: str) -> str:
         return f"{self.api_base}/{endpoint.strip('/')}"
 
-    def _get(self, endpoint: str, params: dict | None = None) -> Any:
-        resp = self.session.get(self._url(endpoint), params=params)
+    def _get(
+        self, endpoint: str, params: dict | None = None, timeout: int | None = None
+    ) -> Any:
+        resp = self.session.get(
+            self._url(endpoint), params=params, timeout=timeout or self.timeout
+        )
         resp.raise_for_status()
         try:
             return resp.json()
@@ -51,8 +62,14 @@ class BaseApiClient:
         endpoint: str,
         data: dict | list | None = None,
         params: dict | None = None,
+        timeout: int | None = None,
     ) -> Any:
-        resp = self.session.post(self._url(endpoint), json=data, params=params)
+        resp = self.session.post(
+            self._url(endpoint),
+            json=data,
+            params=params,
+            timeout=timeout or self.timeout,
+        )
         resp.raise_for_status()
         try:
             return resp.json()
@@ -64,8 +81,14 @@ class BaseApiClient:
         endpoint: str,
         data: dict | list | None = None,
         params: dict | None = None,
+        timeout: int | None = None,
     ) -> Any:
-        resp = self.session.put(self._url(endpoint), json=data, params=params)
+        resp = self.session.put(
+            self._url(endpoint),
+            json=data,
+            params=params,
+            timeout=timeout or self.timeout,
+        )
         resp.raise_for_status()
         try:
             return resp.json()
@@ -77,16 +100,26 @@ class BaseApiClient:
         endpoint: str,
         data: dict | list | None = None,
         params: dict | None = None,
+        timeout: int | None = None,
     ) -> Any:
-        resp = self.session.patch(self._url(endpoint), json=data, params=params)
+        resp = self.session.patch(
+            self._url(endpoint),
+            json=data,
+            params=params,
+            timeout=timeout or self.timeout,
+        )
         resp.raise_for_status()
         try:
             return resp.json()
         except Exception:
             return resp.text
 
-    def _delete(self, endpoint: str, params: dict | None = None) -> bool:
-        resp = self.session.delete(self._url(endpoint), params=params)
+    def _delete(
+        self, endpoint: str, params: dict | None = None, timeout: int | None = None
+    ) -> bool:
+        resp = self.session.delete(
+            self._url(endpoint), params=params, timeout=timeout or self.timeout
+        )
         resp.raise_for_status()
         return True
 

@@ -24,11 +24,12 @@ class Api(BaseApiClient):
     def export_all_stacks(self, target_dir: str) -> dict:
         """Export all stacks' compose definitions to a target directory."""
         import os
+
         os.makedirs(target_dir, exist_ok=True)
         stacks = self.get_stacks()
         if not isinstance(stacks, list):
             return {"error": f"Failed to list stacks: {stacks}"}
-        
+
         exported = []
         errors = {}
         for s in stacks:
@@ -38,22 +39,26 @@ class Api(BaseApiClient):
                 continue
             try:
                 file_resp = self.get_stack_file(stack_id=s_id)
-                content = file_resp.get("StackFileContent") or file_resp.get("stackFileContent")
+                content = file_resp.get("StackFileContent") or file_resp.get(
+                    "stackFileContent"
+                )
                 if content:
                     file_path = os.path.join(target_dir, f"{s_name}.yml")
                     with open(file_path, "w", encoding="utf-8") as f:
                         f.write(content)
                     exported.append(s_name)
                 else:
-                    errors[s_name] = f"No stack file content found in response: {file_resp}"
+                    errors[s_name] = (
+                        f"No stack file content found in response: {file_resp}"
+                    )
             except Exception as e:
                 errors[s_name] = str(e)
-        
+
         return {
             "status": "success",
             "exported_stacks": exported,
             "errors": errors,
-            "target_directory": target_dir
+            "target_directory": target_dir,
         }
 
     def create_standalone_stack_from_string(

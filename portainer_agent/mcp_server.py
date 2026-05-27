@@ -37,8 +37,10 @@ __version__ = "0.14.0"
 logger = get_logger(name="portainer-agent")
 logger.setLevel(logging.INFO)
 
+
 def wrap_list(res: Any) -> Any:
     return {"data": res} if isinstance(res, list) else res
+
 
 def register_auth_tools(mcp: FastMCP):
     @mcp.tool(tags={"Auth"})
@@ -68,6 +70,7 @@ def register_auth_tools(mcp: FastMCP):
         raise ValueError(
             f"Unknown action: {action}. Must be one of: authenticate', 'logout', 'validate_oauth"
         )
+
 
 def register_environment_tools(mcp: FastMCP):
     @mcp.tool(tags={"Environment"})
@@ -134,6 +137,7 @@ def register_environment_tools(mcp: FastMCP):
         raise ValueError(
             f"Unknown action: {action}. Must be one of: get_endpoints', 'get_endpoint', 'create_endpoint', 'update_endpoint', 'delete_endpoint', 'snapshot_endpoint', 'snapshot_all_endpoints', 'get_endpoint_groups', 'create_endpoint_group', 'delete_endpoint_group"
         )
+
 
 def _handle_container_actions(
     client,
@@ -216,6 +220,7 @@ def _handle_container_actions(
         return {"data": client.remove_container(**kwargs)}
     raise ValueError(f"Unknown container action: {action}")
 
+
 def _handle_service_actions(
     client,
     action: str,
@@ -248,6 +253,7 @@ def _handle_service_actions(
         kwargs = {k: v for k, v in kwargs.items() if v is not None}
         return {"data": client.get_service_logs(**kwargs)}
     raise ValueError(f"Unknown service action: {action}")
+
 
 def _handle_resource_actions(
     client,
@@ -309,6 +315,7 @@ def _handle_resource_actions(
         return client.docker_create_volume(**kwargs)
     raise ValueError(f"Unknown resource action: {action}")
 
+
 def _handle_exec_stack_actions(
     client,
     action: str,
@@ -362,6 +369,7 @@ def _handle_exec_stack_actions(
         res = client.get_stack_logs(**kwargs)
         return {"data": res} if isinstance(res, str) else res
     raise ValueError(f"Unknown exec/stack action: {action}")
+
 
 def register_docker_tools(mcp: FastMCP):
     @mcp.tool(tags={"Docker"})
@@ -456,6 +464,7 @@ def register_docker_tools(mcp: FastMCP):
             f"Unknown action: {action}. Must be one of: get_docker_dashboard', 'get_container_gpus', 'docker_list_containers', 'docker_inspect_container', 'docker_get_container_logs', 'docker_get_container_stats', 'docker_start_container', 'docker_stop_container', 'docker_restart_container', 'docker_remove_container', 'docker_list_services', 'docker_inspect_service', 'docker_get_service_logs', 'docker_list_images', 'docker_inspect_image', 'docker_list_networks', 'docker_inspect_network', 'docker_list_volumes', 'docker_inspect_volume', 'docker_get_info', 'docker_get_version', 'docker_get_system_df', 'docker_create_container', 'docker_create_network', 'docker_create_volume', 'docker_create_exec', 'docker_start_exec', 'docker_inspect_exec', 'docker_get_stack_logs"
         )
 
+
 def register_stack_tools(mcp: FastMCP):
     @mcp.tool(tags={"Stack"})
     async def portainer_stack(
@@ -468,7 +477,8 @@ def register_stack_tools(mcp: FastMCP):
             default=None, description="compose file content for stack creation/update"
         ),
         env: list | None = Field(
-            default=None, description="environment variables list for stack creation/update"
+            default=None,
+            description="environment variables list for stack creation/update",
         ),
         prune: bool | None = Field(
             default=None, description="whether to prune for update_stack"
@@ -476,25 +486,39 @@ def register_stack_tools(mcp: FastMCP):
         name: str | None = Field(default=None, description="stack name"),
         repo_url: str | None = Field(default=None, description="git repository url"),
         swarm_id: str | None = Field(default=None, description="swarm id"),
-        target_dir: str | None = Field(default=None, description="target directory for export_all_stacks"),
+        target_dir: str | None = Field(
+            default=None, description="target directory for export_all_stacks"
+        ),
         params_json: str | None = Field(
-            default=None, description="JSON string of dynamic/extra parameters to unpack"
+            default=None,
+            description="JSON string of dynamic/extra parameters to unpack",
         ),
         client=Depends(get_client),
     ) -> dict:
         # Clean up Pydantic FieldInfo default values when called directly in tests
         from pydantic.fields import FieldInfo
-        if isinstance(stack_id, FieldInfo): stack_id = None
-        if isinstance(endpoint_id, FieldInfo): endpoint_id = None
-        if isinstance(stack_file_content, FieldInfo): stack_file_content = None
-        if isinstance(env, FieldInfo): env = None
-        if isinstance(prune, FieldInfo): prune = None
-        if isinstance(name, FieldInfo): name = None
-        if isinstance(repo_url, FieldInfo): repo_url = None
-        if isinstance(swarm_id, FieldInfo): swarm_id = None
-        if isinstance(params_json, FieldInfo): params_json = None
+
+        if isinstance(stack_id, FieldInfo):
+            stack_id = None
+        if isinstance(endpoint_id, FieldInfo):
+            endpoint_id = None
+        if isinstance(stack_file_content, FieldInfo):
+            stack_file_content = None
+        if isinstance(env, FieldInfo):
+            env = None
+        if isinstance(prune, FieldInfo):
+            prune = None
+        if isinstance(name, FieldInfo):
+            name = None
+        if isinstance(repo_url, FieldInfo):
+            repo_url = None
+        if isinstance(swarm_id, FieldInfo):
+            swarm_id = None
+        if isinstance(params_json, FieldInfo):
+            params_json = None
 
         import json
+
         params = {}
         if params_json:
             try:
@@ -502,7 +526,7 @@ def register_stack_tools(mcp: FastMCP):
                 if not isinstance(params, dict):
                     params = {}
             except Exception as e:
-                raise ValueError(f"Invalid params_json: {e}")
+                raise ValueError(f"Invalid params_json: {e}") from e
 
         # Field map with defaults
         field_map = {
@@ -544,15 +568,30 @@ def register_stack_tools(mcp: FastMCP):
         # Extract remaining kwargs (exclude known parameter keys that are explicitly passed)
         resolved_kwargs = {**params}
         explicit_keys = [
-            "stack_id", "endpoint_id", "endpointId",
-            "stack_file_content", "StackFileContent", "file_content", "stack_file_content",
-            "env", "Env",
-            "prune", "Prune",
-            "name", "Name", "StackName",
-            "repo_url", "RepositoryURL", "repository_url",
-            "swarm_id", "SwarmID",
-            "target_endpoint_id", "TargetEndpointID", "targetEndpointId",
-            "action", "params_json"
+            "stack_id",
+            "endpoint_id",
+            "endpointId",
+            "stack_file_content",
+            "StackFileContent",
+            "file_content",
+            "stack_file_content",
+            "env",
+            "Env",
+            "prune",
+            "Prune",
+            "name",
+            "Name",
+            "StackName",
+            "repo_url",
+            "RepositoryURL",
+            "repository_url",
+            "swarm_id",
+            "SwarmID",
+            "target_endpoint_id",
+            "TargetEndpointID",
+            "targetEndpointId",
+            "action",
+            "params_json",
         ]
         # Remove explicitly parsed keys from resolved_kwargs to pass extra kwargs dynamically
         for ek in explicit_keys:
@@ -566,7 +605,6 @@ def register_stack_tools(mcp: FastMCP):
                         del resolved_kwargs[pk]
                     except KeyError:
                         pass
-
 
         if action_normalized == "get_stacks":
             res = client.get_stacks(**resolved_kwargs)
@@ -595,9 +633,14 @@ def register_stack_tools(mcp: FastMCP):
             fc = get_val(["file_content", "StackFileContent", "stack_file_content"])
             ep_id = get_val(["endpoint_id", "endpointId"])
             if not n or not fc or ep_id is None:
-                raise ValueError("Missing required parameters for create_standalone_stack_from_string: name, file_content/stack_file_content, endpoint_id")
+                raise ValueError(
+                    "Missing required parameters for create_standalone_stack_from_string: name, file_content/stack_file_content, endpoint_id"
+                )
             return client.create_standalone_stack_from_string(
-                name=str(n), file_content=str(fc), endpoint_id=int(ep_id), **resolved_kwargs
+                name=str(n),
+                file_content=str(fc),
+                endpoint_id=int(ep_id),
+                **resolved_kwargs,
             )
 
         elif action_normalized == "create_standalone_stack_from_repository":
@@ -605,7 +648,9 @@ def register_stack_tools(mcp: FastMCP):
             u = get_val(["repo_url", "RepositoryURL", "repository_url"])
             ep_id = get_val(["endpoint_id", "endpointId"])
             if not n or not u or ep_id is None:
-                raise ValueError("Missing required parameters for create_standalone_stack_from_repository: name, repo_url/RepositoryURL, endpoint_id")
+                raise ValueError(
+                    "Missing required parameters for create_standalone_stack_from_repository: name, repo_url/RepositoryURL, endpoint_id"
+                )
             return client.create_standalone_stack_from_repository(
                 name=str(n), repo_url=str(u), endpoint_id=int(ep_id), **resolved_kwargs
             )
@@ -616,9 +661,15 @@ def register_stack_tools(mcp: FastMCP):
             sw_id = get_val(["swarm_id", "SwarmID"])
             ep_id = get_val(["endpoint_id", "endpointId"])
             if not n or not fc or not sw_id or ep_id is None:
-                raise ValueError("Missing required parameters for create_swarm_stack_from_string: name, file_content/stack_file_content, swarm_id, endpoint_id")
+                raise ValueError(
+                    "Missing required parameters for create_swarm_stack_from_string: name, file_content/stack_file_content, swarm_id, endpoint_id"
+                )
             return client.create_swarm_stack_from_string(
-                name=str(n), file_content=str(fc), swarm_id=str(sw_id), endpoint_id=int(ep_id), **resolved_kwargs
+                name=str(n),
+                file_content=str(fc),
+                swarm_id=str(sw_id),
+                endpoint_id=int(ep_id),
+                **resolved_kwargs,
             )
 
         elif action_normalized == "create_swarm_stack_from_repository":
@@ -627,9 +678,15 @@ def register_stack_tools(mcp: FastMCP):
             sw_id = get_val(["swarm_id", "SwarmID"])
             ep_id = get_val(["endpoint_id", "endpointId"])
             if not n or not u or not sw_id or ep_id is None:
-                raise ValueError("Missing required parameters for create_swarm_stack_from_repository: name, repo_url/RepositoryURL, swarm_id, endpoint_id")
+                raise ValueError(
+                    "Missing required parameters for create_swarm_stack_from_repository: name, repo_url/RepositoryURL, swarm_id, endpoint_id"
+                )
             return client.create_swarm_stack_from_repository(
-                name=str(n), repo_url=str(u), swarm_id=str(sw_id), endpoint_id=int(ep_id), **resolved_kwargs
+                name=str(n),
+                repo_url=str(u),
+                swarm_id=str(sw_id),
+                endpoint_id=int(ep_id),
+                **resolved_kwargs,
             )
 
         elif action_normalized == "create_kubernetes_stack_from_string":
@@ -637,9 +694,14 @@ def register_stack_tools(mcp: FastMCP):
             fc = get_val(["file_content", "StackFileContent", "stack_file_content"])
             ep_id = get_val(["endpoint_id", "endpointId"])
             if not n or not fc or ep_id is None:
-                raise ValueError("Missing required parameters for create_kubernetes_stack_from_string: name, file_content/stack_file_content, endpoint_id")
+                raise ValueError(
+                    "Missing required parameters for create_kubernetes_stack_from_string: name, file_content/stack_file_content, endpoint_id"
+                )
             return client.create_kubernetes_stack_from_string(
-                name=str(n), file_content=str(fc), endpoint_id=int(ep_id), **resolved_kwargs
+                name=str(n),
+                file_content=str(fc),
+                endpoint_id=int(ep_id),
+                **resolved_kwargs,
             )
 
         elif action_normalized == "create_kubernetes_stack_from_repository":
@@ -647,7 +709,9 @@ def register_stack_tools(mcp: FastMCP):
             u = get_val(["repo_url", "RepositoryURL", "repository_url"])
             ep_id = get_val(["endpoint_id", "endpointId"])
             if not n or not u or ep_id is None:
-                raise ValueError("Missing required parameters for create_kubernetes_stack_from_repository: name, repo_url/RepositoryURL, endpoint_id")
+                raise ValueError(
+                    "Missing required parameters for create_kubernetes_stack_from_repository: name, repo_url/RepositoryURL, endpoint_id"
+                )
             return client.create_kubernetes_stack_from_repository(
                 name=str(n), repo_url=str(u), endpoint_id=int(ep_id), **resolved_kwargs
             )
@@ -656,8 +720,10 @@ def register_stack_tools(mcp: FastMCP):
             s_id = get_val(["stack_id"])
             ep_id = get_val(["endpoint_id", "endpointId"])
             if s_id is None or ep_id is None:
-                raise ValueError("Missing required parameters for update_stack: stack_id, endpoint_id")
-            
+                raise ValueError(
+                    "Missing required parameters for update_stack: stack_id, endpoint_id"
+                )
+
             # Map standard update options from direct arguments if not set in resolved_kwargs
             s_file_content = get_val(["stack_file_content", "StackFileContent"])
             if s_file_content is not None and "StackFileContent" not in resolved_kwargs:
@@ -668,70 +734,100 @@ def register_stack_tools(mcp: FastMCP):
             s_prune = get_val(["prune", "Prune"])
             if s_prune is not None and "Prune" not in resolved_kwargs:
                 resolved_kwargs["Prune"] = s_prune
-                
-            return client.update_stack(stack_id=int(s_id), endpoint_id=int(ep_id), **resolved_kwargs)
+
+            return client.update_stack(
+                stack_id=int(s_id), endpoint_id=int(ep_id), **resolved_kwargs
+            )
 
         elif action_normalized == "delete_stack":
             s_id = get_val(["stack_id"])
             ep_id = get_val(["endpoint_id", "endpointId"])
             if s_id is None or ep_id is None:
-                raise ValueError("Missing required parameters for delete_stack: stack_id, endpoint_id")
+                raise ValueError(
+                    "Missing required parameters for delete_stack: stack_id, endpoint_id"
+                )
             return client.delete_stack(stack_id=int(s_id), endpoint_id=int(ep_id))
 
         elif action_normalized == "start_stack":
             s_id = get_val(["stack_id"])
             ep_id = get_val(["endpoint_id", "endpointId"])
             if s_id is None or ep_id is None:
-                raise ValueError("Missing required parameters for start_stack: stack_id, endpoint_id")
+                raise ValueError(
+                    "Missing required parameters for start_stack: stack_id, endpoint_id"
+                )
             return client.start_stack(stack_id=int(s_id), endpoint_id=int(ep_id))
 
         elif action_normalized == "stop_stack":
             s_id = get_val(["stack_id"])
             ep_id = get_val(["endpoint_id", "endpointId"])
             if s_id is None or ep_id is None:
-                raise ValueError("Missing required parameters for stop_stack: stack_id, endpoint_id")
+                raise ValueError(
+                    "Missing required parameters for stop_stack: stack_id, endpoint_id"
+                )
             return client.stop_stack(stack_id=int(s_id), endpoint_id=int(ep_id))
 
         elif action_normalized == "migrate_stack":
             s_id = get_val(["stack_id"])
             ep_id = get_val(["endpoint_id", "endpointId"])
-            target_ep_id = get_val(["target_endpoint_id", "TargetEndpointID", "targetEndpointId"])
+            target_ep_id = get_val(
+                ["target_endpoint_id", "TargetEndpointID", "targetEndpointId"]
+            )
             if s_id is None or ep_id is None or target_ep_id is None:
-                raise ValueError("Missing required parameters for migrate_stack: stack_id, endpoint_id, target_endpoint_id")
+                raise ValueError(
+                    "Missing required parameters for migrate_stack: stack_id, endpoint_id, target_endpoint_id"
+                )
             return client.migrate_stack(
-                stack_id=int(s_id), endpoint_id=int(ep_id), target_endpoint_id=int(target_ep_id), **resolved_kwargs
+                stack_id=int(s_id),
+                endpoint_id=int(ep_id),
+                target_endpoint_id=int(target_ep_id),
+                **resolved_kwargs,
             )
 
         elif action_normalized == "update_stack_git":
             s_id = get_val(["stack_id"])
             ep_id = get_val(["endpoint_id", "endpointId"])
             if s_id is None or ep_id is None:
-                raise ValueError("Missing required parameters for update_stack_git: stack_id, endpoint_id")
-            return client.update_stack_git(stack_id=int(s_id), endpoint_id=int(ep_id), **resolved_kwargs)
+                raise ValueError(
+                    "Missing required parameters for update_stack_git: stack_id, endpoint_id"
+                )
+            return client.update_stack_git(
+                stack_id=int(s_id), endpoint_id=int(ep_id), **resolved_kwargs
+            )
 
         elif action_normalized == "redeploy_stack_git":
             s_id = get_val(["stack_id"])
             ep_id = get_val(["endpoint_id", "endpointId"])
             if s_id is None or ep_id is None:
-                raise ValueError("Missing required parameters for redeploy_stack_git: stack_id, endpoint_id")
-            return client.redeploy_stack_git(stack_id=int(s_id), endpoint_id=int(ep_id), **resolved_kwargs)
+                raise ValueError(
+                    "Missing required parameters for redeploy_stack_git: stack_id, endpoint_id"
+                )
+            return client.redeploy_stack_git(
+                stack_id=int(s_id), endpoint_id=int(ep_id), **resolved_kwargs
+            )
 
         elif action_normalized == "associate_stack":
             s_id = get_val(["stack_id"])
             ep_id = get_val(["endpoint_id", "endpointId"])
             if s_id is None or ep_id is None:
-                raise ValueError("Missing required parameters for associate_stack: stack_id, endpoint_id")
-            return client.associate_stack(stack_id=int(s_id), endpoint_id=int(ep_id), **resolved_kwargs)
+                raise ValueError(
+                    "Missing required parameters for associate_stack: stack_id, endpoint_id"
+                )
+            return client.associate_stack(
+                stack_id=int(s_id), endpoint_id=int(ep_id), **resolved_kwargs
+            )
 
         elif action_normalized == "export_all_stacks":
             t_dir = get_val(["target_dir", "targetDir"])
             if not t_dir:
-                raise ValueError("Missing required parameter for export_all_stacks: target_dir")
+                raise ValueError(
+                    "Missing required parameter for export_all_stacks: target_dir"
+                )
             return client.export_all_stacks(target_dir=str(t_dir))
 
         raise ValueError(
             f"Unknown action: {action}. Must be one of: 'get_stacks', 'get_stack', 'get_stack_by_name', 'get_stack_file', 'export_all_stacks', 'create_standalone_stack_from_string', 'create_standalone_stack_from_repository', 'create_swarm_stack_from_string', 'create_swarm_stack_from_repository', 'create_kubernetes_stack_from_string', 'create_kubernetes_stack_from_repository', 'update_stack', 'delete_stack', 'start_stack', 'stop_stack', 'migrate_stack', 'update_stack_git', 'redeploy_stack_git', 'associate_stack'"
         )
+
 
 def register_kubernetes_tools(mcp: FastMCP):
     @mcp.tool(tags={"Kubernetes"})
@@ -812,6 +908,7 @@ def register_kubernetes_tools(mcp: FastMCP):
             f"Unknown action: {action}. Must be one of: get_k8s_dashboard', 'get_k8s_namespaces', 'get_k8s_applications', 'get_k8s_services', 'get_k8s_ingresses', 'get_k8s_configmaps', 'get_k8s_secrets', 'get_k8s_volumes', 'get_k8s_events', 'get_k8s_nodes_limits', 'get_k8s_metrics_nodes', 'get_helm_releases', 'install_helm_chart', 'delete_helm_release"
         )
 
+
 def register_edge_tools(mcp: FastMCP):
     @mcp.tool(tags={"Edge"})
     async def portainer_edge(
@@ -874,6 +971,7 @@ def register_edge_tools(mcp: FastMCP):
             f"Unknown action: {action}. Must be one of: get_edge_groups', 'create_edge_group', 'delete_edge_group', 'get_edge_stacks', 'get_edge_stack', 'create_edge_stack', 'delete_edge_stack', 'get_edge_jobs', 'get_edge_job', 'create_edge_job', 'delete_edge_job"
         )
 
+
 def register_template_tools(mcp: FastMCP):
     @mcp.tool(tags={"Template"})
     async def portainer_template(
@@ -916,6 +1014,7 @@ def register_template_tools(mcp: FastMCP):
         raise ValueError(
             f"Unknown action: {action}. Must be one of: get_templates', 'get_custom_templates', 'get_custom_template', 'create_custom_template', 'delete_custom_template', 'get_custom_template_file', 'get_helm_templates"
         )
+
 
 def register_user_tools(mcp: FastMCP):
     @mcp.tool(tags={"User"})
@@ -981,6 +1080,7 @@ def register_user_tools(mcp: FastMCP):
             f"Unknown action: {action}. Must be one of: get_users', 'get_user', 'get_current_user', 'create_user', 'delete_user', 'get_teams', 'create_team', 'delete_team', 'get_roles', 'get_user_tokens"
         )
 
+
 def register_registry_tools(mcp: FastMCP):
     @mcp.tool(tags={"Registry"})
     async def portainer_registry(
@@ -1018,6 +1118,7 @@ def register_registry_tools(mcp: FastMCP):
         raise ValueError(
             f"Unknown action: {action}. Must be one of: get_registries', 'get_registry', 'create_registry', 'delete_registry"
         )
+
 
 def register_system_tools(mcp: FastMCP):
     @mcp.tool(tags={"System"})
@@ -1088,6 +1189,7 @@ def register_system_tools(mcp: FastMCP):
             f"Unknown action: {action}. Must be one of: get_status', 'get_system_info', 'get_system_version', 'get_settings', 'update_settings', 'get_tags', 'create_tag', 'delete_tag', 'get_motd', 'backup_portainer"
         )
 
+
 def get_mcp_instance() -> tuple[Any, ...]:
     """Initialize and return the MCP instance."""
     load_dotenv(find_dotenv())
@@ -1136,6 +1238,7 @@ def get_mcp_instance() -> tuple[Any, ...]:
         mcp.add_middleware(mw)
     return mcp, args, middlewares
 
+
 def mcp_server() -> None:
     mcp, args, middlewares = get_mcp_instance()
     print(f"portainer-agent MCP v{__version__}", file=sys.stderr)
@@ -1152,6 +1255,7 @@ def mcp_server() -> None:
     else:
         logger.error("Invalid transport", extra={"transport": args.transport})
         sys.exit(1)
+
 
 if __name__ == "__main__":
     mcp_server()
