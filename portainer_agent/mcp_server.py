@@ -32,7 +32,7 @@ from starlette.responses import JSONResponse
 
 from portainer_agent.auth import get_client
 
-__version__ = "0.17.0"
+__version__ = "0.17.1"
 
 logger = get_logger(name="portainer-agent")
 logger.setLevel(logging.INFO)
@@ -605,6 +605,14 @@ def register_stack_tools(mcp: FastMCP):
                         del resolved_kwargs[pk]
                     except KeyError:
                         pass
+
+        # Re-inject env and prune if present
+        env_val = get_val(["env", "Env"])
+        if env_val is not None:
+            resolved_kwargs["Env"] = env_val
+        prune_val = get_val(["prune", "Prune"])
+        if prune_val is not None:
+            resolved_kwargs["Prune"] = prune_val
 
         if action_normalized == "get_stacks":
             res = client.get_stacks(**resolved_kwargs)
