@@ -149,10 +149,18 @@ class Api(BaseApiClient):
 
     def update_stack_git(self, stack_id: int, endpoint_id: int, **kwargs) -> dict:
         """Update a stack's Git settings."""
+        if "env" in kwargs and "Env" not in kwargs:
+            kwargs["Env"] = kwargs.pop("env")
+        if "prune" in kwargs and "Prune" not in kwargs:
+            kwargs["Prune"] = kwargs.pop("prune")
         return self._put(f"stacks/{stack_id}/git?endpointId={endpoint_id}", data=kwargs)
 
     def redeploy_stack_git(self, stack_id: int, endpoint_id: int, **kwargs) -> dict:
         """Redeploy a stack from its Git config."""
+        if "env" in kwargs and "Env" not in kwargs:
+            kwargs["Env"] = kwargs.pop("env")
+        if "prune" in kwargs and "Prune" not in kwargs:
+            kwargs["Prune"] = kwargs.pop("prune")
         return self._put(
             f"stacks/{stack_id}/git/redeploy?endpointId={endpoint_id}", data=kwargs
         )

@@ -16,7 +16,7 @@ def register_stack_tools(mcp: FastMCP):
     @mcp.tool(tags={"Stack"})
     async def portainer_stack(
         action: str = Field(
-            description="Action to perform. Must be one of: 'get_stacks', 'get_stack', 'get_stack_file', 'create_standalone_stack', 'create_standalone_stack_from_repo', 'update_stack', 'delete_stack', 'start_stack', 'stop_stack', 'redeploy_stack_git'"
+            description="Action to perform. Must be one of: 'get_stacks', 'get_stack', 'get_stack_file', 'create_standalone_stack', 'create_standalone_stack_from_repo', 'update_stack', 'delete_stack', 'start_stack', 'stop_stack', 'update_stack_git', 'redeploy_stack_git'"
         ),
         stack_id: int | None = Field(default=None, description="stack id"),
         endpoint_id: int | None = Field(default=None, description="endpoint id"),
@@ -76,10 +76,24 @@ def register_stack_tools(mcp: FastMCP):
             kwargs = {"stack_id": stack_id, "endpoint_id": endpoint_id}
             kwargs = {k: v for k, v in kwargs.items() if v is not None}
             return client.stop_stack(**kwargs)
+        if action == "update_stack_git":
+            kwargs = {
+                "stack_id": stack_id,
+                "endpoint_id": endpoint_id,
+                "env": env,
+                "prune": prune,
+            }
+            kwargs = {k: v for k, v in kwargs.items() if v is not None}
+            return client.update_stack_git(**kwargs)
         if action == "redeploy_stack_git":
-            kwargs = {"stack_id": stack_id, "endpoint_id": endpoint_id}
+            kwargs = {
+                "stack_id": stack_id,
+                "endpoint_id": endpoint_id,
+                "env": env,
+                "prune": prune,
+            }
             kwargs = {k: v for k, v in kwargs.items() if v is not None}
             return client.redeploy_stack_git(**kwargs)
         raise ValueError(
-            f"Unknown action: {action}. Must be one of: get_stacks', 'get_stack', 'get_stack_file', 'create_standalone_stack', 'create_standalone_stack_from_repo', 'update_stack', 'delete_stack', 'start_stack', 'stop_stack', 'redeploy_stack_git"
+            f"Unknown action: {action}. Must be one of: 'get_stacks', 'get_stack', 'get_stack_file', 'create_standalone_stack', 'create_standalone_stack_from_repo', 'update_stack', 'delete_stack', 'start_stack', 'stop_stack', 'update_stack_git', 'redeploy_stack_git'"
         )

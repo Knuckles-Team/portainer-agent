@@ -790,6 +790,12 @@ def register_stack_tools(mcp: FastMCP):
                 raise ValueError(
                     "Missing required parameters for update_stack_git: stack_id, endpoint_id"
                 )
+            s_env = get_val(["env", "Env"])
+            if s_env is not None:
+                resolved_kwargs["Env"] = s_env
+            s_prune = get_val(["prune", "Prune"])
+            if s_prune is not None:
+                resolved_kwargs["Prune"] = s_prune
             return client.update_stack_git(
                 stack_id=int(s_id), endpoint_id=int(ep_id), **resolved_kwargs
             )
@@ -801,6 +807,12 @@ def register_stack_tools(mcp: FastMCP):
                 raise ValueError(
                     "Missing required parameters for redeploy_stack_git: stack_id, endpoint_id"
                 )
+            s_env = get_val(["env", "Env"])
+            if s_env is not None:
+                resolved_kwargs["Env"] = s_env
+            s_prune = get_val(["prune", "Prune"])
+            if s_prune is not None:
+                resolved_kwargs["Prune"] = s_prune
             return client.redeploy_stack_git(
                 stack_id=int(s_id), endpoint_id=int(ep_id), **resolved_kwargs
             )
