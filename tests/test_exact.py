@@ -25,7 +25,7 @@ async def test_exact():
         print("=== EXACT QUERY TEST ===")
         # Use the centralized workspace initialization
         graph, config = initialize_graph_from_workspace(
-            base_url="http://10.0.0.18:1234/v1",
+            base_url="http://vllm.arpa/v1",
             api_key="llama",
         )
 

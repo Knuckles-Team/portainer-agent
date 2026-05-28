@@ -13,7 +13,7 @@ if __name__ == "__main__":
         model = create_model(
             provider="openai",
             model_id="nvidia/nemotron-3-super",
-            base_url="http://10.0.0.18:1234/v1",
+            base_url="http://vllm.arpa/v1",
             api_key="llama",
         )
         print("Model created successfully")

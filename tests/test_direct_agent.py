@@ -16,7 +16,7 @@ async def test_direct_agent():
         agent = create_agent(
             provider="openai",
             model_id="nvidia/nemotron-3-super",
-            base_url="http://10.0.0.18:1234/v1",
+            base_url="http://vllm.arpa/v1",
             api_key="llama",
         )
 

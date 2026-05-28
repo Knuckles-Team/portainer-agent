@@ -16,7 +16,7 @@ async def test_query():
     try:
         graph_bundle = initialize_graph_from_workspace(
             agent_model="nvidia/nemotron-3-super",
-            base_url="http://10.0.0.18:1234/v1",
+            base_url="http://vllm.arpa/v1",
             api_key="llama",
         )
 
