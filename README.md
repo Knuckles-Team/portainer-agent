@@ -20,7 +20,7 @@
 ![PyPI - Wheel](https://img.shields.io/pypi/wheel/portainer-agent)
 ![PyPI - Implementation](https://img.shields.io/pypi/implementation/portainer-agent)
 
-*Version: 0.23.2*
+*Version: 0.24.0*
 
 ---
 
