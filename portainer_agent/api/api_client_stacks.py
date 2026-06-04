@@ -1,10 +1,58 @@
 #!/usr/bin/env python
+import os
 from typing import Any
 
 from portainer_agent.api.api_client_base import BaseApiClient
 
+# Keys (either casing) that indicate the caller already supplied git credentials.
+_GIT_AUTH_KEYS = (
+    "repositoryUsername",
+    "RepositoryUsername",
+    "repositoryPassword",
+    "RepositoryPassword",
+    "repositoryGitCredentialID",
+    "RepositoryGitCredentialID",
+)
+
 
 class Api(BaseApiClient):
+    def _inject_git_auth(self, kwargs: dict) -> dict:
+        """Auto-attach git credentials for repository (re)deploys.
+
+        Portainer's stored per-stack git credentials are frequently ephemeral
+        (e.g. GitLab CI job tokens) and expire, which makes git redeploys fail
+        with 401/500. When a ``PORTAINER_GIT_TOKEN`` (or ``GITLAB_TOKEN``) is
+        configured in the environment and the caller did not already pass
+        explicit credentials, inject HTTP-basic auth so MCP-driven redeploys
+        authenticate without relying on the (possibly stale) stored secret.
+        """
+        if any(k in kwargs for k in _GIT_AUTH_KEYS):
+            return kwargs
+        token = os.environ.get("PORTAINER_GIT_TOKEN") or os.environ.get("GITLAB_TOKEN")
+        if not token:
+            return kwargs
+        username = os.environ.get("PORTAINER_GIT_USERNAME", "oauth2")
+        kwargs.setdefault("repositoryAuthentication", True)
+        kwargs.setdefault("repositoryUsername", username)
+        kwargs["repositoryPassword"] = token
+        return kwargs
+
+    def _ensure_env_preserved(self, stack_id: int, kwargs: dict) -> dict:
+        """Carry the stack's existing Env into a redeploy when none was given.
+
+        Portainer resets a stack's environment to whatever the redeploy payload
+        contains, so omitting Env silently wipes it. Re-fetch and pass it back.
+        """
+        if "Env" in kwargs or "env" in kwargs:
+            return kwargs
+        try:
+            stack = self.get_stack(stack_id)
+            if isinstance(stack, dict) and isinstance(stack.get("Env"), list):
+                kwargs["Env"] = stack["Env"]
+        except Exception:  # nosec B110 - best-effort env preservation
+            pass
+        return kwargs
+
     def get_stacks(self, **filters) -> Any:
         """List all stacks."""
         return self._list("stacks", **filters)
@@ -15,7 +63,12 @@ class Api(BaseApiClient):
 
     def get_stack_by_name(self, name: str) -> dict:
         """Get a stack by name."""
-        return self._get(f"stacks/name/{name}")
+        stacks = self.get_stacks()
+        if isinstance(stacks, list):
+            for s in stacks:
+                if s.get("Name") == name or s.get("name") == name:
+                    return s
+        return {"error": f"Stack with name '{name}' not found."}
 
     def get_stack_file(self, stack_id: int) -> dict:
         """Get the compose file content for a stack."""
@@ -148,19 +201,27 @@ class Api(BaseApiClient):
         )
 
     def update_stack_git(self, stack_id: int, endpoint_id: int, **kwargs) -> dict:
-        """Update a stack's Git settings."""
+        """Update a stack's Git settings (auto-attaches configured git auth)."""
         if "env" in kwargs and "Env" not in kwargs:
             kwargs["Env"] = kwargs.pop("env")
         if "prune" in kwargs and "Prune" not in kwargs:
             kwargs["Prune"] = kwargs.pop("prune")
+        kwargs = self._inject_git_auth(kwargs)
         return self._put(f"stacks/{stack_id}/git?endpointId={endpoint_id}", data=kwargs)
 
     def redeploy_stack_git(self, stack_id: int, endpoint_id: int, **kwargs) -> dict:
-        """Redeploy a stack from its Git config."""
+        """Redeploy a stack from its Git config.
+
+        Auto-attaches configured git credentials and preserves the stack's
+        existing environment so a bare ``redeploy_stack_git(id, endpoint)`` call
+        succeeds without the caller supplying secrets or re-specifying Env.
+        """
         if "env" in kwargs and "Env" not in kwargs:
             kwargs["Env"] = kwargs.pop("env")
         if "prune" in kwargs and "Prune" not in kwargs:
             kwargs["Prune"] = kwargs.pop("prune")
+        kwargs = self._ensure_env_preserved(stack_id, kwargs)
+        kwargs = self._inject_git_auth(kwargs)
         return self._put(
             f"stacks/{stack_id}/git/redeploy?endpointId={endpoint_id}", data=kwargs
         )
