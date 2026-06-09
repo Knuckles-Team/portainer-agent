@@ -22,6 +22,10 @@
 
 *Version: 0.28.0*
 
+> **Documentation** — Installation, deployment, usage across the API, CLI, and MCP
+> interfaces, and guidance for provisioning the Portainer platform are maintained in
+> the [official documentation](https://knuckles-team.github.io/portainer-agent/).
+
 ---
 
 ## Overview
@@ -353,6 +357,25 @@ uv pip install portainer-agent[all]
 # Using standard pip
 python -m pip install portainer-agent[all]
 ```
+
+---
+
+## Documentation
+
+The complete documentation is published as the
+[official documentation site](https://knuckles-team.github.io/portainer-agent/) and is
+the recommended reference for installation, deployment, and day-to-day operation.
+
+| Page | Contents |
+|---|---|
+| [Installation](https://knuckles-team.github.io/portainer-agent/installation/) | pip, source, extras, prebuilt Docker image |
+| [Deployment](https://knuckles-team.github.io/portainer-agent/deployment/) | run the MCP server and A2A agent, Compose, Caddy + Technitium, env config |
+| [Usage](https://knuckles-team.github.io/portainer-agent/usage/) | the MCP tools, the `PortainerApi` client, the CLI |
+| [Backing Platform](https://knuckles-team.github.io/portainer-agent/platform/) | deploy Portainer with Docker |
+| [Overview](https://knuckles-team.github.io/portainer-agent/overview/) | modes, environment variables, graph routing |
+| [Concepts](https://knuckles-team.github.io/portainer-agent/concepts/) | concept registry (`CONCEPT:PORT-*`) |
+
+`AGENTS.md` is the canonical contributor/agent guidance.
 
 ---
 
