@@ -88,3 +88,49 @@ def test_redeploy_does_not_clobber_explicit_env(monkeypatch, api):
     api.redeploy_stack_git(stack_id=1, endpoint_id=3, env=[{"name": "A", "value": "B"}])
     # caller passed env -> get_stack must not be consulted
     assert called["n"] == 0
+
+
+def _capture_post(api):
+    """Replace _post with a recorder; return the captured-calls list."""
+    calls = []
+
+    def fake_post(endpoint, data=None, params=None, timeout=None):
+        calls.append({"endpoint": endpoint, "data": data})
+        return {"ok": True}
+
+    api._post = fake_post  # type: ignore[assignment]
+    return calls
+
+
+def test_create_swarm_from_repository_injects_auth(monkeypatch, api):
+    # Regression: GitOps stack CREATION (not just redeploy) must auto-authenticate
+    # private repos, else Portainer 400s on the clone.
+    monkeypatch.setenv("PORTAINER_GIT_TOKEN", "glpat-secret")
+    calls = _capture_post(api)
+    api.create_swarm_stack_from_repository(
+        name="data-science-mcp",
+        repo_url="http://gitlab.arpa/homelab/containers/services/data-science-mcp.git",
+        swarm_id="sw1",
+        endpoint_id=3,
+        repositoryReferenceName="refs/heads/main",
+        composeFile="compose.yml",
+    )
+    data = calls[0]["data"]
+    assert data["repositoryAuthentication"] is True
+    assert data["repositoryPassword"] == "glpat-secret"
+    assert data["composeFile"] == "compose.yml"
+
+
+def test_create_standalone_and_k8s_from_repository_inject_auth(monkeypatch, api):
+    monkeypatch.setenv("PORTAINER_GIT_TOKEN", "t")
+    for fn in (
+        lambda: api.create_standalone_stack_from_repository(
+            name="s", repo_url="http://g/r.git", endpoint_id=3
+        ),
+        lambda: api.create_kubernetes_stack_from_repository(
+            name="k", repo_url="http://g/r.git", endpoint_id=3
+        ),
+    ):
+        calls = _capture_post(api)
+        fn()
+        assert calls[0]["data"]["repositoryPassword"] == "t"
