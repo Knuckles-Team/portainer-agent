@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- Inject git auth on GitOps stack creation (swarm/standalone/kubernetes
+  `*_from_repository`), not just redeploy, so private-repo stacks authenticate
+  via `PORTAINER_GIT_TOKEN`/`GITLAB_TOKEN` without callers passing secrets.
+
 ### Added
 - Action-Routed dynamic metaprogramming to drastically reduce tool limits while preserving 1:1 endpoint parity
 
