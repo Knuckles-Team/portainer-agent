@@ -18,6 +18,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - Replaced 108 independent tools with 10 tag-grouped dynamic routers
 - Standardized tool schemas and removed any underscored parameters
+- `BaseApiClient` internals strangled onto the shared
+  `agent_utilities.http.BaseApiClient` fleet base: same public surface
+  (`session`, `_url`, `_get/_post/_put/_patch/_delete/_list` and their
+  return shapes), now with typed error mapping, rate-limit capture, bounded
+  429 backoff, and log redaction. The transport remains the client's
+  `requests.Session` via an adapter, so raw-session call sites
+  (`backup`/`restore`) and existing test fixtures are unaffected.
+- Bumped `agent-utilities` pin to `>=0.47.2` — **requires unreleased
+  agent-utilities (`agent_utilities.http` ships in the next release) — do
+  not push until that release is on PyPI**; until then, run tests with the
+  dev tree on `PYTHONPATH` and expect `uv lock` against the public index to
+  fail to resolve.
 
 ### Fixed
 - Pydantic V2 validations and Pytest failures related to missing parameters or schema conflicts
