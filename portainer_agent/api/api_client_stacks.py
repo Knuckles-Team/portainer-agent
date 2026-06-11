@@ -127,6 +127,7 @@ class Api(BaseApiClient):
         self, name: str, repo_url: str, endpoint_id: int, **kwargs
     ) -> dict:
         """Create a standalone stack from a Git repository."""
+        kwargs = self._inject_git_auth(kwargs)
         data = {"Name": name, "RepositoryURL": repo_url, **kwargs}
         return self._post(
             f"stacks/create/standalone/repository?endpointId={endpoint_id}", data=data
@@ -150,6 +151,7 @@ class Api(BaseApiClient):
         self, name: str, repo_url: str, swarm_id: str, endpoint_id: int, **kwargs
     ) -> dict:
         """Create a Swarm stack from a Git repository."""
+        kwargs = self._inject_git_auth(kwargs)
         data = {"Name": name, "RepositoryURL": repo_url, "SwarmID": swarm_id, **kwargs}
         return self._post(
             f"stacks/create/swarm/repository?endpointId={endpoint_id}", data=data
@@ -168,6 +170,7 @@ class Api(BaseApiClient):
         self, name: str, repo_url: str, endpoint_id: int, **kwargs
     ) -> dict:
         """Create a Kubernetes stack from a Git repository."""
+        kwargs = self._inject_git_auth(kwargs)
         data = {"StackName": name, "RepositoryURL": repo_url, **kwargs}
         return self._post(
             f"stacks/create/kubernetes/repository?endpointId={endpoint_id}", data=data
