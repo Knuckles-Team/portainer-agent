@@ -136,3 +136,36 @@ class BaseApiClient:
         if offset is not None:
             params["start"] = offset
         return self._get(endpoint, params=params)
+
+    def request(
+        self,
+        method: str,
+        path: str,
+        params: dict | None = None,
+        data: Any = None,
+        timeout: int | None = None,
+    ) -> Any:
+        """Generic authenticated passthrough to ANY Portainer API endpoint.
+
+        Escape hatch for the long tail of the Portainer REST API that does not yet
+        have a typed wrapper: ``method`` is GET/POST/PUT/PATCH/DELETE and ``path``
+        is the API path **relative to ``/api``** (e.g. ``stacks/278/git/redeploy``,
+        ``users/3/gitcredentials``, ``backup/s3/settings``). The session's
+        ``X-API-Key`` auth, base URL, and timeout all apply. Returns parsed JSON
+        (or text), or ``True`` for a bodyless DELETE.
+        """
+        m = method.strip().upper()
+        resp = self.session.request(
+            m,
+            self._url(path),
+            params=params,
+            json=data if m in ("POST", "PUT", "PATCH") else None,
+            timeout=timeout or self.timeout,
+        )
+        resp.raise_for_status()
+        if m == "DELETE" and not resp.content:
+            return True
+        try:
+            return resp.json()
+        except Exception:
+            return resp.text
