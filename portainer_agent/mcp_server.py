@@ -1040,7 +1040,7 @@ def register_user_tools(mcp: FastMCP):
     @mcp.tool(tags={"User"})
     async def portainer_user(
         action: str = Field(
-            description="Action to perform. Must be one of: 'get_users', 'get_user', 'get_current_user', 'create_user', 'delete_user', 'get_teams', 'create_team', 'delete_team', 'get_roles', 'get_user_tokens'"
+            description="Action to perform. Must be one of: 'get_users', 'get_user', 'get_current_user', 'create_user', 'delete_user', 'get_teams', 'create_team', 'delete_team', 'get_roles', 'get_user_tokens', 'get_user_git_credentials', 'get_user_git_credential', 'create_user_git_credential', 'update_user_git_credential', 'delete_user_git_credential'"
         ),
         user_id: int | None = Field(default=None, description="user id"),
         username: str | None = Field(default=None, description="username"),
@@ -1048,10 +1048,48 @@ def register_user_tools(mcp: FastMCP):
         role: int | None = Field(default=None, description="role"),
         name: str | None = Field(default=None, description="name"),
         team_id: int | None = Field(default=None, description="team id"),
+        credential_id: int | None = Field(
+            default=None, description="git credential id"
+        ),
+        authorization_type: int | None = Field(
+            default=None,
+            description="git credential auth type (0 = basic auth username/password|PAT)",
+        ),
         client=Depends(get_client),
     ) -> dict:
-        """Manage user operations."""
+        """Manage user operations (incl. per-user Git credentials for binding to
+        git-backed stacks via RepositoryGitCredentialID)."""
         kwargs: dict[str, Any]
+        if action == "get_user_git_credentials":
+            return client.get_user_git_credentials(user_id=user_id)
+        if action == "get_user_git_credential":
+            return client.get_user_git_credential(
+                user_id=user_id, credential_id=credential_id
+            )
+        if action == "create_user_git_credential":
+            kwargs = {
+                "user_id": user_id,
+                "name": name,
+                "username": username,
+                "password": password,
+            }
+            if authorization_type is not None:
+                kwargs["authorization_type"] = authorization_type
+            return client.create_user_git_credential(**kwargs)
+        if action == "update_user_git_credential":
+            kwargs = {
+                "name": name,
+                "username": username,
+                "password": password,
+            }
+            kwargs = {k: v for k, v in kwargs.items() if v is not None}
+            return client.update_user_git_credential(
+                user_id=user_id, credential_id=credential_id, **kwargs
+            )
+        if action == "delete_user_git_credential":
+            return client.delete_user_git_credential(
+                user_id=user_id, credential_id=credential_id
+            )
         if action == "get_users":
             kwargs = {}
             kwargs = {k: v for k, v in kwargs.items() if v is not None}
@@ -1144,10 +1182,24 @@ def register_system_tools(mcp: FastMCP):
     @mcp.tool(tags={"System"})
     async def portainer_system(
         action: str = Field(
-            description="Action to perform. Must be one of: 'get_status', 'get_system_info', 'get_system_version', 'get_settings', 'update_settings', 'get_tags', 'create_tag', 'delete_tag', 'get_motd', 'backup_portainer'"
+            description="Action to perform. Must be one of: 'get_status', 'get_system_info', 'get_system_version', 'get_settings', 'update_settings', 'get_tags', 'create_tag', 'delete_tag', 'get_motd', 'backup_portainer', 'raw_request'"
         ),
         name: str | None = Field(default=None, description="name"),
         tag_id: int | None = Field(default=None, description="tag id"),
+        http_method: str | None = Field(
+            default=None,
+            description="raw_request: HTTP method (GET/POST/PUT/PATCH/DELETE)",
+        ),
+        api_path: str | None = Field(
+            default=None,
+            description="raw_request: API path relative to /api (e.g. 'users/3/gitcredentials')",
+        ),
+        query_json: str | None = Field(
+            default=None, description="raw_request: JSON-encoded query params"
+        ),
+        body_json: str | None = Field(
+            default=None, description="raw_request: JSON-encoded request body"
+        ),
         client=Depends(get_client),
     ) -> dict:
         """Manage system operations.
@@ -1163,8 +1215,22 @@ def register_system_tools(mcp: FastMCP):
           - 'delete_tag': Delete a tag.
           - 'get_motd': Get the message of the day.
           - 'backup_portainer': Call backup_portainer
+          - 'raw_request': Authenticated passthrough to ANY Portainer API endpoint
+            (http_method + api_path [+ query_json/body_json]) — covers the full
+            Portainer REST API surface, including operations without a typed action.
         """
         kwargs: dict[str, Any]
+        if action == "raw_request":
+            import json as _json
+
+            if not http_method or not api_path:
+                raise ValueError("raw_request requires http_method and api_path")
+            return client.request(
+                method=http_method,
+                path=api_path,
+                params=_json.loads(query_json) if query_json else None,
+                data=_json.loads(body_json) if body_json else None,
+            )
         if action == "get_status":
             kwargs = {}
             kwargs = {k: v for k, v in kwargs.items() if v is not None}

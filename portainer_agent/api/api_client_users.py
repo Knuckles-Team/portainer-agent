@@ -145,3 +145,50 @@ class Api(BaseApiClient):
     def delete_user_helm_repository(self, user_id: int, repository_id: int) -> bool:
         """Remove a Helm repository for a user."""
         return self._delete(f"users/{user_id}/helm/repositories/{repository_id}")
+
+    # ── Git credentials (per-user; bind to git-backed stacks via GitCredentialID) ──
+    # Portainer stores reusable git credentials per user. Binding one to a
+    # git-backed stack (RepositoryGitCredentialID) lets Portainer pull/redeploy it
+    # unattended — the durable fix for the "stack has no stored git credential, so
+    # redeploy_stack_git hangs" problem.
+    def get_user_git_credentials(self, user_id: int) -> Any:
+        """List a user's saved Git credentials (passwords are never returned)."""
+        return self._get(f"users/{user_id}/gitcredentials")
+
+    def get_user_git_credential(self, user_id: int, credential_id: int) -> dict:
+        """Get one saved Git credential for a user."""
+        return self._get(f"users/{user_id}/gitcredentials/{credential_id}")
+
+    def create_user_git_credential(
+        self,
+        user_id: int,
+        name: str,
+        username: str,
+        password: str,
+        authorization_type: int = 0,
+    ) -> dict:
+        """Store a reusable Git credential for a user.
+
+        ``authorization_type`` 0 = HTTP basic auth (username + password/PAT). The
+        returned ``id`` is the ``GitCredentialID`` to bind onto git-backed stacks
+        (``RepositoryGitCredentialID``) so Portainer can redeploy them unattended.
+        """
+        return self._post(
+            f"users/{user_id}/gitcredentials",
+            data={
+                "name": name,
+                "username": username,
+                "password": password,
+                "authorizationType": authorization_type,
+            },
+        )
+
+    def update_user_git_credential(
+        self, user_id: int, credential_id: int, **kwargs
+    ) -> dict:
+        """Update a saved Git credential (e.g. rotate the password/PAT)."""
+        return self._put(f"users/{user_id}/gitcredentials/{credential_id}", data=kwargs)
+
+    def delete_user_git_credential(self, user_id: int, credential_id: int) -> bool:
+        """Remove a saved Git credential for a user."""
+        return self._delete(f"users/{user_id}/gitcredentials/{credential_id}")
