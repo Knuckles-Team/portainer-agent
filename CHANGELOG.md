@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Per-user git credentials (typed, 1:1): get/get-one/create/update/delete via
+  `/users/{id}/gitcredentials`, exposed as `port__user` actions. Provision a
+  reusable credential once and bind it to git-backed stacks via
+  `RepositoryGitCredentialID` so Portainer redeploys them unattended.
+- Generic API passthrough: `BaseApiClient.request(method, path, params, data)`
+  plus a `port__system` `raw_request` action, making the entire Portainer REST
+  API reachable via MCP (any method/path) without hand-written wrappers for the
+  long tail of operations.
+
 ### Fixed
 - Inject git auth on GitOps stack creation (swarm/standalone/kubernetes
   `*_from_repository`), not just redeploy, so private-repo stacks authenticate
