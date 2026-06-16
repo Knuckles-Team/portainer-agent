@@ -17,7 +17,7 @@ def register_environment_tools(mcp: FastMCP):
     @mcp.tool(tags={"Environment"})
     async def portainer_environment(
         action: str = Field(
-            description="Action to perform. Must be one of: 'get_endpoints', 'get_endpoint', 'create_endpoint', 'update_endpoint', 'delete_endpoint', 'snapshot_endpoint', 'snapshot_all_endpoints', 'get_endpoint_groups', 'create_endpoint_group', 'delete_endpoint_group'"
+            description="Action to perform. Must be one of: 'get_endpoints', 'get_endpoint', 'create_endpoint', 'update_endpoint', 'delete_endpoint', 'snapshot_endpoint', 'snapshot_all_endpoints', 'get_endpoint_groups', 'create_endpoint_group', 'delete_endpoint_group', 'get_endpoint_settings', 'update_endpoint_settings'"
         ),
         limit: int | None = Field(default=None, description="limit"),
         offset: int | None = Field(default=None, description="offset"),
@@ -27,6 +27,10 @@ def register_environment_tools(mcp: FastMCP):
         url: str | None = Field(default=None, description="url"),
         description: str | None = Field(default=None, description="description"),
         group_id: int | None = Field(default=None, description="group id"),
+        settings: dict | None = Field(
+            default=None,
+            description="endpoint settings payload for update_endpoint_settings (e.g. Kubernetes storage class, ingress class, RBAC, metrics toggles)",
+        ),
         client=Depends(get_client),
     ) -> dict:
         """Manage environment operations."""
@@ -75,6 +79,17 @@ def register_environment_tools(mcp: FastMCP):
             kwargs = {"group_id": group_id}
             kwargs = {k: v for k, v in kwargs.items() if v is not None}
             return await run_blocking(client.delete_endpoint_group, **kwargs)
+        if action == "get_endpoint_settings":
+            return await run_blocking(
+                client.get_endpoint_settings, endpoint_id=endpoint_id
+            )
+        if action == "update_endpoint_settings":
+            payload = settings if isinstance(settings, dict) else {}
+            return await run_blocking(
+                client.update_endpoint_settings,
+                endpoint_id=endpoint_id,
+                **payload,
+            )
         raise ValueError(
-            f"Unknown action: {action}. Must be one of: get_endpoints', 'get_endpoint', 'create_endpoint', 'update_endpoint', 'delete_endpoint', 'snapshot_endpoint', 'snapshot_all_endpoints', 'get_endpoint_groups', 'create_endpoint_group', 'delete_endpoint_group"
+            f"Unknown action: {action}. Must be one of: get_endpoints', 'get_endpoint', 'create_endpoint', 'update_endpoint', 'delete_endpoint', 'snapshot_endpoint', 'snapshot_all_endpoints', 'get_endpoint_groups', 'create_endpoint_group', 'delete_endpoint_group', 'get_endpoint_settings', 'update_endpoint_settings"
         )

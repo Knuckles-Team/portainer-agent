@@ -419,6 +419,8 @@ VALID_TOOL_ACTIONS = {
         "get_endpoint_groups",
         "create_endpoint_group",
         "delete_endpoint_group",
+        "get_endpoint_settings",
+        "update_endpoint_settings",
     ],
     "portainer_docker": [
         "get_docker_dashboard",
@@ -488,6 +490,14 @@ VALID_TOOL_ACTIONS = {
         "get_helm_releases",
         "install_helm_chart",
         "delete_helm_release",
+        "get_k8s_namespace",
+        "create_k8s_namespace",
+        "update_k8s_namespace",
+        "delete_k8s_namespace",
+        "get_k8s_namespace_count",
+        "drain_k8s_node",
+        "describe_k8s_resource",
+        "get_k8s_rbac_enabled",
     ],
     "portainer_edge": [
         "get_edge_groups",
