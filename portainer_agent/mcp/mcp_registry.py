@@ -5,6 +5,7 @@ Auto-generated from mcp_server.py during ecosystem standardization.
 
 from typing import Any
 
+from agent_utilities.mcp_utilities import run_blocking
 from fastmcp import FastMCP
 from fastmcp.dependencies import Depends
 from pydantic import Field
@@ -29,11 +30,11 @@ def register_registry_tools(mcp: FastMCP):
         if action == "get_registries":
             kwargs = {}
             kwargs = {k: v for k, v in kwargs.items() if v is not None}
-            return client.get_registries(**kwargs)
+            return await run_blocking(client.get_registries, **kwargs)
         if action == "get_registry":
             kwargs = {"registry_id": registry_id}
             kwargs = {k: v for k, v in kwargs.items() if v is not None}
-            return client.get_registry(**kwargs)
+            return await run_blocking(client.get_registry, **kwargs)
         if action == "create_registry":
             kwargs = {
                 "name": name,
@@ -41,11 +42,11 @@ def register_registry_tools(mcp: FastMCP):
                 "url": url,
             }
             kwargs = {k: v for k, v in kwargs.items() if v is not None}
-            return client.create_registry(**kwargs)
+            return await run_blocking(client.create_registry, **kwargs)
         if action == "delete_registry":
             kwargs = {"registry_id": registry_id}
             kwargs = {k: v for k, v in kwargs.items() if v is not None}
-            return client.delete_registry(**kwargs)
+            return await run_blocking(client.delete_registry, **kwargs)
         raise ValueError(
             f"Unknown action: {action}. Must be one of: get_registries', 'get_registry', 'create_registry', 'delete_registry"
         )

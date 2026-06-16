@@ -5,6 +5,7 @@ Auto-generated from mcp_server.py during ecosystem standardization.
 
 from typing import Any
 
+from agent_utilities.mcp_utilities import run_blocking
 from fastmcp import FastMCP
 from fastmcp.dependencies import Depends
 from pydantic import Field
@@ -31,15 +32,15 @@ def register_user_tools(mcp: FastMCP):
         if action == "get_users":
             kwargs = {}
             kwargs = {k: v for k, v in kwargs.items() if v is not None}
-            return client.get_users(**kwargs)
+            return await run_blocking(client.get_users, **kwargs)
         if action == "get_user":
             kwargs = {"user_id": user_id}
             kwargs = {k: v for k, v in kwargs.items() if v is not None}
-            return client.get_user(**kwargs)
+            return await run_blocking(client.get_user, **kwargs)
         if action == "get_current_user":
             kwargs = {}
             kwargs = {k: v for k, v in kwargs.items() if v is not None}
-            return client.get_current_user(**kwargs)
+            return await run_blocking(client.get_current_user, **kwargs)
         if action == "create_user":
             kwargs = {
                 "username": username,
@@ -47,31 +48,31 @@ def register_user_tools(mcp: FastMCP):
                 "role": role,
             }
             kwargs = {k: v for k, v in kwargs.items() if v is not None}
-            return client.create_user(**kwargs)
+            return await run_blocking(client.create_user, **kwargs)
         if action == "delete_user":
             kwargs = {"user_id": user_id}
             kwargs = {k: v for k, v in kwargs.items() if v is not None}
-            return client.delete_user(**kwargs)
+            return await run_blocking(client.delete_user, **kwargs)
         if action == "get_teams":
             kwargs = {}
             kwargs = {k: v for k, v in kwargs.items() if v is not None}
-            return client.get_teams(**kwargs)
+            return await run_blocking(client.get_teams, **kwargs)
         if action == "create_team":
             kwargs = {"name": name}
             kwargs = {k: v for k, v in kwargs.items() if v is not None}
-            return client.create_team(**kwargs)
+            return await run_blocking(client.create_team, **kwargs)
         if action == "delete_team":
             kwargs = {"team_id": team_id}
             kwargs = {k: v for k, v in kwargs.items() if v is not None}
-            return client.delete_team(**kwargs)
+            return await run_blocking(client.delete_team, **kwargs)
         if action == "get_roles":
             kwargs = {}
             kwargs = {k: v for k, v in kwargs.items() if v is not None}
-            return client.get_roles(**kwargs)
+            return await run_blocking(client.get_roles, **kwargs)
         if action == "get_user_tokens":
             kwargs = {"user_id": user_id}
             kwargs = {k: v for k, v in kwargs.items() if v is not None}
-            return client.get_user_tokens(**kwargs)
+            return await run_blocking(client.get_user_tokens, **kwargs)
         raise ValueError(
             f"Unknown action: {action}. Must be one of: get_users', 'get_user', 'get_current_user', 'create_user', 'delete_user', 'get_teams', 'create_team', 'delete_team', 'get_roles', 'get_user_tokens"
         )

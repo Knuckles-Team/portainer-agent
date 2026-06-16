@@ -3,6 +3,7 @@
 Auto-generated from mcp_server.py during ecosystem standardization.
 """
 
+from agent_utilities.mcp_utilities import run_blocking
 from fastmcp import FastMCP
 from fastmcp.dependencies import Depends
 from pydantic import Field
@@ -57,8 +58,13 @@ def register_docker_tools(mcp: FastMCP):
             "docker_restart_container",
             "docker_remove_container",
         ):
-            return _handle_container_actions(
-                client, action, environment_id, container_id, tail
+            return await run_blocking(
+                _handle_container_actions,
+                client,
+                action,
+                environment_id,
+                container_id,
+                tail,
             )
 
         if action in (
@@ -66,8 +72,13 @@ def register_docker_tools(mcp: FastMCP):
             "docker_inspect_service",
             "docker_get_service_logs",
         ):
-            return _handle_service_actions(
-                client, action, environment_id, service_id, tail
+            return await run_blocking(
+                _handle_service_actions,
+                client,
+                action,
+                environment_id,
+                service_id,
+                tail,
             )
 
         if action in (
@@ -85,7 +96,9 @@ def register_docker_tools(mcp: FastMCP):
             "docker_create_network",
             "docker_create_volume",
         ):
-            return _handle_resource_actions(client, action, environment_id)
+            return await run_blocking(
+                _handle_resource_actions, client, action, environment_id
+            )
 
         if action in (
             "docker_create_exec",
@@ -93,7 +106,8 @@ def register_docker_tools(mcp: FastMCP):
             "docker_inspect_exec",
             "docker_get_stack_logs",
         ):
-            return _handle_exec_stack_actions(
+            return await run_blocking(
+                _handle_exec_stack_actions,
                 client,
                 action,
                 environment_id,
