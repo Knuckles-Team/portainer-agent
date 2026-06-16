@@ -25,7 +25,7 @@ import sys
 from typing import Any
 
 from agent_utilities.base_utilities import to_boolean
-from agent_utilities.mcp_utilities import create_mcp_server
+from agent_utilities.mcp_utilities import create_mcp_server, resolve_action
 from dotenv import find_dotenv, load_dotenv
 from starlette.requests import Request
 from starlette.responses import JSONResponse
@@ -55,6 +55,11 @@ def register_auth_tools(mcp: FastMCP):
     ) -> dict:
         """Manage auth operations."""
         kwargs: dict[str, Any]
+        valid_actions = ("authenticate", "logout", "validate_oauth")
+        resolved = resolve_action(action, valid_actions, service="portainer-agent")
+        if isinstance(resolved, dict):
+            return resolved
+        action = resolved
         if action == "authenticate":
             kwargs = {"username": username, "password": password}
             kwargs = {k: v for k, v in kwargs.items() if v is not None}
@@ -90,6 +95,22 @@ def register_environment_tools(mcp: FastMCP):
     ) -> dict:
         """Manage environment operations."""
         kwargs: dict[str, Any]
+        valid_actions = (
+            "get_endpoints",
+            "get_endpoint",
+            "create_endpoint",
+            "update_endpoint",
+            "delete_endpoint",
+            "snapshot_endpoint",
+            "snapshot_all_endpoints",
+            "get_endpoint_groups",
+            "create_endpoint_group",
+            "delete_endpoint_group",
+        )
+        resolved = resolve_action(action, valid_actions, service="portainer-agent")
+        if isinstance(resolved, dict):
+            return resolved
+        action = resolved
         if action == "get_endpoints":
             kwargs = {"limit": limit, "offset": offset}
             kwargs = {k: v for k, v in kwargs.items() if v is not None}
@@ -398,6 +419,42 @@ def register_docker_tools(mcp: FastMCP):
         client=Depends(get_client),
     ) -> dict:
         """Manage docker operations."""
+        valid_actions = (
+            "get_docker_dashboard",
+            "get_container_gpus",
+            "docker_list_containers",
+            "docker_inspect_container",
+            "docker_get_container_logs",
+            "docker_get_container_stats",
+            "docker_start_container",
+            "docker_stop_container",
+            "docker_restart_container",
+            "docker_remove_container",
+            "docker_list_services",
+            "docker_inspect_service",
+            "docker_get_service_logs",
+            "docker_list_images",
+            "docker_inspect_image",
+            "docker_list_networks",
+            "docker_inspect_network",
+            "docker_list_volumes",
+            "docker_inspect_volume",
+            "docker_get_info",
+            "docker_get_version",
+            "docker_get_system_df",
+            "docker_create_container",
+            "docker_create_network",
+            "docker_create_volume",
+            "docker_create_exec",
+            "docker_start_exec",
+            "docker_inspect_exec",
+            "docker_get_stack_logs",
+        )
+        resolved = resolve_action(action, valid_actions, service="portainer-agent")
+        if isinstance(resolved, dict):
+            return resolved
+        action = resolved
+
         if environment_id is None and endpoint_id is not None:
             environment_id = endpoint_id
 
@@ -564,6 +621,34 @@ def register_stack_tools(mcp: FastMCP):
                 action_normalized = "create_standalone_stack_from_string"
         elif action_normalized == "create_standalone_stack_from_repo":
             action_normalized = "create_standalone_stack_from_repository"
+
+        valid_actions = (
+            "get_stacks",
+            "get_stack",
+            "get_stack_by_name",
+            "get_stack_file",
+            "export_all_stacks",
+            "create_standalone_stack_from_string",
+            "create_standalone_stack_from_repository",
+            "create_swarm_stack_from_string",
+            "create_swarm_stack_from_repository",
+            "create_kubernetes_stack_from_string",
+            "create_kubernetes_stack_from_repository",
+            "update_stack",
+            "delete_stack",
+            "start_stack",
+            "stop_stack",
+            "migrate_stack",
+            "update_stack_git",
+            "redeploy_stack_git",
+            "associate_stack",
+        )
+        resolved = resolve_action(
+            action_normalized, valid_actions, service="portainer-agent"
+        )
+        if isinstance(resolved, dict):
+            return resolved
+        action_normalized = resolved
 
         # Extract remaining kwargs (exclude known parameter keys that are explicitly passed)
         resolved_kwargs = {**params}
@@ -862,6 +947,26 @@ def register_kubernetes_tools(mcp: FastMCP):
     ) -> dict:
         """Manage kubernetes operations."""
         kwargs: dict[str, Any]
+        valid_actions = (
+            "get_k8s_dashboard",
+            "get_k8s_namespaces",
+            "get_k8s_applications",
+            "get_k8s_services",
+            "get_k8s_ingresses",
+            "get_k8s_configmaps",
+            "get_k8s_secrets",
+            "get_k8s_volumes",
+            "get_k8s_events",
+            "get_k8s_nodes_limits",
+            "get_k8s_metrics_nodes",
+            "get_helm_releases",
+            "install_helm_chart",
+            "delete_helm_release",
+        )
+        resolved = resolve_action(action, valid_actions, service="portainer-agent")
+        if isinstance(resolved, dict):
+            return resolved
+        action = resolved
         if action == "get_k8s_dashboard":
             kwargs = {}
             kwargs = {k: v for k, v in kwargs.items() if v is not None}
@@ -943,6 +1048,23 @@ def register_edge_tools(mcp: FastMCP):
     ) -> dict:
         """Manage edge operations."""
         kwargs: dict[str, Any]
+        valid_actions = (
+            "get_edge_groups",
+            "create_edge_group",
+            "delete_edge_group",
+            "get_edge_stacks",
+            "get_edge_stack",
+            "create_edge_stack",
+            "delete_edge_stack",
+            "get_edge_jobs",
+            "get_edge_job",
+            "create_edge_job",
+            "delete_edge_job",
+        )
+        resolved = resolve_action(action, valid_actions, service="portainer-agent")
+        if isinstance(resolved, dict):
+            return resolved
+        action = resolved
         if action == "get_edge_groups":
             kwargs = {}
             kwargs = {k: v for k, v in kwargs.items() if v is not None}
@@ -1003,6 +1125,19 @@ def register_template_tools(mcp: FastMCP):
     ) -> dict:
         """Manage template operations."""
         kwargs: dict[str, Any]
+        valid_actions = (
+            "get_templates",
+            "get_custom_templates",
+            "get_custom_template",
+            "create_custom_template",
+            "delete_custom_template",
+            "get_custom_template_file",
+            "get_helm_templates",
+        )
+        resolved = resolve_action(action, valid_actions, service="portainer-agent")
+        if isinstance(resolved, dict):
+            return resolved
+        action = resolved
         if action == "get_templates":
             kwargs = {}
             kwargs = {k: v for k, v in kwargs.items() if v is not None}
@@ -1060,6 +1195,27 @@ def register_user_tools(mcp: FastMCP):
         """Manage user operations (incl. per-user Git credentials for binding to
         git-backed stacks via RepositoryGitCredentialID)."""
         kwargs: dict[str, Any]
+        valid_actions = (
+            "get_users",
+            "get_user",
+            "get_current_user",
+            "create_user",
+            "delete_user",
+            "get_teams",
+            "create_team",
+            "delete_team",
+            "get_roles",
+            "get_user_tokens",
+            "get_user_git_credentials",
+            "get_user_git_credential",
+            "create_user_git_credential",
+            "update_user_git_credential",
+            "delete_user_git_credential",
+        )
+        resolved = resolve_action(action, valid_actions, service="portainer-agent")
+        if isinstance(resolved, dict):
+            return resolved
+        action = resolved
         if action == "get_user_git_credentials":
             return client.get_user_git_credentials(user_id=user_id)
         if action == "get_user_git_credential":
@@ -1153,6 +1309,16 @@ def register_registry_tools(mcp: FastMCP):
     ) -> dict:
         """Manage registry operations."""
         kwargs: dict[str, Any]
+        valid_actions = (
+            "get_registries",
+            "get_registry",
+            "create_registry",
+            "delete_registry",
+        )
+        resolved = resolve_action(action, valid_actions, service="portainer-agent")
+        if isinstance(resolved, dict):
+            return resolved
+        action = resolved
         if action == "get_registries":
             kwargs = {}
             kwargs = {k: v for k, v in kwargs.items() if v is not None}
@@ -1220,6 +1386,23 @@ def register_system_tools(mcp: FastMCP):
             Portainer REST API surface, including operations without a typed action.
         """
         kwargs: dict[str, Any]
+        valid_actions = (
+            "get_status",
+            "get_system_info",
+            "get_system_version",
+            "get_settings",
+            "update_settings",
+            "get_tags",
+            "create_tag",
+            "delete_tag",
+            "get_motd",
+            "backup_portainer",
+            "raw_request",
+        )
+        resolved = resolve_action(action, valid_actions, service="portainer-agent")
+        if isinstance(resolved, dict):
+            return resolved
+        action = resolved
         if action == "raw_request":
             import json as _json
 
