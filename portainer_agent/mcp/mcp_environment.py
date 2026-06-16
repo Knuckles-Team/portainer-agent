@@ -5,6 +5,7 @@ Auto-generated from mcp_server.py during ecosystem standardization.
 
 from typing import Any
 
+from agent_utilities.mcp_utilities import run_blocking
 from fastmcp import FastMCP
 from fastmcp.dependencies import Depends
 from pydantic import Field
@@ -33,11 +34,11 @@ def register_environment_tools(mcp: FastMCP):
         if action == "get_endpoints":
             kwargs = {"limit": limit, "offset": offset}
             kwargs = {k: v for k, v in kwargs.items() if v is not None}
-            return client.get_endpoints(**kwargs)
+            return await run_blocking(client.get_endpoints, **kwargs)
         if action == "get_endpoint":
             kwargs = {"endpoint_id": endpoint_id}
             kwargs = {k: v for k, v in kwargs.items() if v is not None}
-            return client.get_endpoint(**kwargs)
+            return await run_blocking(client.get_endpoint, **kwargs)
         if action == "create_endpoint":
             kwargs = {
                 "name": name,
@@ -45,35 +46,35 @@ def register_environment_tools(mcp: FastMCP):
                 "url": url,
             }  # type: ignore
             kwargs = {k: v for k, v in kwargs.items() if v is not None}
-            return client.create_endpoint(**kwargs)
+            return await run_blocking(client.create_endpoint, **kwargs)
         if action == "update_endpoint":
             kwargs = {"endpoint_id": endpoint_id}
             kwargs = {k: v for k, v in kwargs.items() if v is not None}
-            return client.update_endpoint(**kwargs)
+            return await run_blocking(client.update_endpoint, **kwargs)
         if action == "delete_endpoint":
             kwargs = {"endpoint_id": endpoint_id}
             kwargs = {k: v for k, v in kwargs.items() if v is not None}
-            return client.delete_endpoint(**kwargs)
+            return await run_blocking(client.delete_endpoint, **kwargs)
         if action == "snapshot_endpoint":
             kwargs = {"endpoint_id": endpoint_id}
             kwargs = {k: v for k, v in kwargs.items() if v is not None}
-            return client.snapshot_endpoint(**kwargs)
+            return await run_blocking(client.snapshot_endpoint, **kwargs)
         if action == "snapshot_all_endpoints":
             kwargs = {}
             kwargs = {k: v for k, v in kwargs.items() if v is not None}
-            return client.snapshot_all_endpoints(**kwargs)
+            return await run_blocking(client.snapshot_all_endpoints, **kwargs)
         if action == "get_endpoint_groups":
             kwargs = {}
             kwargs = {k: v for k, v in kwargs.items() if v is not None}
-            return client.get_endpoint_groups(**kwargs)
+            return await run_blocking(client.get_endpoint_groups, **kwargs)
         if action == "create_endpoint_group":
             kwargs = {"name": name, "description": description}  # type: ignore
             kwargs = {k: v for k, v in kwargs.items() if v is not None}
-            return client.create_endpoint_group(**kwargs)
+            return await run_blocking(client.create_endpoint_group, **kwargs)
         if action == "delete_endpoint_group":
             kwargs = {"group_id": group_id}
             kwargs = {k: v for k, v in kwargs.items() if v is not None}
-            return client.delete_endpoint_group(**kwargs)
+            return await run_blocking(client.delete_endpoint_group, **kwargs)
         raise ValueError(
             f"Unknown action: {action}. Must be one of: get_endpoints', 'get_endpoint', 'create_endpoint', 'update_endpoint', 'delete_endpoint', 'snapshot_endpoint', 'snapshot_all_endpoints', 'get_endpoint_groups', 'create_endpoint_group', 'delete_endpoint_group"
         )

@@ -5,6 +5,7 @@ Auto-generated from mcp_server.py during ecosystem standardization.
 
 from typing import Any
 
+from agent_utilities.mcp_utilities import run_blocking
 from fastmcp import FastMCP
 from fastmcp.dependencies import Depends
 from pydantic import Field
@@ -36,24 +37,26 @@ def register_stack_tools(mcp: FastMCP):
         if action == "get_stacks":
             kwargs = {}
             kwargs = {k: v for k, v in kwargs.items() if v is not None}
-            res = client.get_stacks(**kwargs)
+            res = await run_blocking(client.get_stacks, **kwargs)
             return {"data": res} if isinstance(res, list) else res
         if action == "get_stack":
             kwargs = {"stack_id": stack_id}
             kwargs = {k: v for k, v in kwargs.items() if v is not None}
-            return client.get_stack(**kwargs)
+            return await run_blocking(client.get_stack, **kwargs)
         if action == "get_stack_file":
             kwargs = {"stack_id": stack_id}
             kwargs = {k: v for k, v in kwargs.items() if v is not None}
-            return client.get_stack_file(**kwargs)
+            return await run_blocking(client.get_stack_file, **kwargs)
         if action == "create_standalone_stack":
             kwargs = {}
             kwargs = {k: v for k, v in kwargs.items() if v is not None}
-            return client.create_standalone_stack(**kwargs)
+            return await run_blocking(client.create_standalone_stack, **kwargs)
         if action == "create_standalone_stack_from_repo":
             kwargs = {}
             kwargs = {k: v for k, v in kwargs.items() if v is not None}
-            return client.create_standalone_stack_from_repo(**kwargs)
+            return await run_blocking(
+                client.create_standalone_stack_from_repo, **kwargs
+            )
         if action == "update_stack":
             kwargs = {
                 "stack_id": stack_id,
@@ -63,19 +66,19 @@ def register_stack_tools(mcp: FastMCP):
                 "Prune": prune,
             }
             kwargs = {k: v for k, v in kwargs.items() if v is not None}
-            return client.update_stack(**kwargs)
+            return await run_blocking(client.update_stack, **kwargs)
         if action == "delete_stack":
             kwargs = {"stack_id": stack_id, "endpoint_id": endpoint_id}
             kwargs = {k: v for k, v in kwargs.items() if v is not None}
-            return client.delete_stack(**kwargs)
+            return await run_blocking(client.delete_stack, **kwargs)
         if action == "start_stack":
             kwargs = {"stack_id": stack_id, "endpoint_id": endpoint_id}
             kwargs = {k: v for k, v in kwargs.items() if v is not None}
-            return client.start_stack(**kwargs)
+            return await run_blocking(client.start_stack, **kwargs)
         if action == "stop_stack":
             kwargs = {"stack_id": stack_id, "endpoint_id": endpoint_id}
             kwargs = {k: v for k, v in kwargs.items() if v is not None}
-            return client.stop_stack(**kwargs)
+            return await run_blocking(client.stop_stack, **kwargs)
         if action == "update_stack_git":
             kwargs = {
                 "stack_id": stack_id,
@@ -84,7 +87,7 @@ def register_stack_tools(mcp: FastMCP):
                 "prune": prune,
             }
             kwargs = {k: v for k, v in kwargs.items() if v is not None}
-            return client.update_stack_git(**kwargs)
+            return await run_blocking(client.update_stack_git, **kwargs)
         if action == "redeploy_stack_git":
             kwargs = {
                 "stack_id": stack_id,
@@ -93,7 +96,7 @@ def register_stack_tools(mcp: FastMCP):
                 "prune": prune,
             }
             kwargs = {k: v for k, v in kwargs.items() if v is not None}
-            return client.redeploy_stack_git(**kwargs)
+            return await run_blocking(client.redeploy_stack_git, **kwargs)
         raise ValueError(
             f"Unknown action: {action}. Must be one of: 'get_stacks', 'get_stack', 'get_stack_file', 'create_standalone_stack', 'create_standalone_stack_from_repo', 'update_stack', 'delete_stack', 'start_stack', 'stop_stack', 'update_stack_git', 'redeploy_stack_git'"
         )

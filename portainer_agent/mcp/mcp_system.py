@@ -5,6 +5,7 @@ Auto-generated from mcp_server.py during ecosystem standardization.
 
 from typing import Any
 
+from agent_utilities.mcp_utilities import run_blocking
 from fastmcp import FastMCP
 from fastmcp.dependencies import Depends
 from pydantic import Field
@@ -40,43 +41,43 @@ def register_system_tools(mcp: FastMCP):
         if action == "get_status":
             kwargs = {}
             kwargs = {k: v for k, v in kwargs.items() if v is not None}
-            return client.get_status(**kwargs)
+            return await run_blocking(client.get_status, **kwargs)
         if action == "get_system_info":
             kwargs = {}
             kwargs = {k: v for k, v in kwargs.items() if v is not None}
-            return client.get_system_info(**kwargs)
+            return await run_blocking(client.get_system_info, **kwargs)
         if action == "get_system_version":
             kwargs = {}
             kwargs = {k: v for k, v in kwargs.items() if v is not None}
-            return client.get_system_version(**kwargs)
+            return await run_blocking(client.get_system_version, **kwargs)
         if action == "get_settings":
             kwargs = {}
             kwargs = {k: v for k, v in kwargs.items() if v is not None}
-            return client.get_settings(**kwargs)
+            return await run_blocking(client.get_settings, **kwargs)
         if action == "update_settings":
             kwargs = {}
             kwargs = {k: v for k, v in kwargs.items() if v is not None}
-            return client.update_settings(**kwargs)
+            return await run_blocking(client.update_settings, **kwargs)
         if action == "get_tags":
             kwargs = {}
             kwargs = {k: v for k, v in kwargs.items() if v is not None}
-            return client.get_tags(**kwargs)
+            return await run_blocking(client.get_tags, **kwargs)
         if action == "create_tag":
             kwargs = {"name": name}
             kwargs = {k: v for k, v in kwargs.items() if v is not None}
-            return client.create_tag(**kwargs)
+            return await run_blocking(client.create_tag, **kwargs)
         if action == "delete_tag":
             kwargs = {"tag_id": tag_id}
             kwargs = {k: v for k, v in kwargs.items() if v is not None}
-            return client.delete_tag(**kwargs)
+            return await run_blocking(client.delete_tag, **kwargs)
         if action == "get_motd":
             kwargs = {}
             kwargs = {k: v for k, v in kwargs.items() if v is not None}
-            return client.get_motd(**kwargs)
+            return await run_blocking(client.get_motd, **kwargs)
         if action == "backup_portainer":
             kwargs = {}
             kwargs = {k: v for k, v in kwargs.items() if v is not None}
-            return client.backup_portainer(**kwargs)
+            return await run_blocking(client.backup_portainer, **kwargs)
         raise ValueError(
             f"Unknown action: {action}. Must be one of: get_status', 'get_system_info', 'get_system_version', 'get_settings', 'update_settings', 'get_tags', 'create_tag', 'delete_tag', 'get_motd', 'backup_portainer"
         )
