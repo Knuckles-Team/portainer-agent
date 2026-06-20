@@ -56,54 +56,26 @@ Detailed instructions on how to use the underlying API wrappers, extended schema
 This server utilizes dynamic Action-Routed tools to optimize token overhead and maximize IDE compatibility.
 
 ### Available MCP Tools
-| Tool Module | Toggle Env Var | Enabled by Default | Description & Nested Methods |
-|-------------|----------------|--------------------|------------------------------|
-| **Auth** | `AUTH_TOOL` | `True` | Manage auth operations. Action-routed methods: `authenticate`, `logout`, `validate_oauth`. |
-| **Environment** | `ENVIRONMENT_TOOL` | `True` | Manage environment operations. Action-routed methods: `create_endpoint`, `create_endpoint_group`, `delete_endpoint`, `delete_endpoint_group`, `get_endpoint`, `get_endpoint_groups`, `get_endpoints`, `snapshot_all_endpoints`, `snapshot_endpoint`, `update_endpoint`. |
-| **Docker** | `DOCKER_TOOL` | `True` | Manage docker operations. Action-routed methods: `docker_create_container`, `docker_create_exec`, `docker_create_network`, `docker_create_volume`, `docker_get_container_logs`, `docker_get_container_stats`, `docker_get_info`, `docker_get_service_logs`, `docker_get_stack_logs`, `docker_get_system_df`, `docker_get_version`, `docker_inspect_container`, `docker_inspect_exec`, `docker_inspect_image`, `docker_inspect_network`, `docker_inspect_service`, `docker_inspect_volume`, `docker_list_containers`, `docker_list_images`, `docker_list_networks`, `docker_list_services`, `docker_list_volumes`, `docker_remove_container`, `docker_restart_container`, `docker_start_container`, `docker_start_exec`, `docker_stop_container`, `get_container_gpus`, `get_docker_dashboard`. |
-| **Stack** | `STACK_TOOL` | `True` | Manage stack operations. Action-routed methods: `create_standalone_stack`, `create_standalone_stack_from_repo`, `delete_stack`, `get_stack`, `get_stack_file`, `get_stacks`, `redeploy_stack_git`, `start_stack`, `stop_stack`, `update_stack`. |
-| **Kubernetes** | `KUBERNETES_TOOL` | `True` | Manage kubernetes operations. Action-routed methods: `delete_helm_release`, `get_helm_releases`, `get_k8s_applications`, `get_k8s_configmaps`, `get_k8s_dashboard`, `get_k8s_events`, `get_k8s_ingresses`, `get_k8s_metrics_nodes`, `get_k8s_namespaces`, `get_k8s_nodes_limits`, `get_k8s_secrets`, `get_k8s_services`, `get_k8s_volumes`, `install_helm_chart`. |
-| **Edge** | `EDGE_TOOL` | `True` | Manage edge operations. Action-routed methods: `create_edge_group`, `create_edge_job`, `create_edge_stack`, `delete_edge_group`, `delete_edge_job`, `delete_edge_stack`, `get_edge_groups`, `get_edge_job`, `get_edge_jobs`, `get_edge_stack`, `get_edge_stacks`. |
-| **Template** | `TEMPLATE_TOOL` | `True` | Manage template operations. Action-routed methods: `create_custom_template`, `delete_custom_template`, `get_custom_template`, `get_custom_template_file`, `get_custom_templates`, `get_helm_templates`, `get_templates`. |
-| **User** | `USER_TOOL` | `True` | Manage user operations. Action-routed methods: `create_team`, `create_user`, `delete_team`, `delete_user`, `get_current_user`, `get_roles`, `get_teams`, `get_user`, `get_user_tokens`, `get_users`. |
-| **Registry** | `REGISTRY_TOOL` | `True` | Manage registry operations. Action-routed methods: `create_registry`, `delete_registry`, `get_registries`, `get_registry`. |
-| **System** | `SYSTEM_TOOL` | `True` | Manage system operations.
 
-        Actions:
-          - 'get_status': Get Portainer instance status.
-          - 'get_system_info': Get system information.
-          - 'get_system_version': Get Portainer version information.
-          - 'get_settings': Get Portainer settings.
-          - 'update_settings': Update Portainer settings.
-          - 'get_tags': List all tags.
-          - 'create_tag': Create a tag.
-          - 'delete_tag': Delete a tag.
-          - 'get_motd': Get the message of the day.
-          - 'backup_portainer': Call backup_portainer Action-routed methods: `backup_portainer`, `create_tag`, `delete_tag`, `get_motd`, `get_settings`, `get_status`, `get_system_info`, `get_system_version`, `get_tags`, `update_settings`. |
+This table is auto-generated from the live server — do not edit by hand.
 
-        Actions:
-          - 'get_status': Get Portainer instance status.
-          - 'get_system_info': Get system information.
-          - 'get_system_version': Get Portainer version information.
-          - 'get_settings': Get Portainer settings.
-          - 'update_settings': Update Portainer settings.
-          - 'get_tags': List all tags.
-          - 'create_tag': Create a tag.
-          - 'delete_tag': Delete a tag.
-          - 'get_motd': Get the message of the day.
-          - 'backup_portainer': Call backup_portainer Action-routed methods: `backup_portainer`, `create_tag`, `delete_tag`, `get_motd`, `get_settings`, `get_status`, `get_system_info`, `get_system_version`, `get_tags`, `update_settings`. |
+<!-- MCP-TOOLS-TABLE:START -->
 
-        Actions:
-          - 'get_status': Get Portainer instance status.
-          - 'get_system_info': Get system information.
-          - 'get_system_version': Get Portainer version information.
-          - 'get_settings': Get Portainer settings.
-          - 'update_settings': Update Portainer settings.
-          - 'get_tags': List all tags.
-          - 'create_tag': Create a tag.
-          - 'delete_tag': Delete a tag.
-          - 'get_motd': Get the message of the day.
-          - 'backup_portainer': Call backup_portainer Action-routed methods: `backup_portainer`, `create_tag`, `delete_tag`, `get_motd`, `get_settings`, `get_status`, `get_system_info`, `get_system_version`, `get_tags`, `update_settings`. |
+| MCP Tool | Toggle Env Var | Description |
+|----------|----------------|-------------|
+| `portainer_auth` | `AUTHTOOL` | Manage auth operations. |
+| `portainer_docker` | `DOCKERTOOL` | Manage docker operations. |
+| `portainer_edge` | `EDGETOOL` | Manage edge operations. |
+| `portainer_environment` | `ENVIRONMENTTOOL` | Manage environment operations. |
+| `portainer_kubernetes` | `KUBERNETESTOOL` | Manage kubernetes operations. |
+| `portainer_registry` | `REGISTRYTOOL` | Manage registry operations. |
+| `portainer_stack` | `STACKTOOL` |  |
+| `portainer_system` | `SYSTEMTOOL` | Manage system operations. |
+| `portainer_template` | `TEMPLATETOOL` | Manage template operations. |
+| `portainer_user` | `USERTOOL` | Manage user operations (incl. per-user Git credentials for binding to |
+
+_10 action-routed tools (default `MCP_TOOL_MODE=condensed`). Each is enabled unless its toggle is set false; set `MCP_TOOL_MODE=verbose` (or `both`) for the 1:1 per-operation surface. Auto-generated — do not edit._
+<!-- MCP-TOOLS-TABLE:END -->
 
 Detailed tool schemas, parameter shapes, and validation constraints are preserved in [docs/mcp.md](docs/mcp.md).
 
