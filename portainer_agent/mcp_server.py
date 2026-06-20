@@ -20,20 +20,20 @@ warnings.filterwarnings("ignore", message=".*urllib3.*or chardet.*")
 warnings.filterwarnings("ignore", message=".*urllib3.*or charset_normalizer.*")
 
 import logging
-import os
 import sys
 from typing import Any
 
-from agent_utilities.base_utilities import to_boolean
 from agent_utilities.mcp_utilities import (
     create_mcp_server,
     load_config,
+    register_tool_surface,
     resolve_action,
     run_blocking,
 )
 from starlette.requests import Request
 from starlette.responses import JSONResponse
 
+from portainer_agent.api_client import PortainerApi
 from portainer_agent.auth import get_client
 
 __version__ = "0.31.0"
@@ -1602,36 +1602,13 @@ def get_mcp_instance() -> tuple[Any, ...]:
     async def health_check(request: Request) -> JSONResponse:
         return JSONResponse({"status": "OK"})
 
-    DEFAULT_AUTHTOOL = to_boolean(os.getenv("AUTHTOOL", "True"))
-    if DEFAULT_AUTHTOOL:
-        register_auth_tools(mcp)
-    DEFAULT_ENVIRONMENTTOOL = to_boolean(os.getenv("ENVIRONMENTTOOL", "True"))
-    if DEFAULT_ENVIRONMENTTOOL:
-        register_environment_tools(mcp)
-    DEFAULT_DOCKERTOOL = to_boolean(os.getenv("DOCKERTOOL", "True"))
-    if DEFAULT_DOCKERTOOL:
-        register_docker_tools(mcp)
-    DEFAULT_STACKTOOL = to_boolean(os.getenv("STACKTOOL", "True"))
-    if DEFAULT_STACKTOOL:
-        register_stack_tools(mcp)
-    DEFAULT_KUBERNETESTOOL = to_boolean(os.getenv("KUBERNETESTOOL", "True"))
-    if DEFAULT_KUBERNETESTOOL:
-        register_kubernetes_tools(mcp)
-    DEFAULT_EDGETOOL = to_boolean(os.getenv("EDGETOOL", "True"))
-    if DEFAULT_EDGETOOL:
-        register_edge_tools(mcp)
-    DEFAULT_TEMPLATETOOL = to_boolean(os.getenv("TEMPLATETOOL", "True"))
-    if DEFAULT_TEMPLATETOOL:
-        register_template_tools(mcp)
-    DEFAULT_USERTOOL = to_boolean(os.getenv("USERTOOL", "True"))
-    if DEFAULT_USERTOOL:
-        register_user_tools(mcp)
-    DEFAULT_REGISTRYTOOL = to_boolean(os.getenv("REGISTRYTOOL", "True"))
-    if DEFAULT_REGISTRYTOOL:
-        register_registry_tools(mcp)
-    DEFAULT_SYSTEMTOOL = to_boolean(os.getenv("SYSTEMTOOL", "True"))
-    if DEFAULT_SYSTEMTOOL:
-        register_system_tools(mcp)
+    register_tool_surface(
+        mcp,
+        client_cls=PortainerApi,
+        get_client=get_client,
+        service="portainer-agent",
+        tools_module=sys.modules[__name__],
+    )
 
     for mw in middlewares:
         mcp.add_middleware(mw)

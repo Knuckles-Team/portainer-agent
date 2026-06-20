@@ -1,12 +1,11 @@
 #!/usr/bin/python
-import os
-
 import urllib3
 
 from portainer_agent.api_client import PortainerApi
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
+from agent_utilities.core.config import setting
 from agent_utilities.core.exceptions import AuthError, UnauthorizedError
 
 _client = None
@@ -16,9 +15,9 @@ def get_client() -> PortainerApi:
     """Get or create a singleton PortainerApi client instance."""
     global _client
     if _client is None:
-        base_url = os.getenv("PORTAINER_URL", "http://localhost:9000")
-        token = os.getenv("PORTAINER_TOKEN", "")
-        verify = os.getenv("PORTAINER_SSL_VERIFY", "True").lower() in (
+        base_url = setting("PORTAINER_URL", "http://localhost:9000")
+        token = setting("PORTAINER_TOKEN", "")
+        verify = setting("PORTAINER_SSL_VERIFY", "True").lower() in (
             "true",
             "1",
             "yes",
