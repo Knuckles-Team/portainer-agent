@@ -27,6 +27,12 @@ test = [
 portainer-mcp = "portainer_agent.mcp_server:mcp_server"
 portainer-agent = "portainer_agent.agent_server:agent_server"
 
+[project.entry-points."agent_utilities.skill_providers"]
+portainer-agent = "portainer_agent.skills"
+
+[project.entry-points."agent_utilities.prompt_providers"]
+portainer-agent = "portainer_agent.prompts"
+
 [tool.setuptools]
 include-package-data = true
 
@@ -45,7 +51,7 @@ dev = [
 ]
 
 [tool.setuptools.package-data]
-portainer_agent = [ "mcp_config.json", "agent_data/**", "skills/**",]
+portainer_agent = [ "mcp_config.json", "agent_data/**", "skills/**", "prompts/**",]
 
 [tool.ruff.lint]
 select = [ "E", "F", "I", "UP", "B",]
