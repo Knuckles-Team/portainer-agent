@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   portainer-agent-mcp:
-    image: knucklessg1/portainer-agent:latest
+    image: knucklessg1/portainer-agent:mcp
     container_name: portainer-agent-mcp
     hostname: portainer-agent-mcp
     restart: always
