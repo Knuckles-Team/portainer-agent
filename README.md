@@ -102,6 +102,14 @@ When query strings or parameters are supplied, an LLM-free **Knowledge Graph res
 
 ### MCP Configuration Examples
 
+> **Install the slim `[mcp]` extra.** All examples below install
+> `portainer-agent[mcp]` — the MCP-server extra that pulls only the FastMCP /
+> FastAPI tooling (`agent-utilities[mcp]`). It deliberately **excludes** the heavy
+> agent runtime (the epistemic-graph engine, `pydantic-ai`, `dspy`, `llama-index`,
+> `tree-sitter`), so `uvx`/container installs are dramatically smaller and faster.
+> Use the full `[agent]` extra only when you need the integrated Pydantic AI agent
+> (see [Installation](#installation)).
+
 #### stdio Transport (Recommended for local IDEs e.g., Cursor, Claude Desktop)
 Configure your IDE's `mcp.json` to launch the MCP server via `uvx`:
 
@@ -112,7 +120,7 @@ Configure your IDE's `mcp.json` to launch the MCP server via `uvx`:
       "command": "uvx",
       "args": [
         "--from",
-        "portainer-agent",
+        "portainer-agent[mcp]",
         "portainer-mcp"
       ],
       "env": {
@@ -135,7 +143,7 @@ Configure your client's `mcp.json` to launch the Streamable-HTTP server via `uvx
       "command": "uvx",
       "args": [
         "--from",
-        "portainer-agent",
+        "portainer-agent[mcp]",
         "portainer-mcp"
       ],
       "env": {
@@ -174,8 +182,15 @@ docker run -d \
   -e PORTAINER_ENDPOINT="your_value" \
   -e PORTAINER_USERNAME="your_value" \
   -e PORTAINER_PASSWORD="your_value" \
-  knucklessg1/portainer-agent:latest
+  knucklessg1/portainer-agent:mcp
 ```
+
+> The `:mcp` tag is the **slim MCP-server image** (built from
+> `docker/Dockerfile --target mcp`, installing `portainer-agent[mcp]`). The default
+> `:latest` tag is the **full agent image** (`--target agent`, `portainer-agent[agent]`)
+> which also bundles the Pydantic AI agent and the epistemic-graph engine — use it
+> when you run `portainer-agent` (the agent), not just the MCP server. See
+> [Container images](#container-images-mcp-vs-agent).
 
 ---
 
@@ -219,7 +234,7 @@ version: '3.8'
 
 services:
   portainer-agent-mcp:
-    image: knucklessg1/portainer-agent:latest
+    image: knucklessg1/portainer-agent:mcp
     container_name: portainer-agent-mcp
     hostname: portainer-agent-mcp
     restart: always
@@ -285,33 +300,67 @@ Detailed graph node architecture explanations, custom skill configurations, and 
 
 ## Environment Variables
 
-The agent can be configured via the following environment variables:
+Every variable the server reads, grouped by purpose.
 
-### Core Portainer API Settings
-- `PORTAINER_URL`: The base HTTP/HTTPS URL of your Portainer instance (e.g., `http://localhost:9000`). Default: `http://localhost:9000`.
-- `PORTAINER_ENDPOINT`: Alternative Portainer socket or connection endpoint path.
-- `PORTAINER_USERNAME`: The Portainer username to authenticate with. Default: `admin`.
-- `PORTAINER_PASSWORD`: The Portainer user password.
-- `PORTAINER_TOKEN`: Portainer API token (alternative to username/password authentication).
-- `PORTAINER_SSL_VERIFY`: Whether to verify SSL/TLS certificates when calling the Portainer API (`True`, `False`, `yes`, or `no`). Default: `True`.
+### Connection & Credentials
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `PORTAINER_URL` | Base HTTP/HTTPS URL of your Portainer instance. | `http://localhost:9000` |
+| `PORTAINER_ENDPOINT` | Alternative Portainer socket / connection endpoint path. | `unix:///var/run/portainer/events.sock` |
+| `PORTAINER_USERNAME` | Username for basic authentication. | `admin` |
+| `PORTAINER_PASSWORD` | Password for basic authentication. | — |
+| `PORTAINER_TOKEN` | API token (alternative to username/password). | — |
+| `PORTAINER_SSL_VERIFY` | Verify TLS certificates on outbound requests. | `True` |
 
-### Transport & Server Settings
-- `TRANSPORT`: The MCP communication transport protocol. Options: `stdio`, `streamable-http`, `sse`. Default: `stdio`.
-- `HOST`: Server interface to bind to (e.g., `0.0.0.0`). Default: `0.0.0.0`.
-- `PORT`: Server port to listen on. Default: `8000`.
+### MCP server / transport
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `TRANSPORT` | `stdio`, `streamable-http`, or `sse`. | `stdio` |
+| `HOST` | Bind host (HTTP transports). | `0.0.0.0` |
+| `PORT` | Bind port (HTTP transports). | `8000` |
+| `MCP_TOOL_MODE` | Tool surface: `condensed`, `verbose`, or `both`. | `condensed` |
+| `MCP_ENABLED_TOOLS` / `MCP_DISABLED_TOOLS` | Comma-separated tool allow/deny list. | — |
+| `MCP_ENABLED_TAGS` / `MCP_DISABLED_TAGS` | Comma-separated tag allow/deny list. | — |
+| `PYTHONUNBUFFERED` | Unbuffered stdout (recommended in containers). | `1` |
 
-### Tool Toggle Switches
-Each major tool category can be dynamically enabled or disabled using the following boolean environment variables (options: `True`, `False`; default: `True`):
-- `AUTHTOOL`: Enable/Disable the **Auth** tool category.
-- `ENVIRONMENTTOOL`: Enable/Disable the **Environment** tool category.
-- `DOCKERTOOL`: Enable/Disable the **Docker** tool category.
-- `STACKTOOL`: Enable/Disable the **Stack** tool category.
-- `KUBERNETESTOOL`: Enable/Disable the **Kubernetes** tool category.
-- `EDGETOOL`: Enable/Disable the **Edge** tool category.
-- `TEMPLATETOOL`: Enable/Disable the **Template** tool category.
-- `USERTOOL`: Enable/Disable the **User** tool category.
-- `REGISTRYTOOL`: Enable/Disable the **Registry** tool category.
-- `SYSTEMTOOL`: Enable/Disable the **System** tool category.
+### Tool toggles
+Each action-routed tool can be disabled individually by setting its toggle env var to `false`.
+The names match the authoritative "Toggle Env Var" column in the
+[Available MCP Tools](#available-mcp-tools) table above.
+
+| Variable | Tool | Default |
+|----------|------|---------|
+| `AUTHTOOL` | `portainer_auth` | `True` |
+| `ENVIRONMENTTOOL` | `portainer_environment` | `True` |
+| `DOCKERTOOL` | `portainer_docker` | `True` |
+| `STACKTOOL` | `portainer_stack` | `True` |
+| `KUBERNETESTOOL` | `portainer_kubernetes` | `True` |
+| `EDGETOOL` | `portainer_edge` | `True` |
+| `TEMPLATETOOL` | `portainer_template` | `True` |
+| `USERTOOL` | `portainer_user` | `True` |
+| `REGISTRYTOOL` | `portainer_registry` | `True` |
+| `SYSTEMTOOL` | `portainer_system` | `True` |
+
+### Telemetry & governance
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `ENABLE_OTEL` | Enable OpenTelemetry export. | `True` |
+| `OTEL_EXPORTER_OTLP_ENDPOINT` | OTLP collector endpoint. | — |
+| `OTEL_EXPORTER_OTLP_PUBLIC_KEY` / `OTEL_EXPORTER_OTLP_SECRET_KEY` | OTLP auth keys. | — |
+| `OTEL_EXPORTER_OTLP_PROTOCOL` | OTLP protocol (e.g. `http/protobuf`). | — |
+| `EUNOMIA_TYPE` | Authorization mode: `none`, `embedded`, `remote`. | `none` |
+| `EUNOMIA_POLICY_FILE` | Embedded policy file. | `mcp_policies.json` |
+| `EUNOMIA_REMOTE_URL` | Remote Eunomia server URL. | — |
+
+### Agent CLI (full `[agent]` runtime only)
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `MCP_URL` | URL of the MCP server the agent connects to. | `http://localhost:8000/mcp` |
+| `PROVIDER` | LLM provider (e.g. `openai`). | `openai` |
+| `MODEL_ID` | Model id (e.g. `gpt-4o`). | `gpt-4o` |
+| `ENABLE_WEB_UI` | Serve the AG-UI web interface. | `True` |
+
+See [`.env.example`](.env.example) for a copy-paste starting point.
 
 ---
 
@@ -335,15 +384,51 @@ Built directly upon the enterprise-ready [`agent-utilities`](https://github.com/
 
 ## Installation
 
-Install the Python package locally:
+Pick the extra that matches what you want to run:
+
+| Extra | Installs | Use when |
+|-------|----------|----------|
+| `portainer-agent[mcp]` | Slim MCP server only (`agent-utilities[mcp]` — FastMCP/FastAPI) | You only run the **MCP server** (smallest install / image) |
+| `portainer-agent[agent]` | Full agent runtime (`agent-utilities[agent,logfire]` — Pydantic AI + the epistemic-graph engine) | You run the **integrated agent** |
+| `portainer-agent[all]` | Everything (`mcp` + `agent` + `logfire`) | Development / both surfaces |
 
 ```bash
-# Using uv (highly recommended)
-uv pip install portainer-agent[all]
+# MCP server only (recommended for tool hosting — slim deps)
+uv pip install "portainer-agent[mcp]"
 
-# Using standard pip
-python -m pip install portainer-agent[all]
+# Full agent runtime (Pydantic AI + epistemic-graph engine)
+uv pip install "portainer-agent[agent]"
+
+# Everything (development)
+uv pip install "portainer-agent[all]"      # or: python -m pip install "portainer-agent[all]"
 ```
+
+### Container images (`:mcp` vs `:agent`)
+
+One multi-stage `docker/Dockerfile` builds two right-sized images, selected by `--target`:
+
+| Image tag | Build target | Contents | Entrypoint |
+|-----------|--------------|----------|------------|
+| `knucklessg1/portainer-agent:mcp` | `--target mcp` | `portainer-agent[mcp]` — **slim**, no engine/`pydantic-ai`/`dspy`/`llama-index`/`tree-sitter` | `portainer-mcp` |
+| `knucklessg1/portainer-agent:latest` | `--target agent` (default) | `portainer-agent[agent]` — **full** agent runtime + epistemic-graph engine | `portainer-agent` |
+
+```bash
+docker build --target mcp   -t knucklessg1/portainer-agent:mcp    docker/   # slim MCP server
+docker build --target agent -t knucklessg1/portainer-agent:latest docker/   # full agent
+```
+
+`docker/mcp.compose.yml` runs the slim `:mcp` server; `docker/agent.compose.yml` runs the
+agent (`:latest`) with a co-located `:mcp` sidecar.
+
+### Knowledge-graph database (`epistemic-graph`)
+
+The **full agent** (`[agent]` / `:latest`) embeds the **epistemic-graph** engine (pulled in
+transitively via `agent-utilities[agent]`). For production — or to share one knowledge graph
+across multiple agents — run **epistemic-graph as its own database container** and point the
+agent at it instead of embedding it. Deployment recipes (single-node + Raft HA), connection
+config, and the full database architecture (with diagrams) are documented in the
+[epistemic-graph deployment guide](https://knuckles-team.github.io/epistemic-graph/deployment/).
+The slim `[mcp]` server does **not** require the database.
 
 ---
 
