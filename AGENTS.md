@@ -11,7 +11,6 @@
     - `mcp_server.py`: Main MCP server entry point and tool registration.
     - `agent.py`: Pydantic AI agent definition and logic.
     - `skills/`: Directory containing modular agent skills (if applicable).
-    - `agent/`: Internal agent logic and prompt templates.
 
 ### Architecture Diagram
 ```mermaid
@@ -111,15 +110,6 @@ uvicorn portainer_agent.agent_server:app --reload  # If using FastAPI
 ├── debug.Dockerfile
 ├── portainer_agent
 │   ├── __init__.py
-│   ├── agent
-│   │   ├── AGENTS.md
-│   │   ├── CRON.md
-│   │   ├── CRON_LOG.md
-│   │   ├── HEARTBEAT.md
-│   │   ├── IDENTITY.md
-│   │   ├── MEMORY.md
-│   │   ├── USER.md
-│   │   └── mcp_config.json
 │   ├── agent.py
 │   ├── auth.py
 │   ├── mcp_server.py
