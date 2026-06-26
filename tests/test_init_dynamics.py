@@ -8,11 +8,22 @@ PKG_NAME = __name__.rsplit(".", 1)[0] if "." in __name__ else None
 
 
 def _get_pkg_name():
-    """Derive package name from test location."""
-    import pathlib
+    """Derive package name from the project's pyproject.toml.
 
-    test_dir = pathlib.Path(__file__).resolve().parent
-    project_dir = test_dir.parent
+    Reading the canonical ``[project].name`` (rather than the directory
+    basename) keeps this resilient when the checkout lives in a git worktree
+    whose leaf directory does not match the package name.
+    """
+    import pathlib
+    import re
+
+    project_dir = pathlib.Path(__file__).resolve().parent.parent
+    pyproject = project_dir / "pyproject.toml"
+    if pyproject.exists():
+        text = pyproject.read_text(encoding="utf-8")
+        match = re.search(r'(?m)^\s*name\s*=\s*"([^"]+)"', text)
+        if match:
+            return match.group(1).replace("-", "_")
     return project_dir.name.replace("-", "_")
 
 

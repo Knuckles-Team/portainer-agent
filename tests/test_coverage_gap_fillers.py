@@ -638,7 +638,10 @@ async def test_mcp_server_custom_route():
     response = await route_handler(mock_req)
 
     assert response.status_code == 200
-    assert json.loads(response.body.decode()) == {"status": "OK"}
+    # The shared MCP server factory now owns the /health route and returns a
+    # lowercase status plus the server name; assert on that current contract.
+    payload = json.loads(response.body.decode())
+    assert payload.get("status", "").lower() == "ok"
 
 
 def test_mcp_server_requests_warning_import_error():

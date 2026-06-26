@@ -7,6 +7,7 @@
         "portainer-mcp"
       ],
       "env": {
+        "MCP_TOOL_MODE": "condensed",
         "PORTAINER_SSL_VERIFY": "<YOUR_PORTAINER_SSL_VERIFY>",
         "PORTAINER_TOKEN": "<YOUR_PORTAINER_TOKEN>",
         "PORTAINER_URL": "<YOUR_PORTAINER_URL>",

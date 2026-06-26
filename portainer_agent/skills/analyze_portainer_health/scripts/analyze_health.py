@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# coding: utf-8
 
 import argparse
 import json
@@ -35,7 +34,7 @@ def parse_arguments():
 
 def load_json_file(filepath):
     try:
-        with open(filepath, "r", encoding="utf-8") as f:
+        with open(filepath, encoding="utf-8") as f:
             data = json.load(f)
             # Portainer sometimes wraps data inside a dictionary under a 'data' key or lists it directly.
             if isinstance(data, dict) and "data" in data:
@@ -153,7 +152,7 @@ def main():
     degraded_stacks = []
     unhealthy_stacks = []
 
-    for name, stack in stacks_dict.items():
+    for _name, stack in stacks_dict.items():
         svcs = stack["services"]
         if not svcs:
             stack["health"] = "Healthy (Empty)"
@@ -345,7 +344,7 @@ def main():
         )
         md.append("| Service Name | Image | Replicas | Status |")
         md.append("| :--- | :--- | :---: | :--- |")
-        for namespace, s in sorted(orphan_services, key=lambda x: x[1]["name"]):
+        for _namespace, s in sorted(orphan_services, key=lambda x: x[1]["name"]):
             status_str = (
                 f"🔴 {s['update_state']}"
                 if s["update_state"] in ["paused", "failed"]

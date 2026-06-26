@@ -61,6 +61,8 @@ This table is auto-generated from the live server — do not edit by hand.
 
 <!-- MCP-TOOLS-TABLE:START -->
 
+#### Condensed action-routed tools (default — `MCP_TOOL_MODE=condensed`)
+
 | MCP Tool | Toggle Env Var | Description |
 |----------|----------------|-------------|
 | `portainer_auth` | `AUTHTOOL` | Manage auth operations. |
@@ -74,7 +76,245 @@ This table is auto-generated from the live server — do not edit by hand.
 | `portainer_template` | `TEMPLATETOOL` | Manage template operations. |
 | `portainer_user` | `USERTOOL` | Manage user operations (incl. per-user Git credentials for binding to |
 
-_10 action-routed tools (default `MCP_TOOL_MODE=condensed`). Each is enabled unless its toggle is set false; set `MCP_TOOL_MODE=verbose` (or `both`) for the 1:1 per-operation surface. Auto-generated — do not edit._
+#### Verbose 1:1 API-mapped tools (`MCP_TOOL_MODE=verbose` or `both`)
+
+<details>
+<summary>228 per-operation tools — one per public API method (click to expand)</summary>
+
+| MCP Tool | Toggle Env Var | Description |
+|----------|----------------|-------------|
+| `portainer_add_endpoint_to_group` | `APITOOL` | Add an environment to a group. |
+| `portainer_associate_stack` | `APITOOL` | Associate an orphaned stack. |
+| `portainer_authenticate` | `APITOOL` | Authenticate and get a JWT token. |
+| `portainer_backup` | `APITOOL` | Create a backup of Portainer data. |
+| `portainer_change_user_password` | `APITOOL` | Change a user's password. |
+| `portainer_check_admin_init` | `APITOOL` | Check if admin user has been initialized. |
+| `portainer_check_ldap` | `APITOOL` | Check LDAP connectivity. |
+| `portainer_configure_registry` | `APITOOL` | Configure registry access for an environment. |
+| `portainer_create_container` | `APITOOL` | Create a container. |
+| `portainer_create_custom_template_from_repository` | `APITOOL` | Create a custom template from a Git repository. |
+| `portainer_create_custom_template_from_string` | `APITOOL` | Create a custom template from a string. Types: 1=swarm, 2=compose, 3=kubernetes. |
+| `portainer_create_edge_group` | `APITOOL` | Create an edge group. |
+| `portainer_create_edge_job_from_string` | `APITOOL` | Create an edge job from a string. |
+| `portainer_create_edge_stack_from_repository` | `APITOOL` | Create an edge stack from a Git repository. |
+| `portainer_create_edge_stack_from_string` | `APITOOL` | Create an edge stack from a string. |
+| `portainer_create_endpoint` | `APITOOL` | Create a new environment. Types: 1=Docker, 2=AgentOnDocker, 3=Azure, 4=EdgeAgent, 5=KubernetesLocal, 6=AgentOnKubernetes, 7=EdgeAgentOnKubernetes. |
+| `portainer_create_endpoint_group` | `APITOOL` | Create an endpoint group. |
+| `portainer_create_exec` | `APITOOL` | Create an exec instance. |
+| `portainer_create_kubernetes_namespace` | `APITOOL` | Create a Kubernetes namespace. |
+| `portainer_create_kubernetes_stack_from_repository` | `APITOOL` | Create a Kubernetes stack from a Git repository. |
+| `portainer_create_kubernetes_stack_from_string` | `APITOOL` | Create a Kubernetes stack from a string. |
+| `portainer_create_network` | `APITOOL` | Create a network. |
+| `portainer_create_registry` | `APITOOL` | Create a registry. Types: 1=Quay, 2=Azure, 3=Custom, 4=GitLab, 5=ProGet, 6=DockerHub, 7=ECR, 8=GitHub. |
+| `portainer_create_resource_control` | `APITOOL` | Create a resource control. |
+| `portainer_create_standalone_stack_from_repository` | `APITOOL` | Create a standalone stack from a Git repository. |
+| `portainer_create_standalone_stack_from_string` | `APITOOL` | Create a standalone Docker Compose stack from a string. |
+| `portainer_create_swarm_stack_from_repository` | `APITOOL` | Create a Swarm stack from a Git repository. |
+| `portainer_create_swarm_stack_from_string` | `APITOOL` | Create a Swarm stack from a string. |
+| `portainer_create_tag` | `APITOOL` | Create a tag. |
+| `portainer_create_team` | `APITOOL` | Create a team. |
+| `portainer_create_team_membership` | `APITOOL` | Create a team membership. Roles: 1=leader, 2=member. |
+| `portainer_create_user` | `APITOOL` | Create a user. Roles: 1=admin, 2=standard. |
+| `portainer_create_user_git_credential` | `APITOOL` | Store a reusable Git credential for a user. |
+| `portainer_create_user_helm_repository` | `APITOOL` | Add a Helm repository for a user. |
+| `portainer_create_user_token` | `APITOOL` | Create an API token for a user. |
+| `portainer_create_volume` | `APITOOL` | Create a volume. |
+| `portainer_create_webhook` | `APITOOL` | Create a webhook. |
+| `portainer_delete_custom_template` | `APITOOL` | Delete a custom template. |
+| `portainer_delete_edge_group` | `APITOOL` | Delete an edge group. |
+| `portainer_delete_edge_job` | `APITOOL` | Delete an edge job. |
+| `portainer_delete_edge_stack` | `APITOOL` | Delete an edge stack. |
+| `portainer_delete_endpoint` | `APITOOL` | Delete a single environment. |
+| `portainer_delete_endpoint_group` | `APITOOL` | Delete an endpoint group. |
+| `portainer_delete_endpoints` | `APITOOL` | Delete multiple environments. |
+| `portainer_delete_helm_release` | `APITOOL` | Delete a Helm release. |
+| `portainer_delete_kubernetes_ingresses` | `APITOOL` | Delete Kubernetes ingresses. |
+| `portainer_delete_kubernetes_namespace` | `APITOOL` | Delete a Kubernetes namespace. |
+| `portainer_delete_kubernetes_services` | `APITOOL` | Delete Kubernetes services. |
+| `portainer_delete_kubernetes_volume` | `APITOOL` | Delete a Kubernetes volume. |
+| `portainer_delete_registry` | `APITOOL` | Delete a registry. |
+| `portainer_delete_resource_control` | `APITOOL` | Delete a resource control. |
+| `portainer_delete_stack` | `APITOOL` | Delete a stack. |
+| `portainer_delete_tag` | `APITOOL` | Delete a tag. |
+| `portainer_delete_team` | `APITOOL` | Delete a team. |
+| `portainer_delete_team_membership` | `APITOOL` | Delete a team membership. |
+| `portainer_delete_user` | `APITOOL` | Delete a user. |
+| `portainer_delete_user_git_credential` | `APITOOL` | Remove a saved Git credential for a user. |
+| `portainer_delete_user_helm_repository` | `APITOOL` | Remove a Helm repository for a user. |
+| `portainer_delete_user_token` | `APITOOL` | Delete an API token. |
+| `portainer_delete_webhook` | `APITOOL` | Delete a webhook. |
+| `portainer_describe_kubernetes_resource` | `APITOOL` | Describe a Kubernetes resource. |
+| `portainer_drain_kubernetes_node` | `APITOOL` | Drain a Kubernetes node. |
+| `portainer_export_all_stacks` | `APITOOL` | Export all stacks' compose definitions to a target directory. |
+| `portainer_get_container_gpus` | `APITOOL` | Get GPU info for a container. |
+| `portainer_get_container_logs` | `APITOOL` | Get container logs. |
+| `portainer_get_container_stats` | `APITOOL` | Get container stats. |
+| `portainer_get_current_user` | `APITOOL` | Get the currently authenticated user. |
+| `portainer_get_custom_template` | `APITOOL` | Get a specific custom template. |
+| `portainer_get_custom_template_file` | `APITOOL` | Get custom template compose file content. |
+| `portainer_get_custom_templates` | `APITOOL` | List custom templates. |
+| `portainer_get_docker_dashboard` | `APITOOL` | Get Docker dashboard data for an environment. |
+| `portainer_get_docker_df` | `APITOOL` | Get Docker data usage information. |
+| `portainer_get_docker_events` | `APITOOL` | Get Docker events. |
+| `portainer_get_docker_images` | `APITOOL` | List Docker images in an environment. |
+| `portainer_get_docker_info` | `APITOOL` | Get Docker system information. |
+| `portainer_get_docker_version` | `APITOOL` | Get Docker version information. |
+| `portainer_get_edge_group` | `APITOOL` | Get a specific edge group. |
+| `portainer_get_edge_groups` | `APITOOL` | List edge groups. |
+| `portainer_get_edge_job` | `APITOOL` | Get a specific edge job. |
+| `portainer_get_edge_job_file` | `APITOOL` | Get the script file content for an edge job. |
+| `portainer_get_edge_job_task_logs` | `APITOOL` | Get logs for an edge job task. |
+| `portainer_get_edge_job_tasks` | `APITOOL` | List tasks for an edge job. |
+| `portainer_get_edge_jobs` | `APITOOL` | List edge jobs. |
+| `portainer_get_edge_stack` | `APITOOL` | Get a specific edge stack. |
+| `portainer_get_edge_stack_file` | `APITOOL` | Get the compose file content for an edge stack. |
+| `portainer_get_edge_stack_status` | `APITOOL` | Get edge stack deployment status. |
+| `portainer_get_edge_stacks` | `APITOOL` | List edge stacks. |
+| `portainer_get_endpoint` | `APITOOL` | Get a specific environment by ID. |
+| `portainer_get_endpoint_group` | `APITOOL` | Get a specific endpoint group. |
+| `portainer_get_endpoint_groups` | `APITOOL` | List all endpoint groups. |
+| `portainer_get_endpoint_registries` | `APITOOL` | List registries for an environment. |
+| `portainer_get_endpoint_relations` | `APITOOL` | Get environment relations. |
+| `portainer_get_endpoint_settings` | `APITOOL` | Get environment settings. |
+| `portainer_get_endpoints` | `APITOOL` | List all environments (endpoints). |
+| `portainer_get_helm_release_history` | `APITOOL` | Get Helm release history. |
+| `portainer_get_helm_releases` | `APITOOL` | List Helm releases for an environment. |
+| `portainer_get_helm_templates` | `APITOOL` | List Helm chart templates. |
+| `portainer_get_image_history` | `APITOOL` | Get image history. |
+| `portainer_get_kubernetes_application_count` | `APITOOL` | Get application count. |
+| `portainer_get_kubernetes_applications` | `APITOOL` | List Kubernetes applications (deployments, statefulsets, daemonsets). |
+| `portainer_get_kubernetes_cluster_role_bindings` | `APITOOL` | List Kubernetes cluster role bindings. |
+| `portainer_get_kubernetes_cluster_roles` | `APITOOL` | List Kubernetes cluster roles. |
+| `portainer_get_kubernetes_config` | `APITOOL` | Get Kubernetes global configuration. |
+| `portainer_get_kubernetes_configmap_count` | `APITOOL` | Get configmap count. |
+| `portainer_get_kubernetes_configmaps` | `APITOOL` | List Kubernetes configmaps. |
+| `portainer_get_kubernetes_cron_jobs` | `APITOOL` | List Kubernetes cron jobs. |
+| `portainer_get_kubernetes_dashboard` | `APITOOL` | Get Kubernetes dashboard data. |
+| `portainer_get_kubernetes_events` | `APITOOL` | List Kubernetes events. |
+| `portainer_get_kubernetes_ingress_controllers` | `APITOOL` | List Kubernetes ingress controllers. |
+| `portainer_get_kubernetes_ingress_count` | `APITOOL` | Get ingress count. |
+| `portainer_get_kubernetes_ingresses` | `APITOOL` | List Kubernetes ingresses. |
+| `portainer_get_kubernetes_jobs` | `APITOOL` | List Kubernetes jobs. |
+| `portainer_get_kubernetes_max_resource_limits` | `APITOOL` | Get max resource limits for the cluster. |
+| `portainer_get_kubernetes_metrics_applications` | `APITOOL` | Get application resource metrics. |
+| `portainer_get_kubernetes_metrics_node` | `APITOOL` | Get metrics for a specific node. |
+| `portainer_get_kubernetes_metrics_nodes` | `APITOOL` | Get metrics for Kubernetes nodes. |
+| `portainer_get_kubernetes_namespace` | `APITOOL` | Get a specific Kubernetes namespace. |
+| `portainer_get_kubernetes_namespace_count` | `APITOOL` | Get namespace count. |
+| `portainer_get_kubernetes_namespace_events` | `APITOOL` | List events in a specific namespace. |
+| `portainer_get_kubernetes_namespace_services` | `APITOOL` | List services in a specific namespace. |
+| `portainer_get_kubernetes_namespaces` | `APITOOL` | List Kubernetes namespaces. |
+| `portainer_get_kubernetes_nodes_limits` | `APITOOL` | Get Kubernetes node resource limits. |
+| `portainer_get_kubernetes_rbac_enabled` | `APITOOL` | Check if RBAC is enabled on the cluster. |
+| `portainer_get_kubernetes_role_bindings` | `APITOOL` | List Kubernetes role bindings. |
+| `portainer_get_kubernetes_roles` | `APITOOL` | List Kubernetes roles. |
+| `portainer_get_kubernetes_secret_count` | `APITOOL` | Get secret count. |
+| `portainer_get_kubernetes_secrets` | `APITOOL` | List Kubernetes secrets. |
+| `portainer_get_kubernetes_service_accounts` | `APITOOL` | List Kubernetes service accounts. |
+| `portainer_get_kubernetes_service_count` | `APITOOL` | Get service count. |
+| `portainer_get_kubernetes_services` | `APITOOL` | List Kubernetes services. |
+| `portainer_get_kubernetes_volume_count` | `APITOOL` | Get volume count. |
+| `portainer_get_kubernetes_volumes` | `APITOOL` | List Kubernetes persistent volume claims. |
+| `portainer_get_motd` | `APITOOL` | Get the message of the day. |
+| `portainer_get_public_settings` | `APITOOL` | Get public (unauthenticated) settings. |
+| `portainer_get_registries` | `APITOOL` | List all Docker registries. |
+| `portainer_get_registry` | `APITOOL` | Get a specific registry. |
+| `portainer_get_resource_controls` | `APITOOL` | List all resource controls. |
+| `portainer_get_roles` | `APITOOL` | List all roles. |
+| `portainer_get_service_logs` | `APITOOL` | Get Swarm service logs. |
+| `portainer_get_settings` | `APITOOL` | Get Portainer settings. |
+| `portainer_get_ssl_settings` | `APITOOL` | Get SSL settings. |
+| `portainer_get_stack` | `APITOOL` | Get a specific stack. |
+| `portainer_get_stack_by_name` | `APITOOL` | Get a stack by name. |
+| `portainer_get_stack_file` | `APITOOL` | Get the compose file content for a stack. |
+| `portainer_get_stack_logs` | `APITOOL` | Get logs for all containers/services in a stack. |
+| `portainer_get_stacks` | `APITOOL` | List all stacks. |
+| `portainer_get_status` | `APITOOL` | Get Portainer instance status. |
+| `portainer_get_system_info` | `APITOOL` | Get system information. |
+| `portainer_get_system_nodes` | `APITOOL` | Get system nodes. |
+| `portainer_get_system_status` | `APITOOL` | Get detailed system status. |
+| `portainer_get_system_version` | `APITOOL` | Get Portainer version information. |
+| `portainer_get_tags` | `APITOOL` | List all tags. |
+| `portainer_get_team` | `APITOOL` | Get a specific team. |
+| `portainer_get_team_memberships` | `APITOOL` | List all team memberships. |
+| `portainer_get_team_memberships_by_team` | `APITOOL` | List memberships for a team. |
+| `portainer_get_teams` | `APITOOL` | List all teams. |
+| `portainer_get_template_file` | `APITOOL` | Get template compose file. |
+| `portainer_get_templates` | `APITOOL` | List app templates. |
+| `portainer_get_user` | `APITOOL` | Get a specific user. |
+| `portainer_get_user_git_credential` | `APITOOL` | Get one saved Git credential for a user. |
+| `portainer_get_user_git_credentials` | `APITOOL` | List a user's saved Git credentials (passwords are never returned). |
+| `portainer_get_user_helm_repositories` | `APITOOL` | List Helm repositories for a user. |
+| `portainer_get_user_memberships` | `APITOOL` | Get team memberships for a user. |
+| `portainer_get_user_tokens` | `APITOOL` | List API tokens for a user. |
+| `portainer_get_users` | `APITOOL` | List all users. |
+| `portainer_get_webhooks` | `APITOOL` | List all webhooks. |
+| `portainer_git_fetch_custom_template` | `APITOOL` | Fetch latest version of a custom template from Git. |
+| `portainer_init_admin` | `APITOOL` | Initialize the admin user (first-time setup). |
+| `portainer_inspect_container` | `APITOOL` | Inspect a container. |
+| `portainer_inspect_exec` | `APITOOL` | Inspect an exec instance. |
+| `portainer_inspect_image` | `APITOOL` | Inspect an image. |
+| `portainer_inspect_network` | `APITOOL` | Inspect a network. |
+| `portainer_inspect_service` | `APITOOL` | Inspect a Swarm service. |
+| `portainer_inspect_volume` | `APITOOL` | Inspect a volume. |
+| `portainer_install_helm_chart` | `APITOOL` | Install a Helm chart. |
+| `portainer_list_containers` | `APITOOL` | List containers in an environment. |
+| `portainer_list_images` | `APITOOL` | List images in an environment. |
+| `portainer_list_networks` | `APITOOL` | List networks. |
+| `portainer_list_services` | `APITOOL` | List Swarm services. |
+| `portainer_list_volumes` | `APITOOL` | List volumes. |
+| `portainer_logout` | `APITOOL` | Logout and invalidate the current token. |
+| `portainer_migrate_stack` | `APITOOL` | Migrate a stack to another environment. |
+| `portainer_ping_registry` | `APITOOL` | Test registry connectivity. |
+| `portainer_preview_git_file` | `APITOOL` | Preview a file from a Git repository. |
+| `portainer_prune_containers` | `APITOOL` | Delete unused containers. |
+| `portainer_prune_images` | `APITOOL` | Delete unused images. |
+| `portainer_prune_networks` | `APITOOL` | Delete unused networks. |
+| `portainer_prune_volumes` | `APITOOL` | Delete unused volumes. |
+| `portainer_redeploy_stack_git` | `APITOOL` | Redeploy a stack from its Git config. |
+| `portainer_remove_container` | `APITOOL` | Remove a container. |
+| `portainer_remove_endpoint_association` | `APITOOL` | Remove edge environment association. |
+| `portainer_remove_endpoint_from_group` | `APITOOL` | Remove an environment from a group. |
+| `portainer_remove_image` | `APITOOL` | Remove an image. |
+| `portainer_remove_network` | `APITOOL` | Remove a network. |
+| `portainer_remove_service` | `APITOOL` | Remove a Swarm service. |
+| `portainer_remove_volume` | `APITOOL` | Remove a volume. |
+| `portainer_request` | `BASE_API_CLIENTTOOL` | Generic authenticated passthrough to ANY Portainer API endpoint. |
+| `portainer_restart_container` | `APITOOL` | Restart a container. |
+| `portainer_restore` | `APITOOL` | Restore Portainer data from a backup. |
+| `portainer_rollback_helm_release` | `APITOOL` | Rollback a Helm release to a specific revision. |
+| `portainer_snapshot_all_endpoints` | `APITOOL` | Take a snapshot of all environments. |
+| `portainer_snapshot_endpoint` | `APITOOL` | Take a snapshot of a specific environment. |
+| `portainer_start_container` | `APITOOL` | Start a container. |
+| `portainer_start_exec` | `APITOOL` | Start an exec instance. |
+| `portainer_start_stack` | `APITOOL` | Start a stopped stack. |
+| `portainer_stop_container` | `APITOOL` | Stop a container. |
+| `portainer_stop_stack` | `APITOOL` | Stop a running stack. |
+| `portainer_update_custom_template` | `APITOOL` | Update a custom template. |
+| `portainer_update_edge_group` | `APITOOL` | Update an edge group. |
+| `portainer_update_edge_job` | `APITOOL` | Update an edge job. |
+| `portainer_update_edge_stack` | `APITOOL` | Update an edge stack. |
+| `portainer_update_endpoint` | `APITOOL` | Update an environment. |
+| `portainer_update_endpoint_group` | `APITOOL` | Update an endpoint group. |
+| `portainer_update_endpoint_settings` | `APITOOL` | Update environment settings. |
+| `portainer_update_kubernetes_namespace` | `APITOOL` | Update a Kubernetes namespace. |
+| `portainer_update_registry` | `APITOOL` | Update a registry. |
+| `portainer_update_resource_control` | `APITOOL` | Update a resource control. |
+| `portainer_update_settings` | `APITOOL` | Update Portainer settings. |
+| `portainer_update_ssl_settings` | `APITOOL` | Update SSL settings. |
+| `portainer_update_stack` | `APITOOL` | Update a stack. |
+| `portainer_update_stack_git` | `APITOOL` | Update a stack's Git settings (auto-attaches configured git auth). |
+| `portainer_update_team` | `APITOOL` | Update a team. |
+| `portainer_update_team_membership` | `APITOOL` | Update a team membership. |
+| `portainer_update_user` | `APITOOL` | Update a user. |
+| `portainer_update_user_git_credential` | `APITOOL` | Update a saved Git credential (e.g. rotate the password/PAT). |
+| `portainer_update_webhook` | `APITOOL` | Update a webhook. |
+| `portainer_upgrade_system` | `APITOOL` | Trigger a system upgrade. |
+| `portainer_validate_oauth` | `APITOOL` | Validate an OAuth code. |
+
+</details>
+
+_10 action-routed tool(s) (default) · 228 verbose 1:1 tool(s). Each is enabled unless its `<DOMAIN>TOOL` toggle is set false; `MCP_TOOL_MODE` selects the surface (`condensed` default · `verbose` 1:1 · `both`). Auto-generated — do not edit._
 <!-- MCP-TOOLS-TABLE:END -->
 
 Detailed tool schemas, parameter shapes, and validation constraints are preserved in [docs/mcp.md](docs/mcp.md).
@@ -318,11 +558,13 @@ Detailed graph node architecture explanations, custom skill configurations, and 
 | `EUNOMIA_POLICY_FILE` | `mcp_policies.json` |  |
 | `EUNOMIA_REMOTE_URL` | `http://eunomia-server:8000` |  |
 | `PORTAINER_URL` | `http://localhost:9000` |  |
-| `PORTAINER_ENDPOINT` | `unix:///var/run/portainer/events.sock` |  |
-| `PORTAINER_USERNAME` | `admin` |  |
 | `PORTAINER_PASSWORD` | `your_portainer_password_here` |  |
 | `PORTAINER_TOKEN` | `your_portainer_api_token_here` |  |
 | `PORTAINER_SSL_VERIFY` | `True` |  |
+| `PORTAINER_GIT_USERNAME` | `oauth2` | username for git-backed stack auth (default: oauth2) |
+| `PORTAINER_GIT_TOKEN` | — | token for private git repos used by stacks |
+| `GITLAB_TOKEN` | — | fallback token when PORTAINER_GIT_TOKEN is unset |
+| `PORTAINER_VERIFY` | `True` | TLS verify for the portainer-sync-agent stack helper script |
 | `AUTHTOOL` | `True` |  |
 | `ENVIRONMENTTOOL` | `True` |  |
 | `DOCKERTOOL` | `True` |  |
@@ -353,7 +595,7 @@ Detailed graph node architecture explanations, custom skill configurations, and 
 | `MODEL_ID` | `gpt-4o` | Model id for the agent |
 | `ENABLE_WEB_UI` | `True` | Serve the AG-UI web interface |
 
-_27 package + 14 inherited variable(s). Auto-generated from `.env.example` + the shared agent-utilities set — do not edit._
+_29 package + 14 inherited variable(s). Auto-generated from `.env.example` + the shared agent-utilities set — do not edit._
 <!-- ENV-VARS-TABLE:END -->
 
 
