@@ -342,21 +342,20 @@ When query strings or parameters are supplied, an LLM-free **Knowledge Graph res
 
 ### MCP Configuration Examples
 
-> **Install the slim `[mcp]` extra.** All examples below install
-> `portainer-agent[mcp]` — the MCP-server extra that pulls only the FastMCP /
-> FastAPI tooling (`agent-utilities[mcp]`). It deliberately **excludes** the heavy
-> agent runtime (the epistemic-graph engine, `pydantic-ai`, `dspy`, `llama-index`,
-> `tree-sitter`), so `uvx`/container installs are dramatically smaller and faster.
-> Use the full `[agent]` extra only when you need the integrated Pydantic AI agent
-> (see [Installation](#installation)).
+<!-- MCP-CONFIG-EXAMPLES:START -->
 
-#### stdio Transport (Recommended for local IDEs e.g., Cursor, Claude Desktop)
-Configure your IDE's `mcp.json` to launch the MCP server via `uvx`:
+> **Install the slim `[mcp]` extra.** All examples install `portainer-agent[mcp]` — the
+> MCP-server extra that pulls only the FastMCP / FastAPI tooling (`agent-utilities[mcp]`).
+> It deliberately **excludes** the heavy agent runtime (`pydantic-ai`, the epistemic-graph
+> engine, `dspy`, `llama-index`), so `uvx` / container installs are far smaller. Use the
+> full `[agent]` extra only when you need the integrated Pydantic AI agent.
+
+#### stdio Transport (local IDEs — Cursor, Claude Desktop, VS Code)
 
 ```json
 {
   "mcpServers": {
-    "portainer-agent": {
+    "portainer-mcp": {
       "command": "uvx",
       "args": [
         "--from",
@@ -364,48 +363,79 @@ Configure your IDE's `mcp.json` to launch the MCP server via `uvx`:
         "portainer-mcp"
       ],
       "env": {
-        "PORTAINER_ENDPOINT": "your_portainer_endpoint_here",
-        "PORTAINER_USERNAME": "your_portainer_username_here",
-        "PORTAINER_PASSWORD": "your_portainer_password_here"
+        "MCP_TOOL_MODE": "condensed",
+        "AUTHTOOL": "True",
+        "DOCKERTOOL": "True",
+        "EDGETOOL": "True",
+        "ENVIRONMENTTOOL": "True",
+        "GITLAB_TOKEN": "",
+        "KUBERNETESTOOL": "True",
+        "PORTAINER_GIT_TOKEN": "",
+        "PORTAINER_GIT_USERNAME": "oauth2",
+        "PORTAINER_TOKEN": "your_portainer_api_token_here",
+        "PORTAINER_URL": "http://localhost:9000",
+        "PORTAINER_VERIFY": "True",
+        "REGISTRYTOOL": "True",
+        "STACKTOOL": "True",
+        "SYSTEMTOOL": "True",
+        "TEMPLATETOOL": "True",
+        "USERTOOL": "True"
       }
     }
   }
 }
 ```
 
-#### Streamable-HTTP Transport (Recommended for production deployments)
-Configure your client's `mcp.json` to launch the Streamable-HTTP server via `uvx` with explicit host and port definition:
+#### Streamable-HTTP Transport (networked / production)
 
 ```json
 {
   "mcpServers": {
-    "portainer-agent": {
+    "portainer-mcp": {
       "command": "uvx",
       "args": [
         "--from",
         "portainer-agent[mcp]",
-        "portainer-mcp"
+        "portainer-mcp",
+        "--transport",
+        "streamable-http",
+        "--port",
+        "8000"
       ],
       "env": {
         "TRANSPORT": "streamable-http",
         "HOST": "0.0.0.0",
         "PORT": "8000",
-        "PORTAINER_ENDPOINT": "your_portainer_endpoint_here",
-        "PORTAINER_USERNAME": "your_portainer_username_here",
-        "PORTAINER_PASSWORD": "your_portainer_password_here"
+        "MCP_TOOL_MODE": "condensed",
+        "AUTHTOOL": "True",
+        "DOCKERTOOL": "True",
+        "EDGETOOL": "True",
+        "ENVIRONMENTTOOL": "True",
+        "GITLAB_TOKEN": "",
+        "KUBERNETESTOOL": "True",
+        "PORTAINER_GIT_TOKEN": "",
+        "PORTAINER_GIT_USERNAME": "oauth2",
+        "PORTAINER_TOKEN": "your_portainer_api_token_here",
+        "PORTAINER_URL": "http://localhost:9000",
+        "PORTAINER_VERIFY": "True",
+        "REGISTRYTOOL": "True",
+        "STACKTOOL": "True",
+        "SYSTEMTOOL": "True",
+        "TEMPLATETOOL": "True",
+        "USERTOOL": "True"
       }
     }
   }
 }
 ```
 
-Alternatively, connect to a pre-deployed remote or local Streamable-HTTP instance:
+Alternatively, connect to a pre-deployed Streamable-HTTP instance by `url`:
 
 ```json
 {
   "mcpServers": {
-    "portainer-agent": {
-      "url": "http://localhost:8000/portainer-agent/mcp"
+    "portainer-mcp": {
+      "url": "http://localhost:8000/portainer-mcp/mcp"
     }
   }
 }
@@ -415,24 +445,33 @@ Deploying the Streamable-HTTP server via Docker:
 
 ```bash
 docker run -d \
-  --name portainer-agent-mcp \
+  --name portainer-mcp-mcp \
   -p 8000:8000 \
   -e TRANSPORT=streamable-http \
+  -e HOST=0.0.0.0 \
   -e PORT=8000 \
-  -e PORTAINER_ENDPOINT="your_value" \
-  -e PORTAINER_USERNAME="your_value" \
-  -e PORTAINER_PASSWORD="your_value" \
+  -e MCP_TOOL_MODE=condensed \
+  -e AUTHTOOL=True \
+  -e DOCKERTOOL=True \
+  -e EDGETOOL=True \
+  -e ENVIRONMENTTOOL=True \
+  -e GITLAB_TOKEN="" \
+  -e KUBERNETESTOOL=True \
+  -e PORTAINER_GIT_TOKEN="" \
+  -e PORTAINER_GIT_USERNAME=oauth2 \
+  -e PORTAINER_TOKEN=your_portainer_api_token_here \
+  -e PORTAINER_URL=http://localhost:9000 \
+  -e PORTAINER_VERIFY=True \
+  -e REGISTRYTOOL=True \
+  -e STACKTOOL=True \
+  -e SYSTEMTOOL=True \
+  -e TEMPLATETOOL=True \
+  -e USERTOOL=True \
   knucklessg1/portainer-agent:mcp
 ```
 
-> The `:mcp` tag is the **slim MCP-server image** (built from
-> `docker/Dockerfile --target mcp`, installing `portainer-agent[mcp]`). The default
-> `:latest` tag is the **full agent image** (`--target agent`, `portainer-agent[agent]`)
-> which also bundles the Pydantic AI agent and the epistemic-graph engine — use it
-> when you run `portainer-agent` (the agent), not just the MCP server. See
-> [Container images](#container-images-mcp-vs-agent).
-
----
+_Auto-generated from the code-read env surface (`MCP_TOOL_MODE` + package vars) — do not edit._
+<!-- MCP-CONFIG-EXAMPLES:END -->
 
 <!-- BEGIN GENERATED: additional-deployment-options -->
 ### Additional Deployment Options
