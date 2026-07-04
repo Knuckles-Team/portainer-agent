@@ -1,0 +1,161 @@
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix foaf: <http://xmlns.com/foaf/0.1/> .
+@prefix dc: <http://purl.org/dc/terms/> .
+@prefix : <http://knuckles.team/kg#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+# Portainer container-management ontology — environments (endpoints), stacks, containers,
+# services, images, networks, volumes, registries, templates, edge stacks and teams, with
+# their deployment and placement relationships. All classes and properties live in the
+# shared `:` (kg#) namespace; only the owl:Ontology node gets the per-package IRI. Backs the
+# portainer-agent MCP tool surface (portainer_environment / portainer_stack / portainer_docker
+# / portainer_kubernetes / portainer_registry / portainer_user / …). The shared `:Person`
+# class models Portainer users (never redefined here).
+
+# --- classes (owl:Class) ---
+
+:Environment a owl:Class ;
+    rdfs:label "Environment" ;
+    rdfs:comment "A Portainer-managed endpoint — a Docker host, Swarm cluster, Kubernetes cluster or edge agent (portainer_environment)." .
+
+:EndpointGroup a owl:Class ;
+    rdfs:label "Endpoint Group" ;
+    rdfs:comment "A named group that organizes environments for access control and tagging (portainer_environment get_endpoint_groups)." .
+
+:Stack a owl:Class ;
+    rdfs:label "Stack" ;
+    rdfs:comment "A deployed application stack — a compose/swarm/kubernetes manifest managed as one unit (portainer_stack)." .
+
+:Container a owl:Class ;
+    rdfs:label "Container" ;
+    rdfs:comment "A Docker container running in an environment (portainer_docker docker_list_containers)." .
+
+:Service a owl:Class ;
+    rdfs:label "Service" ;
+    rdfs:comment "A Docker Swarm service — a replicated task definition within an environment (portainer_docker list_services)." .
+
+:Image a owl:Class ;
+    rdfs:label "Image" ;
+    rdfs:comment "A Docker image available in an environment (portainer_docker list_images)." .
+
+:Network a owl:Class ;
+    rdfs:label "Network" ;
+    rdfs:comment "A Docker network within an environment (portainer_docker list_networks)." .
+
+:Volume a owl:Class ;
+    rdfs:label "Volume" ;
+    rdfs:comment "A Docker volume within an environment (portainer_docker list_volumes)." .
+
+:Registry a owl:Class ;
+    rdfs:label "Registry" ;
+    rdfs:comment "A configured container image registry (portainer_registry)." .
+
+:Template a owl:Class ;
+    rdfs:label "App Template" ;
+    rdfs:comment "A reusable application template for one-click deployment (portainer_template)." .
+
+:EdgeStack a owl:Class ;
+    rdfs:label "Edge Stack" ;
+    rdfs:comment "A stack deployed to remote edge environments via the Portainer edge agent (portainer_edge)." .
+
+:Team a owl:Class ;
+    rdfs:label "Team" ;
+    rdfs:comment "A team of Portainer users used for role-based access control (portainer_user get_teams)." .
+
+# --- links (owl:ObjectProperty) ---
+
+:inEnvironment a owl:ObjectProperty ;
+    rdfs:label "in environment" ;
+    rdfs:comment "Links a Stack, Container, Service, Image, Network or Volume to the Environment it lives in." ;
+    rdfs:range :Environment .
+
+:partOfEndpointGroup a owl:ObjectProperty ;
+    rdfs:label "part of endpoint group" ;
+    rdfs:comment "Links an Environment to its owning EndpointGroup." ;
+    rdfs:domain :Environment ;
+    rdfs:range :EndpointGroup .
+
+:deployedByStack a owl:ObjectProperty ;
+    rdfs:label "deployed by stack" ;
+    rdfs:comment "Links a Container or Service to the Stack that deployed it." ;
+    rdfs:range :Stack .
+
+:runsImage a owl:ObjectProperty ;
+    rdfs:label "runs image" ;
+    rdfs:comment "Links a Container or Service to the Image it runs." ;
+    rdfs:range :Image .
+
+:attachedToNetwork a owl:ObjectProperty ;
+    rdfs:label "attached to network" ;
+    rdfs:comment "Links a Container to a Network it is attached to." ;
+    rdfs:domain :Container ;
+    rdfs:range :Network .
+
+:mountsVolume a owl:ObjectProperty ;
+    rdfs:label "mounts volume" ;
+    rdfs:comment "Links a Container to a Volume it mounts." ;
+    rdfs:domain :Container ;
+    rdfs:range :Volume .
+
+:pullsFromRegistry a owl:ObjectProperty ;
+    rdfs:label "pulls from registry" ;
+    rdfs:comment "Links a Stack or Image to the Registry it is pulled from." ;
+    rdfs:range :Registry .
+
+:ownedByUser a owl:ObjectProperty ;
+    rdfs:label "owned by user" ;
+    rdfs:comment "Links a Stack to the Person (Portainer user) who created it." ;
+    rdfs:range :Person .
+
+:memberOfTeam a owl:ObjectProperty ;
+    rdfs:label "member of team" ;
+    rdfs:comment "Links a Person (Portainer user) to a Team they belong to." ;
+    rdfs:domain :Person ;
+    rdfs:range :Team .
+
+# --- fields (owl:DatatypeProperty) ---
+
+:portainerId a owl:DatatypeProperty ;
+    rdfs:label "portainer id" ;
+    rdfs:comment "Numeric Portainer identifier of an Environment, Stack, Registry, Template or Team." ;
+    rdfs:range xsd:string .
+
+:environmentType a owl:DatatypeProperty ;
+    rdfs:label "environment type" ;
+    rdfs:comment "Environment endpoint type (1=Docker, 2=agent, 4=edge agent, 5=Azure, 6=Kubernetes, 7=edge Kubernetes)." ;
+    rdfs:range xsd:integer .
+
+:endpointUrl a owl:DatatypeProperty ;
+    rdfs:label "endpoint url" ;
+    rdfs:comment "Connection URL of an Environment endpoint." ;
+    rdfs:range xsd:string .
+
+:status a owl:DatatypeProperty ;
+    rdfs:label "status" ;
+    rdfs:comment "Lifecycle/health status (Environment up/down, Stack active/inactive, Container running/exited)." ;
+    rdfs:range xsd:string .
+
+:stackType a owl:DatatypeProperty ;
+    rdfs:label "stack type" ;
+    rdfs:comment "Deployment kind of a Stack (1=swarm, 2=compose, 3=kubernetes)." ;
+    rdfs:range xsd:integer .
+
+:imageName a owl:DatatypeProperty ;
+    rdfs:label "image name" ;
+    rdfs:comment "Repository:tag reference of an Image or the image a Container runs." ;
+    rdfs:range xsd:string .
+
+:dockerId a owl:DatatypeProperty ;
+    rdfs:label "docker id" ;
+    rdfs:comment "Docker-engine object id (container/service/image/network/volume sha)." ;
+    rdfs:range xsd:string .
+
+<http://knuckles.team/kg/portainer> a owl:Ontology ;
+    rdfs:label "Portainer Container-Management Ontology" ;
+    rdfs:comment """Portainer container-management model — environments (endpoints), endpoint
+    groups, stacks, containers, services, images, networks, volumes, registries, templates,
+    edge stacks and teams, with their deployment and placement relationships — federated into
+    the agent-utilities knowledge-graph hub.""" ;
+    owl:imports <http://knuckles.team/kg> .

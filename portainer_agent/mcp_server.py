@@ -1588,6 +1588,70 @@ def register_system_tools(mcp: FastMCP):
             f"Unknown action: {action}. Must be one of: get_status', 'get_system_info', 'get_system_version', 'get_settings', 'update_settings', 'get_tags', 'create_tag', 'delete_tag', 'get_motd', 'backup_portainer"
         )
 
+    @mcp.tool(tags={"System", "kg"})
+    async def portainer_ingest_environments(
+        include_stacks: bool = Field(
+            default=True,
+            description="Also list and ingest all stacks and link them to their environments.",
+        ),
+        client=Depends(get_client),
+    ) -> dict:
+        """Natively ingest Portainer environments (+ stacks) into epistemic-graph.
+
+        Lists endpoints via the Portainer API and pushes them as typed ``:Environment``
+        nodes (with ``:EndpointGroup`` + ``:partOfEndpointGroup`` links); when
+        ``include_stacks`` is set, also pushes ``:Stack`` nodes linked ``:inEnvironment``.
+        Best-effort: ``ingested`` is ``None`` when no engine is reachable.
+        CONCEPT:AU-KG.ingest.enterprise-source-extractor.
+        """
+        from portainer_agent.kg_ingest import ingest_environments, ingest_stacks
+
+        def _records(res: Any) -> list[dict]:
+            data = res.get("data", res) if isinstance(res, dict) else res
+            data = data if isinstance(data, list) else [data]
+            return [
+                r.model_dump() if hasattr(r, "model_dump") else r
+                for r in data
+                if isinstance(r, dict) or hasattr(r, "model_dump")
+            ]
+
+        endpoints = _records(await run_blocking(client.get_endpoints))
+        env_result = ingest_environments(endpoints)
+        out: dict[str, Any] = {
+            "environments_listed": len(endpoints),
+            "environments_ingested": env_result,
+        }
+        if include_stacks:
+            stacks = _records(await run_blocking(client.get_stacks))
+            out["stacks_listed"] = len(stacks)
+            out["stacks_ingested"] = ingest_stacks(stacks)
+        return out
+
+    @mcp.tool(tags={"System", "kg"})
+    async def portainer_ingest_containers(
+        environment_id: int = Field(description="Environment (endpoint) id to list containers in."),
+        client=Depends(get_client),
+    ) -> dict:
+        """Natively ingest an environment's Docker containers into epistemic-graph.
+
+        Lists containers in ``environment_id`` and pushes them as typed ``:Container``
+        nodes linked ``:inEnvironment`` (and ``:deployedByStack`` where a compose/stack
+        label is present). Best-effort: ``ingested`` is ``None`` with no reachable engine.
+        CONCEPT:AU-KG.ingest.enterprise-source-extractor.
+        """
+        from portainer_agent.kg_ingest import ingest_containers
+
+        res = await run_blocking(client.list_containers, endpoint_id=environment_id)
+        data = res.get("data", res) if isinstance(res, dict) else res
+        records = data if isinstance(data, list) else [data]
+        containers = [
+            r.model_dump() if hasattr(r, "model_dump") else r
+            for r in records
+            if isinstance(r, dict) or hasattr(r, "model_dump")
+        ]
+        result = ingest_containers(containers, environment_id)
+        return {"listed": len(containers), "ingested": result}
+
 
 def get_mcp_instance() -> tuple[Any, ...]:
     """Initialize and return the MCP instance."""
