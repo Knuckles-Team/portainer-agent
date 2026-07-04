@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """Portainer HTTP base — strangled onto ``agent_utilities.http.BaseApiClient``.
 
-CONCEPT:ECO-4.35 (Fleet HTTP Client Library) adoption: the public surface
+CONCEPT:AU-ECO.ui.fleet-http-client-library (Fleet HTTP Client Library) adoption: the public surface
 (``base_url``/``api_base``/``timeout``/``session``, ``_url`` and the
 ``_get/_post/_put/_patch/_delete/_list`` verbs with their legacy return
 shapes) is unchanged, while the plumbing — typed error mapping, rate-limit
