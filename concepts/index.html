@@ -766,7 +766,7 @@
 <blockquote>
 <p><strong>Prefix</strong>: <code>CONCEPT:PORT-*</code>
 <strong>Version</strong>: 0.14.0
-<strong>Bridge</strong>: <a href="https://github.com/Knuckles-Team/agent-utilities/blob/main/docs/concepts.md"><code>CONCEPT:ECO-4.0</code></a> (Unified Toolkit Ingestion)</p>
+<strong>Bridge</strong>: <a href="https://github.com/Knuckles-Team/agent-utilities/blob/main/docs/concepts.md"><code>CONCEPT:AU-ECO.messaging.native-backend-abstraction</code></a> (Unified Toolkit Ingestion)</p>
 </blockquote>
 <hr />
 <h2 id="project-specific-concepts">Project-Specific Concepts<a class="headerlink" href="#project-specific-concepts" title="Permanent link">&para;</a></h2>
@@ -780,52 +780,52 @@
 </thead>
 <tbody>
 <tr>
-<td><code>CONCEPT:PORT-001</code></td>
+<td><code>CONCEPT:PT-OS.governance.port</code></td>
 <td>Authentication &amp; Session Management</td>
 <td>MCP tool domain <code>auth</code> — Action-routed dynamic tool registration</td>
 </tr>
 <tr>
-<td><code>CONCEPT:PORT-002</code></td>
+<td><code>CONCEPT:PT-OS.governance.port-2</code></td>
 <td>Docker Container Management</td>
 <td>MCP tool domain <code>docker</code> — Action-routed dynamic tool registration</td>
 </tr>
 <tr>
-<td><code>CONCEPT:PORT-003</code></td>
+<td><code>CONCEPT:PT-OS.governance.port-3</code></td>
 <td>Edge Computing &amp; Deployment</td>
 <td>MCP tool domain <code>edge</code> — Action-routed dynamic tool registration</td>
 </tr>
 <tr>
-<td><code>CONCEPT:PORT-004</code></td>
+<td><code>CONCEPT:PT-OS.governance.port-4</code></td>
 <td>Environment Configuration</td>
 <td>MCP tool domain <code>environment</code> — Action-routed dynamic tool registration</td>
 </tr>
 <tr>
-<td><code>CONCEPT:PORT-005</code></td>
+<td><code>CONCEPT:PT-OS.governance.port-5</code></td>
 <td>Kubernetes Orchestration</td>
 <td>MCP tool domain <code>kubernetes</code> — Action-routed dynamic tool registration</td>
 </tr>
 <tr>
-<td><code>CONCEPT:PORT-006</code></td>
+<td><code>CONCEPT:PT-OS.governance.port-6</code></td>
 <td>Container Registry Management</td>
 <td>MCP tool domain <code>registry</code> — Action-routed dynamic tool registration</td>
 </tr>
 <tr>
-<td><code>CONCEPT:PORT-007</code></td>
+<td><code>CONCEPT:PT-OS.governance.port-7</code></td>
 <td>Stack Deployment &amp; Management</td>
 <td>MCP tool domain <code>stack</code> — Action-routed dynamic tool registration</td>
 </tr>
 <tr>
-<td><code>CONCEPT:PORT-008</code></td>
+<td><code>CONCEPT:PT-OS.governance.port-8</code></td>
 <td>System Information &amp; Health</td>
 <td>MCP tool domain <code>system</code> — Action-routed dynamic tool registration</td>
 </tr>
 <tr>
-<td><code>CONCEPT:PORT-009</code></td>
+<td><code>CONCEPT:PT-OS.governance.port-9</code></td>
 <td>Template Management</td>
 <td>MCP tool domain <code>template</code> — Action-routed dynamic tool registration</td>
 </tr>
 <tr>
-<td><code>CONCEPT:PORT-010</code></td>
+<td><code>CONCEPT:PT-OS.governance.port-10</code></td>
 <td>User &amp; Identity Management</td>
 <td>MCP tool domain <code>user</code> — Action-routed dynamic tool registration</td>
 </tr>
@@ -842,44 +842,44 @@
 </thead>
 <tbody>
 <tr>
-<td><code>CONCEPT:ECO-4.0</code></td>
+<td><code>CONCEPT:AU-ECO.messaging.native-backend-abstraction</code></td>
 <td>Unified Toolkit Ingestion</td>
 <td>agent-utilities</td>
 </tr>
 <tr>
-<td><code>CONCEPT:ORCH-1.2</code></td>
+<td><code>CONCEPT:AU-ORCH.adapter.hot-cache-invalidation</code></td>
 <td>Confidence-Gated Router</td>
 <td>agent-utilities</td>
 </tr>
 <tr>
-<td><code>CONCEPT:OS-5.1</code></td>
+<td><code>CONCEPT:AU-OS.config.secrets-authentication</code></td>
 <td>Prompt Injection Defense</td>
 <td>agent-utilities</td>
 </tr>
 <tr>
-<td><code>CONCEPT:OS-5.2</code></td>
+<td><code>CONCEPT:AU-OS.state.cognitive-scheduler-preemption</code></td>
 <td>Cognitive Scheduler</td>
 <td>agent-utilities</td>
 </tr>
 <tr>
-<td><code>CONCEPT:OS-5.3</code></td>
+<td><code>CONCEPT:AU-OS.governance.reactive-multi-axis-budget</code></td>
 <td>Guardrail Engine</td>
 <td>agent-utilities</td>
 </tr>
 <tr>
-<td><code>CONCEPT:OS-5.4</code></td>
+<td><code>CONCEPT:AU-OS.governance.wasm-micro-agent-sandbox</code></td>
 <td>Audit Logging</td>
 <td>agent-utilities</td>
 </tr>
 <tr>
-<td><code>CONCEPT:KG-2.0</code></td>
+<td><code>CONCEPT:AU-KG.query.object-graph-mapper</code></td>
 <td>Knowledge Graph Core</td>
 <td>agent-utilities</td>
 </tr>
 </tbody>
 </table>
 <h2 id="synergy-with-agent-utilities">Synergy with agent-utilities<a class="headerlink" href="#synergy-with-agent-utilities" title="Permanent link">&para;</a></h2>
-<p>This project integrates with <code>agent-utilities</code> via <code>CONCEPT:ECO-4.0</code> (Unified Toolkit Ingestion). The <code>portainer_agent</code> MCP server registers its tools with the agent-utilities FastMCP middleware, enabling automatic discovery, telemetry, and Knowledge Graph ingestion of all PORT-* concepts.</p>
+<p>This project integrates with <code>agent-utilities</code> via <code>CONCEPT:AU-ECO.messaging.native-backend-abstraction</code> (Unified Toolkit Ingestion). The <code>portainer_agent</code> MCP server registers its tools with the agent-utilities FastMCP middleware, enabling automatic discovery, telemetry, and Knowledge Graph ingestion of all PORT-* concepts.</p>
 
 
 
