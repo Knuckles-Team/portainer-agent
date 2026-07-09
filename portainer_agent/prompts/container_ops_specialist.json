@@ -40,6 +40,6 @@
       "flagged destructive actions before running them"
     ]
   },
-  "skills": ["portainer-sync-agent", "analyze_portainer_health"],
+  "skills": ["portainer-sync-agent", "analyze-portainer-health"],
   "tools": ["portainer_environment", "portainer_stack", "portainer_docker", "portainer_kubernetes", "portainer_ingest_environments", "portainer_ingest_containers"]
 }
