@@ -1,5 +1,5 @@
 ---
-name: analyze_portainer_health
+name: analyze-portainer-health
 skill_type: skill
 description: >-
   Analyze Portainer stack health status and Swarm service status. Correlates Swarm services
@@ -21,7 +21,7 @@ metadata:
 
 # Analyze Portainer Health Skill
 
-The `analyze_portainer_health` skill provides a comprehensive diagnostic sweep of Docker Swarm services and Portainer stacks. It correlates Swarm services with their parent stacks, identifies update states, highlights manual configuration drift, and generates a formatted health report with precise remediation steps.
+The `analyze-portainer-health` skill provides a comprehensive diagnostic sweep of Docker Swarm services and Portainer stacks. It correlates Swarm services with their parent stacks, identifies update states, highlights manual configuration drift, and generates a formatted health report with precise remediation steps.
 
 ## Trigger Scenarios
 
