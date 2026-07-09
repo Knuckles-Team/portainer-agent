@@ -1,5 +1,6 @@
 ---
 name: analyze_portainer_health
+skill_type: skill
 description: >-
   Analyze Portainer stack health status and Swarm service status. Correlates Swarm services
   to Portainer stack namespaces, detects degraded or paused service updates, validates

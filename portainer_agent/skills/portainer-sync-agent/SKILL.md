@@ -1,5 +1,6 @@
 ---
 name: portainer-sync-agent
+skill_type: skill
 description: >
   Portainer Sync Agent atomic skill. Connects to Portainer API, resolves environment IDs,
   creates or redeploys stacks, and wires GitOps auto-sync configurations using portainer-mcp.

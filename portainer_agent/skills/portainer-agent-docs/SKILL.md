@@ -1,5 +1,6 @@
 ---
 name: portainer-agent-docs
+skill_type: skill
 description: Documentation and API references for Portainer agent
 crawl_depth: 2
 source_url: https://docs.portainer.io, https://api-docs.portainer.io
