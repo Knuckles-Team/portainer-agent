@@ -1,0 +1,305 @@
+connector: portainer-agent
+ontology_source: portainer
+schema_version: '1'
+resources:
+- name: Container
+  label: Container
+  id_prefix: container
+  relations:
+  - name: attachedToNetwork
+    label: attached to network
+    target: Network
+    lpg_rel_type: ''
+  - name: mountsVolume
+    label: mounts volume
+    target: Volume
+    lpg_rel_type: ''
+- name: EdgeStack
+  label: Edge Stack
+  id_prefix: edgestack
+  relations: []
+- name: EndpointGroup
+  label: Endpoint Group
+  id_prefix: endpointgroup
+  relations: []
+- name: Environment
+  label: Environment
+  id_prefix: environment
+  relations:
+  - name: partOfEndpointGroup
+    label: part of endpoint group
+    target: EndpointGroup
+    lpg_rel_type: ''
+- name: Image
+  label: Image
+  id_prefix: image
+  relations: []
+- name: Network
+  label: Network
+  id_prefix: network
+  relations: []
+- name: Registry
+  label: Registry
+  id_prefix: registry
+  relations: []
+- name: Service
+  label: Service
+  id_prefix: service
+  relations: []
+- name: Stack
+  label: Stack
+  id_prefix: stack
+  relations: []
+- name: Team
+  label: Team
+  id_prefix: team
+  relations: []
+- name: Template
+  label: App Template
+  id_prefix: template
+  relations: []
+- name: Volume
+  label: Volume
+  id_prefix: volume
+  relations: []
+actions:
+- id: run_graph_flow
+  name: Graph Flow Execution
+  description: Execute a workflow through the agent's graph orchestration engine
+events: []
+identity:
+  id_field:
+    environment: Id
+    stack: Id
+  title_field:
+    environment: Name
+    stack: Name
+  text_field:
+    environment: URL
+    stack: Status
+  updated_field: {}
+permissions:
+  acl_fields: []
+  tenant_field: null
+  read_roles: []
+schema_mappings:
+  Container:
+    ontology_class: null
+    fields:
+      dockerId: xsd:string
+      endpointUrl: xsd:string
+      environmentType: xsd:integer
+      imageName: xsd:string
+      portainerId: xsd:string
+      stackType: xsd:integer
+      status: xsd:string
+  EdgeStack:
+    ontology_class: null
+    fields:
+      dockerId: xsd:string
+      endpointUrl: xsd:string
+      environmentType: xsd:integer
+      imageName: xsd:string
+      portainerId: xsd:string
+      stackType: xsd:integer
+      status: xsd:string
+  EndpointGroup:
+    ontology_class: Organization
+    fields:
+      dockerId: xsd:string
+      endpointUrl: xsd:string
+      environmentType: xsd:integer
+      imageName: xsd:string
+      portainerId: xsd:string
+      stackType: xsd:integer
+      status: xsd:string
+  Environment:
+    ontology_class: null
+    fields:
+      dockerId: xsd:string
+      endpointUrl: xsd:string
+      environmentType: xsd:integer
+      imageName: xsd:string
+      portainerId: xsd:string
+      stackType: xsd:integer
+      status: xsd:string
+  Image:
+    ontology_class: null
+    fields:
+      dockerId: xsd:string
+      endpointUrl: xsd:string
+      environmentType: xsd:integer
+      imageName: xsd:string
+      portainerId: xsd:string
+      stackType: xsd:integer
+      status: xsd:string
+  Network:
+    ontology_class: null
+    fields:
+      dockerId: xsd:string
+      endpointUrl: xsd:string
+      environmentType: xsd:integer
+      imageName: xsd:string
+      portainerId: xsd:string
+      stackType: xsd:integer
+      status: xsd:string
+  Registry:
+    ontology_class: null
+    fields:
+      dockerId: xsd:string
+      endpointUrl: xsd:string
+      environmentType: xsd:integer
+      imageName: xsd:string
+      portainerId: xsd:string
+      stackType: xsd:integer
+      status: xsd:string
+  Service:
+    ontology_class: System
+    fields:
+      dockerId: xsd:string
+      endpointUrl: xsd:string
+      environmentType: xsd:integer
+      imageName: xsd:string
+      portainerId: xsd:string
+      stackType: xsd:integer
+      status: xsd:string
+  Stack:
+    ontology_class: null
+    fields:
+      dockerId: xsd:string
+      endpointUrl: xsd:string
+      environmentType: xsd:integer
+      imageName: xsd:string
+      portainerId: xsd:string
+      stackType: xsd:integer
+      status: xsd:string
+  Team:
+    ontology_class: Team
+    fields:
+      dockerId: xsd:string
+      endpointUrl: xsd:string
+      environmentType: xsd:integer
+      imageName: xsd:string
+      portainerId: xsd:string
+      stackType: xsd:integer
+      status: xsd:string
+  Template:
+    ontology_class: null
+    fields:
+      dockerId: xsd:string
+      endpointUrl: xsd:string
+      environmentType: xsd:integer
+      imageName: xsd:string
+      portainerId: xsd:string
+      stackType: xsd:integer
+      status: xsd:string
+  Volume:
+    ontology_class: null
+    fields:
+      dockerId: xsd:string
+      endpointUrl: xsd:string
+      environmentType: xsd:integer
+      imageName: xsd:string
+      portainerId: xsd:string
+      stackType: xsd:integer
+      status: xsd:string
+sync:
+- preset: portainer-environments
+  server: portainer-agent
+  tool: portainer_environment
+  action: get_endpoints
+  records_path: data
+  id_field: Id
+  title_field: Name
+  text_field: URL
+  updated_field: null
+  pagination: null
+  doc_type: environment
+  raw:
+    server: portainer-agent
+    tool: portainer_environment
+    action: get_endpoints
+    records_path: data
+    id_field: Id
+    title_field: Name
+    text_field: URL
+    doc_type: environment
+- preset: portainer-stacks
+  server: portainer-agent
+  tool: portainer_stack
+  action: get_stacks
+  records_path: data
+  id_field: Id
+  title_field: Name
+  text_field: Status
+  updated_field: null
+  pagination: null
+  doc_type: stack
+  raw:
+    server: portainer-agent
+    tool: portainer_stack
+    action: get_stacks
+    records_path: data
+    id_field: Id
+    title_field: Name
+    text_field: Status
+    doc_type: stack
+provenance:
+  generated_by: scripts/generate_connector_manifests.py
+  generated_at: '2026-07-09T00:00:00Z'
+  source_artifacts:
+  - a2a.json
+  - portainer_agent/connectors/mcp_source_presets.json
+  - portainer_agent/ontology/portainer.ttl
+  integrity:
+    algorithm: urdna2015-sha256
+    hash: dc15d71e746013ac8e7afc154cb5f707c33e542228ff9a25924716d12b423dab
+    triple_count: 76
+  signer: ontology-manifest-generator
+  signature: 90df016c5cf5a8d65d6bde8f27af52bf80e91aeb7b4da824fbbbb92b5e9e287d
+policy:
+  pii_fields: {}
+  tenant_boundary: null
+  rls: []
+review_todos:
+- "policy.rls / policy.tenant_boundary are unset \u2014 no row-level-security predicate has been reviewed\
+  \ for this connector."
+- "relation 'deployedByStack' has no declared rdfs:domain resolving to a known resource in this connector's\
+  \ ontology \u2014 not attached to any resource; verify its true domain manually."
+- "relation 'inEnvironment' has no declared rdfs:domain resolving to a known resource in this connector's\
+  \ ontology \u2014 not attached to any resource; verify its true domain manually."
+- "relation 'memberOfTeam' has no declared rdfs:domain resolving to a known resource in this connector's\
+  \ ontology \u2014 not attached to any resource; verify its true domain manually."
+- "relation 'ownedByUser' has no declared rdfs:domain resolving to a known resource in this connector's\
+  \ ontology \u2014 not attached to any resource; verify its true domain manually."
+- "relation 'pullsFromRegistry' has no declared rdfs:domain resolving to a known resource in this connector's\
+  \ ontology \u2014 not attached to any resource; verify its true domain manually."
+- "relation 'runsImage' has no declared rdfs:domain resolving to a known resource in this connector's\
+  \ ontology \u2014 not attached to any resource; verify its true domain manually."
+- "schema_mappings.Container.ontology_class = None [UNRESOLVED \u2014 no crosswalk found by any heuristic]\
+  \ \u2014 verify manually before relying on this crosswalk for reasoning/joins."
+- "schema_mappings.EdgeStack.ontology_class = None [UNRESOLVED \u2014 no crosswalk found by any heuristic]\
+  \ \u2014 verify manually before relying on this crosswalk for reasoning/joins."
+- "schema_mappings.EndpointGroup.ontology_class = 'Organization' [DRAFT \u2014 nearest hub-canonical-class-by-name\
+  \ heuristic (D16 residue; human sign-off required before use)] \u2014 verify manually before relying\
+  \ on this crosswalk for reasoning/joins."
+- "schema_mappings.Environment.ontology_class = None [UNRESOLVED \u2014 no crosswalk found by any heuristic]\
+  \ \u2014 verify manually before relying on this crosswalk for reasoning/joins."
+- "schema_mappings.Image.ontology_class = None [UNRESOLVED \u2014 no crosswalk found by any heuristic]\
+  \ \u2014 verify manually before relying on this crosswalk for reasoning/joins."
+- "schema_mappings.Network.ontology_class = None [UNRESOLVED \u2014 no crosswalk found by any heuristic]\
+  \ \u2014 verify manually before relying on this crosswalk for reasoning/joins."
+- "schema_mappings.Registry.ontology_class = None [UNRESOLVED \u2014 no crosswalk found by any heuristic]\
+  \ \u2014 verify manually before relying on this crosswalk for reasoning/joins."
+- "schema_mappings.Service.ontology_class = 'System' [DRAFT \u2014 nearest hub-canonical-class-by-name\
+  \ heuristic (D16 residue; human sign-off required before use)] \u2014 verify manually before relying\
+  \ on this crosswalk for reasoning/joins."
+- "schema_mappings.Stack.ontology_class = None [UNRESOLVED \u2014 no crosswalk found by any heuristic]\
+  \ \u2014 verify manually before relying on this crosswalk for reasoning/joins."
+- "schema_mappings.Team.ontology_class = 'Team' [DRAFT \u2014 nearest hub-canonical-class-by-name heuristic\
+  \ (D16 residue; human sign-off required before use)] \u2014 verify manually before relying on this crosswalk\
+  \ for reasoning/joins."
+- "schema_mappings.Template.ontology_class = None [UNRESOLVED \u2014 no crosswalk found by any heuristic]\
+  \ \u2014 verify manually before relying on this crosswalk for reasoning/joins."
+- "schema_mappings.Volume.ontology_class = None [UNRESOLVED \u2014 no crosswalk found by any heuristic]\
+  \ \u2014 verify manually before relying on this crosswalk for reasoning/joins."
