@@ -4,16 +4,45 @@ from typing import Any
 from portainer_agent.api.api_client_base import BaseApiClient
 
 
+def _entitled(namespace: str, names: list[str]) -> list[str]:
+    """Filter ``names`` to the subset the calling identity's Okta/Keycloak groups
+    entitle (CONCEPT:AU-OS.identity.identity-scoped-resource-autoload). Degrades
+    to the full list if agent-utilities predates the resolver.
+    """
+    try:
+        from agent_utilities.security.entitlements import identity_scoped_resources
+    except Exception:
+        return list(names)
+    return list(identity_scoped_resources(namespace, names))
+
+
 class Api(BaseApiClient):
     def get_endpoints(
         self, limit: int | None = None, offset: int | None = None, **filters
     ) -> Any:
-        """List all environments (endpoints)."""
-        return self._list("endpoints", limit=limit, offset=offset, **filters)
+        """List all environments (endpoints) the caller is entitled to."""
+        endpoints = self._list("endpoints", limit=limit, offset=offset, **filters)
+        if isinstance(endpoints, list):
+            names = [
+                e["Name"] for e in endpoints if isinstance(e, dict) and e.get("Name")
+            ]
+            entitled = set(_entitled("portainer", names))
+            endpoints = [
+                e
+                for e in endpoints
+                if not isinstance(e, dict) or not e.get("Name") or e["Name"] in entitled
+            ]
+        return endpoints
 
     def get_endpoint(self, endpoint_id: int) -> dict:
-        """Get a specific environment by ID."""
-        return self._get(f"endpoints/{endpoint_id}")
+        """Get a specific environment by ID. Denied if not entitled."""
+        endpoint = self._get(f"endpoints/{endpoint_id}")
+        name = endpoint.get("Name") if isinstance(endpoint, dict) else None
+        if name and name not in _entitled("portainer", [name]):
+            raise PermissionError(
+                f"Your identity is not entitled to the Portainer environment '{name}'."
+            )
+        return endpoint
 
     def create_endpoint(
         self, name: str, endpoint_type: int, url: str = "", **kwargs
