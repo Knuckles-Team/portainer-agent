@@ -64,6 +64,10 @@
     rdfs:label "Team" ;
     rdfs:comment "A team of Portainer users used for role-based access control (portainer_user get_teams)." .
 
+:Repository a owl:Class ;
+    rdfs:label "Repository" ;
+    rdfs:comment "The git source repository a Stack was deployed from (portainer_stack GitConfig)." .
+
 # --- links (owl:ObjectProperty) ---
 
 :inEnvironment a owl:ObjectProperty ;
@@ -115,6 +119,12 @@
     rdfs:domain :Person ;
     rdfs:range :Team .
 
+:deployedFrom a owl:ObjectProperty ;
+    rdfs:label "deployed from" ;
+    rdfs:comment "Links a git-backed Stack to the Repository (GitConfig.URL) it was deployed from." ;
+    rdfs:domain :Stack ;
+    rdfs:range :Repository .
+
 # --- fields (owl:DatatypeProperty) ---
 
 :portainerId a owl:DatatypeProperty ;
@@ -150,6 +160,24 @@
 :dockerId a owl:DatatypeProperty ;
     rdfs:label "docker id" ;
     rdfs:comment "Docker-engine object id (container/service/image/network/volume sha)." ;
+    rdfs:range xsd:string .
+
+:repositoryUrl a owl:DatatypeProperty ;
+    rdfs:label "repository url" ;
+    rdfs:comment "Normalized git remote URL of a git-backed Stack's source Repository." ;
+    rdfs:domain :Stack ;
+    rdfs:range xsd:string .
+
+:repositoryRef a owl:DatatypeProperty ;
+    rdfs:label "repository ref" ;
+    rdfs:comment "Git branch/tag reference (GitConfig.ReferenceName) a Stack tracks." ;
+    rdfs:domain :Stack ;
+    rdfs:range xsd:string .
+
+:composePath a owl:DatatypeProperty ;
+    rdfs:label "compose path" ;
+    rdfs:comment "Path to the compose/manifest file within the source Repository (GitConfig.ConfigFilePath or EntryPoint)." ;
+    rdfs:domain :Stack ;
     rdfs:range xsd:string .
 
 <http://knuckles.team/kg/portainer> a owl:Ontology ;

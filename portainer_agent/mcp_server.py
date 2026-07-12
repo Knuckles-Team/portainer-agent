@@ -36,7 +36,7 @@ from starlette.responses import JSONResponse
 from portainer_agent.api_client import PortainerApi
 from portainer_agent.auth import get_client
 
-__version__ = "1.0.2"
+__version__ = "1.1.0"
 
 logger = get_logger(name="portainer-agent")
 logger.setLevel(logging.INFO)
@@ -1629,7 +1629,9 @@ def register_system_tools(mcp: FastMCP):
 
     @mcp.tool(tags={"System", "kg"})
     async def portainer_ingest_containers(
-        environment_id: int = Field(description="Environment (endpoint) id to list containers in."),
+        environment_id: int = Field(
+            description="Environment (endpoint) id to list containers in."
+        ),
         client=Depends(get_client),
     ) -> dict:
         """Natively ingest an environment's Docker containers into epistemic-graph.

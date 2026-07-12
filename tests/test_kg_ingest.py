@@ -117,6 +117,109 @@ def test_ingest_stacks_links_environment():
     ]
 
 
+def test_ingest_stacks_git_backed_creates_repository_and_deployed_from_edge():
+    c = _FakeClient()
+    res = ingest_stacks(
+        [
+            {
+                "Id": 5,
+                "Name": "web",
+                "Type": 2,
+                "Status": 1,
+                "EndpointId": 1,
+                "EntryPoint": "docker-compose.yml",
+                "GitConfig": {
+                    "URL": "https://oauth2:token123@github.com/acme/web-stack.git/",
+                    "ReferenceName": "refs/heads/main",
+                    "ConfigFilePath": "deploy/docker-compose.yml",
+                },
+            }
+        ],
+        client=c,
+        graph="__commons__",
+    )
+    assert res == {"nodes": 2, "edges": 2}
+    st = c.txn.nodes["portainer:stack:5"]
+    assert st["repositoryUrl"] == "https://github.com/acme/web-stack"
+    assert st["repositoryRef"] == "refs/heads/main"
+    # explicit GitConfig.ConfigFilePath wins over the top-level EntryPoint
+    assert st["composePath"] == "deploy/docker-compose.yml"
+
+    repo_node = "git:repo:github.com/acme/web-stack"
+    repo = c.txn.nodes[repo_node]
+    assert repo["type"] == "Repository"
+    assert repo["url"] == "https://github.com/acme/web-stack"
+    assert (
+        "portainer:stack:5",
+        repo_node,
+        {"type": "deployedFrom"},
+    ) in c.edges.edges
+    assert (
+        "portainer:stack:5",
+        "portainer:environment:1",
+        {"type": "inEnvironment"},
+    ) in c.edges.edges
+
+
+def test_ingest_stacks_git_backed_scp_style_and_entrypoint_fallback():
+    c = _FakeClient()
+    res = ingest_stacks(
+        [
+            {
+                "Id": 6,
+                "Name": "api",
+                "EntryPoint": "docker-compose.yml",
+                "GitConfig": {
+                    "URL": "git@gitlab.example.com:team/api.git",
+                },
+            }
+        ],
+        client=c,
+        graph="__commons__",
+    )
+    assert res == {"nodes": 2, "edges": 1}
+    st = c.txn.nodes["portainer:stack:6"]
+    assert st["repositoryUrl"] == "https://gitlab.example.com/team/api"
+    # no ReferenceName/ConfigFilePath supplied -> falls back to EntryPoint, no ref
+    assert st["composePath"] == "docker-compose.yml"
+    assert "repositoryRef" not in st
+    assert c.txn.nodes["git:repo:gitlab.example.com/team/api"]["type"] == "Repository"
+
+
+def test_ingest_stacks_without_git_config_has_no_repository_node():
+    c = _FakeClient()
+    res = ingest_stacks(
+        [{"Id": 7, "Name": "plain", "EndpointId": 1, "GitConfig": None}],
+        client=c,
+        graph="__commons__",
+    )
+    assert res == {"nodes": 1, "edges": 1}
+    st = c.txn.nodes["portainer:stack:7"]
+    assert "repositoryUrl" not in st
+    assert "repositoryRef" not in st
+    assert "composePath" not in st
+    assert not any(n.startswith("git:repo:") for n in c.txn.nodes)
+    assert c.edges.edges == [
+        ("portainer:stack:7", "portainer:environment:1", {"type": "inEnvironment"})
+    ]
+
+
+def test_ingest_stacks_git_backed_noops_without_engine():
+    # No injected client + no reachable engine -> clean no-op, even for a git-backed stack.
+    assert (
+        ingest_stacks(
+            [
+                {
+                    "Id": 8,
+                    "Name": "web",
+                    "GitConfig": {"URL": "https://github.com/acme/web.git"},
+                }
+            ]
+        )
+        is None
+    )
+
+
 def test_ingest_containers_links_env_and_stack():
     c = _FakeClient()
     res = ingest_containers(
