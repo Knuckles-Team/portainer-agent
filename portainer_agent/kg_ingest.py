@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import logging
 from typing import Any
+from urllib.parse import urlsplit
 
 logger = logging.getLogger("portainer_agent.kg")
 
@@ -166,34 +167,108 @@ def ingest_environments(
     return ingest_entities(entities, relationships, client=client, graph=graph)
 
 
+def _normalize_repo_url(url: Any) -> tuple[str, str] | None:
+    """Normalize a git remote URL -> ``(clean_url, repo_node_id)``, or ``None``.
+
+    Strips embedded credentials, a trailing ``.git``, and a trailing slash so the id is
+    stable regardless of protocol/auth. Handles HTTP(S) and SCP-style
+    (``git@host:owner/name.git``) remotes.
+
+    The source-code connectors (``gitlab-api``, ``github-agent``) key their own
+    ``:Project``/``:Repository`` nodes by *that system's internal numeric id*
+    (``gitlab:project:<id>``, ``github:repository:<id>``) — an id Portainer's
+    ``GitConfig`` does not carry, only the remote URL. So this uses a clean
+    normalized-URL id instead (``git:repo:<host>/<path>``); it intentionally does not
+    (and cannot) collide with those ids.
+    """
+    if not url or not isinstance(url, str):
+        return None
+    raw = url.strip()
+    if not raw:
+        return None
+    if "://" in raw:
+        parts = urlsplit(raw)
+        host = (parts.hostname or "").lower()
+        path = parts.path or ""
+    elif "@" in raw and ":" in raw:
+        # SCP-style remote, e.g. git@github.com:owner/name.git
+        _, _, rest = raw.partition("@")
+        host, _, path = rest.partition(":")
+        host = host.lower()
+    else:
+        return None
+    path = path.strip("/")
+    if path.endswith(".git"):
+        path = path[: -len(".git")]
+    if not host or not path:
+        return None
+    return f"https://{host}/{path}", f"git:repo:{host}/{path}"
+
+
+def _repo_from_git_config(
+    stack: dict[str, Any],
+) -> tuple[str, str, Any, Any] | None:
+    """Extract ``(repo_node_id, clean_url, ref, compose_path)`` from a Stack's ``GitConfig``."""
+    git_conf = _get(stack, "GitConfig", "gitConfig")
+    if not git_conf:
+        return None
+    normalized = _normalize_repo_url(_get(git_conf, "URL", "url"))
+    if not normalized:
+        return None
+    clean_url, repo_node = normalized
+    ref = _get(git_conf, "ReferenceName", "referenceName")
+    compose_path = _get(git_conf, "ConfigFilePath", "configFilePath") or _get(
+        stack, "EntryPoint", "entryPoint"
+    )
+    return repo_node, clean_url, ref, compose_path
+
+
 def ingest_stacks(
     stacks: list[dict[str, Any]],
     *,
     client: Any | None = None,
     graph: str | None = None,
 ) -> dict[str, int] | None:
-    """Map Portainer stack records → ``:Stack`` nodes linked to their ``:Environment``."""
+    """Map Portainer stack records → ``:Stack`` nodes linked to their ``:Environment``.
+
+    Git-backed stacks (``GitConfig``) additionally get ``repositoryUrl`` /
+    ``repositoryRef`` / ``composePath`` stamped onto the ``:Stack`` node, plus a
+    ``:Repository`` node and a ``:deployedFrom`` edge, so the deployed stack traces
+    back to its source repo.
+    """
     entities: list[dict[str, Any]] = []
     relationships: list[dict[str, Any]] = []
     for st in stacks or []:
         sid = _get(st, "Id", "id")
         if sid is None:
             continue
-        entities.append(
-            {
-                "id": f"portainer:stack:{sid}",
-                "type": "Stack",
-                "name": _get(st, "Name", "name"),
-                "stackType": _get(st, "Type", "type"),
-                "status": _stack_status(_get(st, "Status", "status")),
-                "portainerId": str(sid),
-            }
-        )
+        stack_node = f"portainer:stack:{sid}"
+        stack_entity: dict[str, Any] = {
+            "id": stack_node,
+            "type": "Stack",
+            "name": _get(st, "Name", "name"),
+            "stackType": _get(st, "Type", "type"),
+            "status": _stack_status(_get(st, "Status", "status")),
+            "portainerId": str(sid),
+        }
+        repo = _repo_from_git_config(st)
+        if repo:
+            repo_node, repo_url, repo_ref, compose_path = repo
+            stack_entity["repositoryUrl"] = repo_url
+            if repo_ref:
+                stack_entity["repositoryRef"] = repo_ref
+            if compose_path:
+                stack_entity["composePath"] = compose_path
+            entities.append({"id": repo_node, "type": "Repository", "url": repo_url})
+            relationships.append(
+                {"source": stack_node, "target": repo_node, "type": "deployedFrom"}
+            )
+        entities.append(stack_entity)
         env = _get(st, "EndpointId", "endpointId")
         if env is not None:
             relationships.append(
                 {
-                    "source": f"portainer:stack:{sid}",
+                    "source": stack_node,
                     "target": f"portainer:environment:{env}",
                     "type": "inEnvironment",
                 }

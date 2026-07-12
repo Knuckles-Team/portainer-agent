@@ -1629,7 +1629,9 @@ def register_system_tools(mcp: FastMCP):
 
     @mcp.tool(tags={"System", "kg"})
     async def portainer_ingest_containers(
-        environment_id: int = Field(description="Environment (endpoint) id to list containers in."),
+        environment_id: int = Field(
+            description="Environment (endpoint) id to list containers in."
+        ),
         client=Depends(get_client),
     ) -> dict:
         """Natively ingest an environment's Docker containers into epistemic-graph.
