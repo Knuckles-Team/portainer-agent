@@ -497,7 +497,7 @@ Documentation and API references for Portainer agent
 - [Admin Registries Browse](reference/admin_registries_browse.md)
 - [Admin User Roles](reference/admin_user_roles.md)
 - [Contribute Contribute](reference/contribute_contribute.md)
-- [What's New](reference/what's-new.md)
+- [What's New](reference/whats-new.md)
 
 ## 🤖 Agent Usage Guide
 
