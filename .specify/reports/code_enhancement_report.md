@@ -48,13 +48,13 @@ xychart-beta
 |-----------|--------|----------|-----------|
 | has_pyproject | 10 | `pyproject.toml and requirements.txt` | Both pyproject.toml and requirements.txt exist, fulfilling mandatory Python proj |
 | project_type_detected | 10 | `Agent-Utilities Ecosystem` | Identified 1 ecosystem marker(s) in dependencies |
-| externalized_prompts | 0 | `/home/apps/workspace/agent-packages/agents/portainer-agent` | No prompts/ directory found. Prompts may be hardcoded in source. |
+| externalized_prompts | 0 | `${WORKSPACE_ROOT}/agent-packages/agents/portainer-agent` | No prompts/ directory found. Prompts may be hardcoded in source. |
 | observability | 0 | `dependency list` | No observability tools (logfire, sentry, opentelemetry) found |
 | testing_suite | 10 | `tests dir: True, pytest dep: True` | Tests directory exists, pytest in dependencies |
-| agents_md | 10 | `/home/apps/workspace/agent-packages/agents/portainer-agent/A` | AGENTS.md exists with comprehensive content |
-| pre_commit_hooks | 10 | `/home/apps/workspace/agent-packages/agents/portainer-agent/.` | Pre-commit configuration found for automated code quality checks |
-| gitignore | 10 | `/home/apps/workspace/agent-packages/agents/portainer-agent/.` | .gitignore exists to prevent committing build artifacts and secrets |
-| env_template | 10 | `/home/apps/workspace/agent-packages/agents/portainer-agent/.` | Environment template exists for onboarding and secret management |
+| agents_md | 10 | `${WORKSPACE_ROOT}/agent-packages/agents/portainer-agent/A` | AGENTS.md exists with comprehensive content |
+| pre_commit_hooks | 10 | `${WORKSPACE_ROOT}/agent-packages/agents/portainer-agent/.` | Pre-commit configuration found for automated code quality checks |
+| gitignore | 10 | `${WORKSPACE_ROOT}/agent-packages/agents/portainer-agent/.` | .gitignore exists to prevent committing build artifacts and secrets |
+| env_template | 10 | `${WORKSPACE_ROOT}/agent-packages/agents/portainer-agent/.` | Environment template exists for onboarding and secret management |
 | protocol_support | 4 | `MCP` | 1 communication protocol(s) detected |
 
 **Findings:**
@@ -72,7 +72,7 @@ xychart-beta
 
 | Criterion | Points | Evidence | Reasoning |
 |-----------|--------|----------|-----------|
-| dependency_freshness | 94 | `source=/home/apps/workspace/agent-packages/agents/portainer-` | Audited 5 deps (3 installed, 2 constraint-only). 0 major, 2 minor, 0 patch updat |
+| dependency_freshness | 94 | `source=${WORKSPACE_ROOT}/agent-packages/agents/portainer-` | Audited 5 deps (3 installed, 2 constraint-only). 0 major, 2 minor, 0 patch updat |
 
 **Findings:**
 - Minor update: agent-utilities 0.2.40 (installed) -> 0.16.0
@@ -208,7 +208,7 @@ xychart-beta
 
 | Criterion | Points | Evidence | Reasoning |
 |-----------|--------|----------|-----------|
-| precommit_config | 85 | `/home/apps/workspace/agent-packages/agents/portainer-agent/.` | Pre-commit config found. Execution skipped for offline execution stability. |
+| precommit_config | 85 | `${WORKSPACE_ROOT}/agent-packages/agents/portainer-agent/.` | Pre-commit config found. Execution skipped for offline execution stability. |
 
 ---
 
@@ -238,7 +238,7 @@ xychart-beta
 
 | Criterion | Points | Evidence | Reasoning |
 |-----------|--------|----------|-----------|
-| bumpversion_exists | 20 | `/home/apps/workspace/agent-packages/agents/portainer-agent/.` | .bumpversion.cfg found |
+| bumpversion_exists | 20 | `${WORKSPACE_ROOT}/agent-packages/agents/portainer-agent/.` | .bumpversion.cfg found |
 | current_version_defined | 20 | `0.14.0` | Current version tracked is 0.14.0 |
 | files_tracked | 20 | `5 files tracked` | Found 5 files tracked in .bumpversion.cfg |
 | version_drift_check | 40 | `0 drifted files` | No version drift detected in codebase files |
@@ -293,8 +293,8 @@ xychart-beta
 | env_var_documentation | 64 | `{"total_vars": 24, "python_vars": 13, "dockerfile_vars": 4, ` | Found 24 unique env vars across 82 occurrences. README documents 7/24. Has .env. |
 
 **Findings:**
-- Undocumented env vars: AUTHTOOL, AUTH_TYPE, DOCKERTOOL, EDGETOOL, ENVIRONMENTTOOL, EUNOMIA_POLICY_FILE, EUNOMIA_TYPE, KUBERNETESTOOL, OTEL_EXPORTER_OTLP_ENDPOINT, PORTAINER_SSL_VERIFY
-- 3 Python env vars not in .env.example: PORTAINER_SSL_VERIFY, PORTAINER_TOKEN, PORTAINER_URL
+- Undocumented env vars: AUTHTOOL, AUTH_TYPE, DOCKERTOOL, EDGETOOL, ENVIRONMENTTOOL, EUNOMIA_POLICY_FILE, EUNOMIA_TYPE, KUBERNETESTOOL, OTEL_EXPORTER_OTLP_ENDPOINT, TLS_PROFILE
+- 3 Python env vars not in .env.example: TLS_PROFILE, PORTAINER_TOKEN, PORTAINER_URL
 
 ---
 
@@ -324,7 +324,7 @@ xychart-beta
 | 20 | 🔴 High | Pytest Quality | 12 tests have no assertions | High | Medium |
 | 21 | 🔴 High | Environment Variables | Only 29% of env vars documented in README.md | High | Medium |
 | 22 | 🔴 High | Environment Variables | Undocumented env vars: AUTHTOOL, AUTH_TYPE, DOCKERTOOL, EDGETOOL, ENVIRONMENTTOO | High | Medium |
-| 23 | 🔴 High | Environment Variables | 3 Python env vars not in .env.example: PORTAINER_SSL_VERIFY, PORTAINER_TOKEN, PO | High | Medium |
+| 23 | 🔴 High | Environment Variables | 3 Python env vars not in .env.example: TLS_PROFILE, PORTAINER_TOKEN, PO | High | Medium |
 | 24 | 🟡 Medium | Project Analysis | Detected ecosystem marker: agent-utilities → Agent-Utilities Ecosystem | Medium | Low |
 | 25 | 🟡 Medium | Project Analysis | Protocol support: MCP | Medium | Low |
 | 26 | 🟡 Medium | Project Analysis | Detected 1 agent skill(s) — will grade in CE-026 | Medium | Low |

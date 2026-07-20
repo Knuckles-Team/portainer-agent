@@ -40,8 +40,8 @@ def load_json_file(filepath):
             if isinstance(data, dict) and "data" in data:
                 return data["data"]
             return data
-    except Exception as e:
-        print(f"Error: Failed to load JSON file '{filepath}': {e}", file=sys.stderr)
+    except Exception as exc:
+        print(f"Error: Failed to load JSON input: {type(exc).__name__}", file=sys.stderr)
         sys.exit(1)
 
 
@@ -376,10 +376,10 @@ def main():
             os.makedirs(os.path.dirname(os.path.abspath(args.output)), exist_ok=True)
             with open(args.output, "w", encoding="utf-8") as f:
                 f.write(report_content)
-            print(f"Diagnostics report written successfully to '{args.output}'")
-        except Exception as e:
+            print("Diagnostics report written successfully")
+        except Exception as exc:
             print(
-                f"Error: Failed to write report to '{args.output}': {e}",
+                f"Error: Failed to write report: {type(exc).__name__}",
                 file=sys.stderr,
             )
             sys.exit(1)

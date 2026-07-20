@@ -172,7 +172,7 @@
     properties:
       agentImage:
         description: Name of the agent image, does not include the registry
-        example: portainer/agent:latest
+        example: portainer/agent@sha256:<digest>
         type: string
       created:
         description: Created timestamp
@@ -227,7 +227,7 @@
       updaterImage:
         description: Name of the updater image, does not include the registry but
           must include a tag
-        example: portainer/portainer-updater:latest
+        example: portainer/portainer-updater@sha256:<digest>
         type: string
       version:
         description: Deprecated
@@ -251,7 +251,7 @@
     properties:
       agentImage:
         description: Name of the agent image, does not include the registry
-        example: portainer/agent:latest
+        example: portainer/agent@sha256:<digest>
         type: string
       created:
         description: Created timestamp
@@ -316,7 +316,7 @@
       updaterImage:
         description: Name of the updater image, does not include the registry but
           must include a tag
-        example: portainer/portainer-updater:latest
+        example: portainer/portainer-updater@sha256:<digest>
         type: string
       version:
         description: Deprecated
@@ -342,7 +342,7 @@
       Type:
         $ref: '#/definitions/types.UpdateScheduleType'
       UpdaterImage:
-        description: default to "" == portainer/portainer-updater:latest
+        description: default to "" == portainer/portainer-updater@sha256:<digest>
         type: string
     type: object
   endpointedge.EdgeAsyncResponse:

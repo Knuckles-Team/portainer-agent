@@ -13,8 +13,9 @@ two failure modes bite:
 So this tool merges env overrides AND pushes the *current repo* compose file in
 the same update, keeping the deployed stack and the repo in lockstep.
 
-Dependency-free (stdlib urllib). Credentials come from the environment
-(PORTAINER_URL, PORTAINER_TOKEN) or --url/--token. No secret is hard-coded.
+The script uses the package's normal ``agent-utilities``/``httpx`` runtime.
+Credentials come from the environment (PORTAINER_URL, PORTAINER_TOKEN) or
+--url/--token. No secret is hard-coded.
 
 Usage:
   portainer_stack_env.py --stack-id 262 \
@@ -30,40 +31,28 @@ from __future__ import annotations
 import argparse
 import json
 import os
-import ssl
 import sys
 import urllib.parse
-import urllib.request
 
-try:
-    from agent_utilities.base_utilities import to_boolean
-except ImportError:  # keep the skill usable without agent-utilities installed
-
-    def to_boolean(v: object) -> bool:
-        return str(v).strip().lower() in ("1", "true", "yes", "on")
+import httpx
+from agent_utilities.core.transport_security import (
+    ResolvedTLSProfile,
+    resolve_configured_tls_profile,
+)
 
 
-def _ctx(verify: bool) -> ssl.SSLContext | None:
-    if verify:
-        return None
-    c = ssl.create_default_context()
-    c.check_hostname = False
-    c.verify_mode = ssl.CERT_NONE
-    return c
-
-
-def _req(method, url, token, verify, body=None):
+def _req(method, url, token, tls_profile: ResolvedTLSProfile, body=None):
     if urllib.parse.urlparse(url).scheme not in ("http", "https"):
-        raise ValueError(f"refusing non-HTTP(S) Portainer URL: {url!r}")
-    data = json.dumps(body).encode() if body is not None else None
-    r = urllib.request.Request(
-        url,
-        data=data,
-        method=method,
-        headers={"X-API-Key": token, "Content-Type": "application/json"},
-    )
-    with urllib.request.urlopen(r, timeout=30, context=_ctx(verify)) as resp:  # nosec B310 - scheme validated above
-        return json.loads(resp.read() or "{}")
+        raise ValueError("refusing configured non-HTTP(S) endpoint")
+    with httpx.Client(timeout=30.0, **tls_profile.httpx_kwargs()) as client:
+        response = client.request(
+            method,
+            url,
+            json=body,
+            headers={"X-API-Key": token, "Content-Type": "application/json"},
+        )
+        response.raise_for_status()
+        return response.json() if response.content else {}
 
 
 def main() -> int:
@@ -86,11 +75,6 @@ def main() -> int:
         "--compose-file",
         help="repo stack file to push as the stored compose (recommended)",
     )
-    ap.add_argument(
-        "--insecure",
-        action="store_true",
-        help="skip TLS verification (default honors PORTAINER_VERIFY)",
-    )
     a = ap.parse_args()
 
     if not a.url or not a.token:
@@ -99,7 +83,7 @@ def main() -> int:
             file=sys.stderr,
         )
         return 2
-    verify = not a.insecure and to_boolean(os.getenv("PORTAINER_VERIFY", "True"))
+    tls_profile = resolve_configured_tls_profile("portainer")
     base = a.url.rstrip("/")
 
     overrides: dict[str, str] = {}
@@ -109,14 +93,16 @@ def main() -> int:
         k, _, v = kv.partition("=")
         overrides[k] = v
 
-    stack = _req("GET", f"{base}/api/stacks/{a.stack_id}", a.token, verify)
+    stack = _req("GET", f"{base}/api/stacks/{a.stack_id}", a.token, tls_profile)
     eid = stack["EndpointId"]
     env = {e["name"]: e["value"] for e in (stack.get("Env") or [])}
     env.update(overrides)
     if a.compose_file:
         content = open(a.compose_file).read()
     else:
-        content = _req("GET", f"{base}/api/stacks/{a.stack_id}/file", a.token, verify)[
+        content = _req(
+            "GET", f"{base}/api/stacks/{a.stack_id}/file", a.token, tls_profile
+        )[
             "StackFileContent"
         ]
 
@@ -124,7 +110,7 @@ def main() -> int:
         "PUT",
         f"{base}/api/stacks/{a.stack_id}?endpointId={eid}",
         a.token,
-        verify,
+        tls_profile,
         {
             "env": [{"name": k, "value": v} for k, v in env.items()],
             "stackFileContent": content,

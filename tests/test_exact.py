@@ -2,13 +2,12 @@ import os
 
 os.environ["PORTAINER_URL"] = "https://portainer.com"
 os.environ["PORTAINER_TOKEN"] = "TEST"
-os.environ["PORTAINER_SSL_VERIFY"] = "False"
 
 
 import asyncio
 
 import pytest
-from agent_utilities.graph_orchestration import (
+from agent_utilities.graph import (
     initialize_graph_from_workspace,
     run_graph,
 )
@@ -19,13 +18,12 @@ async def test_exact():
     import logging
 
     logging.basicConfig(level=logging.DEBUG)
-    logger = logging.getLogger(__name__)
 
     try:
         print("=== EXACT QUERY TEST ===")
         # Use the centralized workspace initialization
         graph, config = initialize_graph_from_workspace(
-            base_url="http://vllm.arpa/v1",
+            base_url="http://vllm.example/v1",
             api_key="llama",
         )
 
@@ -84,7 +82,7 @@ async def test_exact():
 
     except Exception as e:
         print("\n=== ERROR ===")
-        print(f"Error: {e}")
+        print(f"Operation failed: {type(e).__name__}")
         import traceback
 
         traceback.print_exc()

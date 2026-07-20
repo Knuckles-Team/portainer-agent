@@ -1,0 +1,9 @@
+{
+  "algorithm": "agent-utilities:mcp-tool-schema-compat:v1",
+  "connector": "portainer-agent",
+  "schema_version": "1",
+  "tools": {
+    "portainer_environment": "b50529ca205c7216273190f09e90c507282e9b072f31d151b2f637d4197eb3cb",
+    "portainer_stack": "edd1ff95e420d32372d5544ae802f85527155df6125b36bf68aef75be9f60852"
+  }
+}

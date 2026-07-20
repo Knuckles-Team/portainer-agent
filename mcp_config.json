@@ -18,7 +18,6 @@
         "PORTAINER_GIT_USERNAME": "oauth2",
         "PORTAINER_TOKEN": "your_portainer_api_token_here",
         "PORTAINER_URL": "http://localhost:9000",
-        "PORTAINER_VERIFY": "True",
         "REGISTRYTOOL": "True",
         "STACKTOOL": "True",
         "SYSTEMTOOL": "True",

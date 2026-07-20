@@ -501,7 +501,7 @@
         description: |-
           Mandatory container fields
           Image associated to a container template. Mandatory for a container template
-        example: nginx:latest
+        example: nginx@sha256:<digest>
         type: string
       interactive:
         description: |-

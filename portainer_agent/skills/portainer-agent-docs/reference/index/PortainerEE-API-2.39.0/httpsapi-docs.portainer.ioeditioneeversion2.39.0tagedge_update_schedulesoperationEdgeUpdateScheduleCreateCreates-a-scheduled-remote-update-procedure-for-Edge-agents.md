@@ -63,7 +63,7 @@ Copy
 Expand all  Collapse all
 `{
 
-  *  "agentImage": "portainer/agent:latest",
+  *  "agentImage": "portainer/agent@sha256:<digest>",
 
   *  "created": 1564897200,
 
@@ -91,7 +91,7 @@ Expand all  Collapse all
 
   *  "updated": 1564897200,
 
-  *  "updaterImage": "portainer/portainer-updater:latest",
+  *  "updaterImage": "portainer/portainer-updater@sha256:<digest>",
 
   *  "version": "1.0.0"
 

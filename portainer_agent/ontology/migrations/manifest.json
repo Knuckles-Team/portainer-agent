@@ -1,0 +1,6 @@
+{
+  "connector": "portainer-agent",
+  "current_ontology_source": "portainer",
+  "migrations": [],
+  "schema_version": "1"
+}

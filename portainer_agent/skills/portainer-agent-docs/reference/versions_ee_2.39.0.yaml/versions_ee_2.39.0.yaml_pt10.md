@@ -815,7 +815,7 @@
         type: string
       KubectlShellImage:
         description: "Kubec\ttl Shell Image Name/Tag"
-        example: portainer/kubectl-shell:latest
+        example: portainer/kubectl-shell@sha256:<digest>
         type: string
       LDAPSettings:
         $ref: '#/definitions/portaineree.LDAPSettings'

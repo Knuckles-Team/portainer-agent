@@ -15,7 +15,7 @@ Name |  string
 RegistryID |  integer default to 0 = dockerhub
 ScheduledTime |  string
 Type |  integer (types.UpdateScheduleType)  Enum: 0 1 2
-UpdaterImage |  string default to "" == portainer/portainer-updater:latest
+UpdaterImage |  string default to "" == portainer/portainer-updater@sha256:<digest>
 ### Responses
 **204**
 Remote update procedure successfully updated
@@ -68,7 +68,7 @@ Copy
 Expand all  Collapse all
 `{
 
-  *  "agentImage": "portainer/agent:latest",
+  *  "agentImage": "portainer/agent@sha256:<digest>",
 
   *  "created": 1564897200,
 
@@ -96,7 +96,7 @@ Expand all  Collapse all
 
   *  "updated": 1564897200,
 
-  *  "updaterImage": "portainer/portainer-updater:latest",
+  *  "updaterImage": "portainer/portainer-updater@sha256:<digest>",
 
   *  "version": "1.0.0"
 

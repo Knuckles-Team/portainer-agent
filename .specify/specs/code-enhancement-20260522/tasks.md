@@ -77,5 +77,5 @@ Skipped informational: 3
   - Priority: P2-Medium | Effort: Medium
 - [ ] [P] **T037** [Environment Variables] Undocumented env vars: AUTHTOOL, AUTH_TYPE, DOCKERTOOL, EDGETOOL, ENVIRONMENTTOO
   - Priority: P2-Medium | Effort: Medium
-- [ ] [P] **T038** [Environment Variables] 3 Python env vars not in .env.example: PORTAINER_SSL_VERIFY, PORTAINER_TOKEN, PO
+- [ ] [P] **T038** [Environment Variables] 3 Python env vars not in .env.example: TLS_PROFILE, PORTAINER_TOKEN, PO
   - Priority: P2-Medium | Effort: Medium

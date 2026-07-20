@@ -1,8 +1,7 @@
 import os
 
-os.environ["PORTAINER_URL"] = "http://portainer.arpa"
+os.environ["PORTAINER_URL"] = "http://portainer.example"
 os.environ["PORTAINER_TOKEN"] = "ptr_P444Nokxd9Tn4yr47e26yc5PmGGaR3zVcfvaPUPxmZg="
-os.environ["PORTAINER_SSL_VERIFY"] = "False"
 
 import asyncio
 
@@ -16,7 +15,7 @@ async def test_direct_agent():
         agent = create_agent(
             provider="openai",
             model_id="nvidia/nemotron-3-super",
-            base_url="http://vllm.arpa/v1",
+            base_url="http://vllm.example/v1",
             api_key="llama",
         )
 
@@ -25,7 +24,7 @@ async def test_direct_agent():
         print(f"Direct agent result: {result}")
 
     except Exception as e:
-        print(f"Error running direct agent: {e}")
+        print(f"Operation failed: {type(e).__name__}")
         import traceback
 
         traceback.print_exc()

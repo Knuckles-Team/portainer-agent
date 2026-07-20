@@ -1,0 +1,31 @@
+schema_version: '1'
+connector: portainer-agent
+ontology_source: portainer
+sync:
+- preset: portainer-environments
+  server: portainer-agent
+  tool: portainer_environment
+  action: get_endpoints
+  records_path: data
+  id_field: Id
+  title_field: Name
+  text_field: URL
+  updated_field: null
+  doc_type: environment
+  tool_schema_sha256: b50529ca205c7216273190f09e90c507282e9b072f31d151b2f637d4197eb3cb
+- preset: portainer-stacks
+  server: portainer-agent
+  tool: portainer_stack
+  action: get_stacks
+  records_path: data
+  id_field: Id
+  title_field: Name
+  text_field: Status
+  updated_field: null
+  doc_type: stack
+  tool_schema_sha256: edd1ff95e420d32372d5544ae802f85527155df6125b36bf68aef75be9f60852
+governance:
+  default_acl: quarantine
+  identity: opaque-reference
+  tenant: required-at-materialization
+  provenance: required-at-materialization

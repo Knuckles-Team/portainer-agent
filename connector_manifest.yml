@@ -42,6 +42,10 @@ resources:
   label: Registry
   id_prefix: registry
   relations: []
+- name: Repository
+  label: Repository
+  id_prefix: repository
+  relations: []
 - name: Service
   label: Service
   id_prefix: service
@@ -49,7 +53,11 @@ resources:
 - name: Stack
   label: Stack
   id_prefix: stack
-  relations: []
+  relations:
+  - name: deployedFrom
+    label: deployed from
+    target: Repository
+    lpg_rel_type: ''
 - name: Team
   label: Team
   id_prefix: team
@@ -86,121 +94,170 @@ schema_mappings:
   Container:
     ontology_class: null
     fields:
+      composePath: xsd:string
       dockerId: xsd:string
       endpointUrl: xsd:string
       environmentType: xsd:integer
       imageName: xsd:string
       portainerId: xsd:string
+      repositoryRef: xsd:string
+      repositoryUrl: xsd:string
       stackType: xsd:integer
       status: xsd:string
   EdgeStack:
     ontology_class: null
     fields:
+      composePath: xsd:string
       dockerId: xsd:string
       endpointUrl: xsd:string
       environmentType: xsd:integer
       imageName: xsd:string
       portainerId: xsd:string
+      repositoryRef: xsd:string
+      repositoryUrl: xsd:string
       stackType: xsd:integer
       status: xsd:string
   EndpointGroup:
     ontology_class: Organization
     fields:
+      composePath: xsd:string
       dockerId: xsd:string
       endpointUrl: xsd:string
       environmentType: xsd:integer
       imageName: xsd:string
       portainerId: xsd:string
+      repositoryRef: xsd:string
+      repositoryUrl: xsd:string
       stackType: xsd:integer
       status: xsd:string
   Environment:
     ontology_class: null
     fields:
+      composePath: xsd:string
       dockerId: xsd:string
       endpointUrl: xsd:string
       environmentType: xsd:integer
       imageName: xsd:string
       portainerId: xsd:string
+      repositoryRef: xsd:string
+      repositoryUrl: xsd:string
       stackType: xsd:integer
       status: xsd:string
   Image:
     ontology_class: null
     fields:
+      composePath: xsd:string
       dockerId: xsd:string
       endpointUrl: xsd:string
       environmentType: xsd:integer
       imageName: xsd:string
       portainerId: xsd:string
+      repositoryRef: xsd:string
+      repositoryUrl: xsd:string
       stackType: xsd:integer
       status: xsd:string
   Network:
     ontology_class: null
     fields:
+      composePath: xsd:string
       dockerId: xsd:string
       endpointUrl: xsd:string
       environmentType: xsd:integer
       imageName: xsd:string
       portainerId: xsd:string
+      repositoryRef: xsd:string
+      repositoryUrl: xsd:string
       stackType: xsd:integer
       status: xsd:string
   Registry:
     ontology_class: null
     fields:
+      composePath: xsd:string
       dockerId: xsd:string
       endpointUrl: xsd:string
       environmentType: xsd:integer
       imageName: xsd:string
       portainerId: xsd:string
+      repositoryRef: xsd:string
+      repositoryUrl: xsd:string
+      stackType: xsd:integer
+      status: xsd:string
+  Repository:
+    ontology_class: SoftwareProject
+    fields:
+      composePath: xsd:string
+      dockerId: xsd:string
+      endpointUrl: xsd:string
+      environmentType: xsd:integer
+      imageName: xsd:string
+      portainerId: xsd:string
+      repositoryRef: xsd:string
+      repositoryUrl: xsd:string
       stackType: xsd:integer
       status: xsd:string
   Service:
     ontology_class: System
     fields:
+      composePath: xsd:string
       dockerId: xsd:string
       endpointUrl: xsd:string
       environmentType: xsd:integer
       imageName: xsd:string
       portainerId: xsd:string
+      repositoryRef: xsd:string
+      repositoryUrl: xsd:string
       stackType: xsd:integer
       status: xsd:string
   Stack:
     ontology_class: null
     fields:
+      composePath: xsd:string
       dockerId: xsd:string
       endpointUrl: xsd:string
       environmentType: xsd:integer
       imageName: xsd:string
       portainerId: xsd:string
+      repositoryRef: xsd:string
+      repositoryUrl: xsd:string
       stackType: xsd:integer
       status: xsd:string
   Team:
     ontology_class: Team
     fields:
+      composePath: xsd:string
       dockerId: xsd:string
       endpointUrl: xsd:string
       environmentType: xsd:integer
       imageName: xsd:string
       portainerId: xsd:string
+      repositoryRef: xsd:string
+      repositoryUrl: xsd:string
       stackType: xsd:integer
       status: xsd:string
   Template:
     ontology_class: null
     fields:
+      composePath: xsd:string
       dockerId: xsd:string
       endpointUrl: xsd:string
       environmentType: xsd:integer
       imageName: xsd:string
       portainerId: xsd:string
+      repositoryRef: xsd:string
+      repositoryUrl: xsd:string
       stackType: xsd:integer
       status: xsd:string
   Volume:
     ontology_class: null
     fields:
+      composePath: xsd:string
       dockerId: xsd:string
       endpointUrl: xsd:string
       environmentType: xsd:integer
       imageName: xsd:string
       portainerId: xsd:string
+      repositoryRef: xsd:string
+      repositoryUrl: xsd:string
       stackType: xsd:integer
       status: xsd:string
 sync:
@@ -215,6 +272,7 @@ sync:
   updated_field: null
   pagination: null
   doc_type: environment
+  tool_schema_sha256: b50529ca205c7216273190f09e90c507282e9b072f31d151b2f637d4197eb3cb
   raw:
     server: portainer-agent
     tool: portainer_environment
@@ -235,6 +293,7 @@ sync:
   updated_field: null
   pagination: null
   doc_type: stack
+  tool_schema_sha256: edd1ff95e420d32372d5544ae802f85527155df6125b36bf68aef75be9f60852
   raw:
     server: portainer-agent
     tool: portainer_stack
@@ -246,17 +305,20 @@ sync:
     doc_type: stack
 provenance:
   generated_by: scripts/generate_connector_manifests.py
-  generated_at: '2026-07-09T00:00:00Z'
+  generated_at: '2026-07-18T00:00:00Z'
   source_artifacts:
   - a2a.json
   - portainer_agent/connectors/mcp_source_presets.json
+  - portainer_agent/connectors/tool_schema_fingerprints.json
   - portainer_agent/ontology/portainer.ttl
   integrity:
     algorithm: urdna2015-sha256
-    hash: dc15d71e746013ac8e7afc154cb5f707c33e542228ff9a25924716d12b423dab
-    triple_count: 76
+    hash: cae5fc566d6c1b45d1db3641f1d4e1f481a0f308a084db6acd77627aa123eca8
+    triple_count: 93
   signer: ontology-manifest-generator
-  signature: 90df016c5cf5a8d65d6bde8f27af52bf80e91aeb7b4da824fbbbb92b5e9e287d
+  signature_algorithm: ed25519
+  signing_public_key: q0Cp7bmQMqJhbofGKKw8xXC6KbFzukBDDke0UYVi8y4
+  signature: n348vsNrtKUCAMPgO9ELmMEL8Q7qlyX9ytV1XPIIk6lIkC1lDZw0mxRHs0y-7krD5g0o8FE6ZXOvCLAQXdcxAw
 policy:
   pii_fields: {}
   tenant_boundary: null
@@ -291,6 +353,9 @@ review_todos:
   \ \u2014 verify manually before relying on this crosswalk for reasoning/joins."
 - "schema_mappings.Registry.ontology_class = None [UNRESOLVED \u2014 no crosswalk found by any heuristic]\
   \ \u2014 verify manually before relying on this crosswalk for reasoning/joins."
+- "schema_mappings.Repository.ontology_class = 'SoftwareProject' [DRAFT \u2014 nearest hub-canonical-class-by-name\
+  \ heuristic (D16 residue; human sign-off required before use)] \u2014 verify manually before relying\
+  \ on this crosswalk for reasoning/joins."
 - "schema_mappings.Service.ontology_class = 'System' [DRAFT \u2014 nearest hub-canonical-class-by-name\
   \ heuristic (D16 residue; human sign-off required before use)] \u2014 verify manually before relying\
   \ on this crosswalk for reasoning/joins."

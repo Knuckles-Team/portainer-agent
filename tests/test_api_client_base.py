@@ -1,7 +1,6 @@
-"""Facade-parity tests for the strangled BaseApiClient.
+"""Facade-parity tests for the current BaseApiClient.
 
-The public verb surface must keep its legacy return shapes while the
-plumbing (typed error mapping, rate-limit capture, bounded 429 backoff)
+The plumbing (typed error mapping, rate-limit capture, bounded 429 backoff)
 comes from the shared agent_utilities.http fleet base. Transport is a fake
 requests-style session — no live Portainer.
 """
@@ -21,7 +20,6 @@ class FakeSession:
         self.responses = list(responses)
         self.calls = []
         self.headers = {}
-        self.verify = True
 
     def _respond(self, method, url, **kwargs):
         self.calls.append({"method": method, "url": url, **kwargs})

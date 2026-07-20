@@ -59,7 +59,7 @@ Expand all  Collapse all
 
       *  "id": 1,
 
-      *  "image": "nginx:latest",
+      *  "image": "nginx@sha256:<digest>",
 
       *  "interactive": true,
 

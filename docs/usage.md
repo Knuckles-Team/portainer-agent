@@ -40,7 +40,6 @@ from portainer_agent.api_client import PortainerApi
 api = PortainerApi(
     base_url="http://your-portainer:9000",
     token="your_api_token",
-    verify=True,
 )
 
 # Reads
@@ -56,7 +55,7 @@ Build a client straight from the environment:
 ```python
 from portainer_agent.auth import get_client
 
-api = get_client()        # reads PORTAINER_URL / PORTAINER_TOKEN / PORTAINER_SSL_VERIFY
+api = get_client()        # credentials + XDG AgentConfig TLS profile
 nodes = api.get_system_nodes()
 ```
 
