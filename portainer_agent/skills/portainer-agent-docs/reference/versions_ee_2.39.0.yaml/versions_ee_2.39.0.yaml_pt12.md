@@ -383,7 +383,7 @@
         description: |-
           Image pull policy.
           One of Always, Never, IfNotPresent.
-          Defaults to Always if :latest tag is specified, or IfNotPresent otherwise.
+          Defaults to Always if a mutable latest tag is specified, or IfNotPresent otherwise.
           Cannot be updated.
           More info: https://kubernetes.io/docs/concepts/containers/images#updating-images
           +optional

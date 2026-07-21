@@ -135,7 +135,7 @@ Expand all  Collapse all
 
   *  "KubeconfigExpiry": "24h",
 
-  *  "KubectlShellImage": "portainer/kubectl-shell:latest",
+  *  "KubectlShellImage": "portainer/kubectl-shell@sha256:<digest>",
 
   *  "LDAPSettings": {
     *  "AdminAutoPopulate": true,

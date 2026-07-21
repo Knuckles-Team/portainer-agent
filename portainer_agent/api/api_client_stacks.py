@@ -105,7 +105,7 @@ class Api(BaseApiClient):
                         f"No stack file content found in response: {file_resp}"
                     )
             except Exception as e:
-                errors[s_name] = str(e)
+                errors[s_name] = type(e).__name__
 
         return {
             "status": "success",

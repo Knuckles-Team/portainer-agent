@@ -470,7 +470,7 @@
   {
     "id": "T037",
     "title": "[Environment Variables] Undocumented env vars: AUTHTOOL, AUTH_TYPE, DOCKERTOOL, EDGETOOL, ENVIRONMENTTOO",
-    "description": "Undocumented env vars: AUTHTOOL, AUTH_TYPE, DOCKERTOOL, EDGETOOL, ENVIRONMENTTOOL, EUNOMIA_POLICY_FILE, EUNOMIA_TYPE, KUBERNETESTOOL, OTEL_EXPORTER_OTLP_ENDPOINT, PORTAINER_SSL_VERIFY",
+    "description": "Undocumented env vars: AUTHTOOL, AUTH_TYPE, DOCKERTOOL, EDGETOOL, ENVIRONMENTTOOL, EUNOMIA_POLICY_FILE, EUNOMIA_TYPE, KUBERNETESTOOL, OTEL_EXPORTER_OTLP_ENDPOINT, TLS_PROFILE",
     "domain": "Environment Variables",
     "priority": "P2-Medium",
     "effort": "Medium",
@@ -482,8 +482,8 @@
   },
   {
     "id": "T038",
-    "title": "[Environment Variables] 3 Python env vars not in .env.example: PORTAINER_SSL_VERIFY, PORTAINER_TOKEN, PO",
-    "description": "3 Python env vars not in .env.example: PORTAINER_SSL_VERIFY, PORTAINER_TOKEN, PORTAINER_URL",
+    "title": "[Environment Variables] 3 Python env vars not in .env.example: TLS_PROFILE, PORTAINER_TOKEN, PO",
+    "description": "3 Python env vars not in .env.example: TLS_PROFILE, PORTAINER_TOKEN, PORTAINER_URL",
     "domain": "Environment Variables",
     "priority": "P2-Medium",
     "effort": "Medium",

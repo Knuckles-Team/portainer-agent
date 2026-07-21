@@ -1,15 +1,15 @@
-import os
-import sys
-import pytest
-import runpy
+import builtins
 import inspect
 import json
-import builtins
-from unittest.mock import MagicMock, AsyncMock, patch
+import os
+import runpy
+import sys
+from unittest.mock import MagicMock, patch
+
+import pytest
+from agent_utilities.core.exceptions import UnauthorizedError
 from starlette.datastructures import Headers
 from starlette.requests import Request
-from starlette.responses import JSONResponse
-from agent_utilities.core.exceptions import AuthError, UnauthorizedError
 
 # --- Helper Fixture for API Session ---
 
@@ -64,8 +64,9 @@ def test_init_module_missing_availability():
 
 
 def test_init_lazy_import_failure():
-    import portainer_agent
     import importlib
+
+    import portainer_agent
 
     original_import = importlib.import_module
 
@@ -104,30 +105,38 @@ def test_auth_get_client_success():
     env_mock = {
         "PORTAINER_URL": "http://127.0.0.1:9000",
         "PORTAINER_TOKEN": "mock_token_123",
-        "PORTAINER_SSL_VERIFY": "True",
     }
     with patch.dict(os.environ, env_mock):
         client = portainer_agent.auth.get_client()
         assert client is not None
         assert client.base_url == "http://127.0.0.1:9000"
-        assert client.session.verify is True
 
 
-def test_auth_get_client_ssl_verify_false():
+def test_auth_get_client_uses_configured_tls_profile():
     import portainer_agent.auth
 
-    # Reset singleton
     portainer_agent.auth._client = None
-
     env_mock = {
         "PORTAINER_URL": "http://127.0.0.1:9000",
         "PORTAINER_TOKEN": "mock_token_123",
-        "PORTAINER_SSL_VERIFY": "False",
     }
-    with patch.dict(os.environ, env_mock):
-        client = portainer_agent.auth.get_client()
-        assert client is not None
-        assert client.session.verify is False
+    profile = object()
+    expected = object()
+    with (
+        patch.dict(os.environ, env_mock),
+        patch(
+            "portainer_agent.auth.resolve_configured_tls_profile",
+            return_value=profile,
+        ) as resolver,
+        patch("portainer_agent.auth.PortainerApi", return_value=expected) as factory,
+    ):
+        assert portainer_agent.auth.get_client() is expected
+    resolver.assert_called_once_with("portainer")
+    factory.assert_called_once_with(
+        base_url="http://127.0.0.1:9000",
+        token="mock_token_123",
+        tls_profile=profile,
+    )
 
 
 def test_auth_get_client_unauthorized_error():
@@ -287,10 +296,10 @@ def test_portainer_api_brute_force(_mock_session):
             kwargs = {k: v for k, v in common_kwargs.items() if k in sig.parameters}
             for p_name, p in sig.parameters.items():
                 if p.default == inspect.Parameter.empty and p_name not in kwargs:
-                    if p.annotation == bytes:
+                    if p.annotation is bytes:
                         kwargs[p_name] = b"test"
                     else:
-                        kwargs[p_name] = "test" if p.annotation == str else 1
+                        kwargs[p_name] = "test" if p.annotation is str else 1
         try:
             method(**kwargs)
         except Exception:
@@ -298,7 +307,6 @@ def test_portainer_api_brute_force(_mock_session):
 
 
 def test_api_client_import_fallback():
-    import sys
     import importlib
 
     original_api_client = sys.modules.pop("portainer_agent.api_client", None)
@@ -352,23 +360,17 @@ def test_api_client_get_stack_logs_swarm():
     client = PortainerApi(base_url="http://test", token="test")
 
     # Mock internal methods
-    setattr(
-        client, "get_stack", MagicMock(return_value={"Name": "swarm_stack", "Type": 1})
-    )
-    setattr(
-        client,
-        "list_services",
-        MagicMock(return_value=[{"ID": "svc123", "Spec": {"Name": "service1"}}]),
-    )
-    setattr(client, "get_service_logs", MagicMock(return_value="swarm_logs"))
+    client.get_stack = MagicMock(return_value={"Name": "swarm_stack", "Type": 1})
+    client.list_services = MagicMock(return_value=[{"ID": "svc123", "Spec": {"Name": "service1"}}])
+    client.get_service_logs = MagicMock(return_value="swarm_logs")
 
     logs = client.get_stack_logs(endpoint_id=1, stack_id=10)
     assert "--- Service: service1 ---" in logs
     assert "swarm_logs" in logs
 
-    getattr(client, "get_stack").assert_called_once_with(10)
-    getattr(client, "list_services").assert_called_once()
-    getattr(client, "get_service_logs").assert_called_once_with(1, "svc123")
+    client.get_stack.assert_called_once_with(10)
+    client.list_services.assert_called_once()
+    client.get_service_logs.assert_called_once_with(1, "svc123")
 
 
 def test_api_client_get_stack_logs_compose_fallback():
@@ -376,32 +378,17 @@ def test_api_client_get_stack_logs_compose_fallback():
 
     client = PortainerApi(base_url="http://test", token="test")
 
-    setattr(
-        client,
-        "get_stack",
-        MagicMock(return_value={"Name": "compose_stack", "Type": 2}),
-    )
+    client.get_stack = MagicMock(return_value={"Name": "compose_stack", "Type": 2})
     # First list_containers returns empty, second returns container
-    setattr(
-        client,
-        "list_containers",
-        MagicMock(
-            side_effect=[
-                [],  # com.docker.compose.project=compose_stack returns empty
-                [
-                    {"Id": "cont123", "Names": ["/container1"]}
-                ],  # com.portainer.stack.name=compose_stack returns container
-            ]
-        ),
-    )
-    setattr(client, "get_container_logs", MagicMock(return_value="container_logs"))
+    client.list_containers = MagicMock(side_effect=[[], [{"Id": "cont123", "Names": ["/container1"]}]])
+    client.get_container_logs = MagicMock(return_value="container_logs")
 
     logs = client.get_stack_logs(endpoint_id=1, stack_id=10)
     assert "--- Container: container1 ---" in logs
     assert "container_logs" in logs
 
-    assert getattr(client, "list_containers").call_count == 2
-    getattr(client, "get_container_logs").assert_called_once_with(1, "cont123")
+    assert client.list_containers.call_count == 2
+    client.get_container_logs.assert_called_once_with(1, "cont123")
 
 
 # --- 5. Tests for portainer_agent/mcp_server.py ---
@@ -582,7 +569,7 @@ async def test_mcp_server_comprehensive_action_routes():
                 "name": "test_stack",
                 "file_content": "version: '3'\nservices:\n  web:\n    image: nginx",
                 "stack_file_content": "version: '3'\nservices:\n  web:\n    image: nginx",
-                "repo_url": "http://gitlab.arpa/test.git",
+                "repo_url": "http://gitlab.example/test.git",
                 "swarm_id": "swarm123",
                 "target_endpoint_id": 2,
                 "chart_name": "nginx",
@@ -645,7 +632,6 @@ async def test_mcp_server_custom_route():
 
 
 def test_mcp_server_requests_warning_import_error():
-    import sys
     import importlib
 
     original_mcp_server = sys.modules.pop("portainer_agent.mcp_server", None)
@@ -681,7 +667,7 @@ def test_mcp_server_startup_transports():
             return_value=(mock_mcp, mock_args, []),
         ),
         patch("sys.exit") as mock_exit,
-        patch("fastmcp.FastMCP.run") as mock_run,
+        patch("fastmcp.FastMCP.run"),
     ):
         # 1. stdio
         mock_args.transport = "stdio"
@@ -720,7 +706,7 @@ def test_mcp_server_main_execution():
             "portainer_agent.mcp_server.get_mcp_instance",
             return_value=(mock_mcp, mock_args, []),
         ),
-        patch("sys.exit") as mock_exit,
+        patch("sys.exit"),
         patch("fastmcp.FastMCP.run") as mock_run,
     ):
         runpy.run_module("portainer_agent.mcp_server", run_name="__main__")

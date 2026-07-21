@@ -86,7 +86,7 @@ def test_api_brute_force(_mock_session):
 
             method(*pos_args, **kwargs)
         except Exception as e:
-            print(f"Failed calling {name}: {e}")
+            print(f"Operation failed: {type(e).__name__}")
 
 
 def test_mcp_server_coverage(_mock_session):

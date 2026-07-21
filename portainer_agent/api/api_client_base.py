@@ -1,12 +1,9 @@
 #!/usr/bin/env python
-"""Portainer HTTP base — strangled onto ``agent_utilities.http.BaseApiClient``.
+"""Portainer HTTP base built on ``agent_utilities.http.BaseApiClient``.
 
 CONCEPT:AU-ECO.ui.fleet-http-client-library (Fleet HTTP Client Library) adoption: the public surface
-(``base_url``/``api_base``/``timeout``/``session``, ``_url`` and the
-``_get/_post/_put/_patch/_delete/_list`` verbs with their legacy return
-shapes) is unchanged, while the plumbing — typed error mapping, rate-limit
-capture, bounded 429 backoff, and log redaction — now comes from the shared
-fleet base.
+The plumbing — typed error mapping, rate-limit capture, bounded 429 backoff,
+log redaction, and runtime TLS policy — comes from the shared fleet base.
 
 The transport intentionally remains this client's ``requests.Session``
 (``self.session``), adapted into the shared httpx stack by
@@ -21,11 +18,12 @@ from typing import Any
 
 import httpx
 import requests
-import urllib3
+from agent_utilities.core.transport_security import (
+    ResolvedTLSProfile,
+    resolve_configured_tls_profile,
+)
 from agent_utilities.http import AuthHeaderInjector, TokenAuth
 from agent_utilities.http import BaseApiClient as FleetApiClient
-
-urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 #: Request headers managed by the session/transport rather than forwarded.
 _HOP_HEADERS = {"host", "content-length"}
@@ -34,7 +32,7 @@ _HOP_HEADERS = {"host", "content-length"}
 class _RequestsSessionTransport(httpx.BaseTransport):
     """httpx transport that delegates each request to a ``requests.Session``.
 
-    The session stays the single network touchpoint (TLS ``verify``, the
+    The session stays the single network touchpoint (TLS profile, the
     ``X-API-Key`` header, proxies/adapters configured on it all keep
     working), while the shared fleet client supplies the plumbing above it.
     """
@@ -96,14 +94,14 @@ class BaseApiClient:
         self,
         base_url: str = "http://localhost:9000",
         token: str = "",  # nosec B107
-        verify: bool = True,
+        tls_profile: ResolvedTLSProfile | None = None,
         timeout: int | None = None,
     ):
         self.base_url = base_url.rstrip("/")
         self.api_base = f"{self.base_url}/api"
         self.timeout = timeout or self.DEFAULT_TIMEOUT
-        self.session = requests.Session()
-        self.session.verify = verify
+        self.tls_profile = tls_profile or resolve_configured_tls_profile("portainer")
+        self.session = self.tls_profile.configure_requests_session(requests.Session())
         if token:
             self.session.headers.update({"X-API-Key": token})
         self.session.headers.update({"Accept": "application/json"})
@@ -114,17 +112,23 @@ class BaseApiClient:
         self._fleet = FleetApiClient(
             self.api_base,
             auth=auth,
-            verify=verify,
+            tls_service="portainer",
             timeout=float(self.timeout),
             transport=_RequestsSessionTransport(self.session),
         )
+
+    def close(self) -> None:
+        """Release HTTP resources and runtime-only TLS material."""
+        self._fleet.close()
+        self.session.close()
+        self.tls_profile.cleanup()
 
     def _url(self, endpoint: str) -> str:
         return f"{self.api_base}/{endpoint.strip('/')}"
 
     @staticmethod
     def _decode(body: Any) -> Any:
-        """Legacy decode: JSON whenever the body parses as it, else raw text."""
+        """Decode JSON whenever the body parses as JSON; otherwise return raw text."""
         if isinstance(body, str):
             try:
                 return json.loads(body)

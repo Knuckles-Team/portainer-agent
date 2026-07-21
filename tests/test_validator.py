@@ -1,8 +1,7 @@
 import os
 
-os.environ["PORTAINER_URL"] = "http://portainer.arpa"
+os.environ["PORTAINER_URL"] = "http://portainer.example"
 os.environ["PORTAINER_TOKEN"] = "ptr_P444Nokxd9Tn4yr47e26yc5PmGGaR3zVcfvaPUPxmZg="
-os.environ["PORTAINER_SSL_VERIFY"] = "False"
 
 
 from agent_utilities.core.model_factory import create_model
@@ -21,7 +20,7 @@ if __name__ == "__main__":
         model = create_model(
             provider="openai",
             model_id="nvidia/nemotron-3-super",
-            base_url="http://vllm.arpa/v1",
+            base_url="http://vllm.example/v1",
             api_key="llama",
         )
         print("Model created")
@@ -61,7 +60,7 @@ if __name__ == "__main__":
 
             asyncio.run(test_old())
         except Exception as e:
-            print(f"Old style agent failed: {e}")
+            print(f"Operation failed: {type(e).__name__}")
 
         print("\nTesting new style agent...")
         try:
@@ -73,13 +72,13 @@ if __name__ == "__main__":
 
             asyncio.run(test_new())
         except Exception as e:
-            print(f"New style agent failed: {e}")
+            print(f"Operation failed: {type(e).__name__}")
             import traceback
 
             traceback.print_exc()
 
     except Exception as e:
-        print(f"Error in setup: {e}")
+        print(f"Operation failed: {type(e).__name__}")
         import traceback
 
         traceback.print_exc()

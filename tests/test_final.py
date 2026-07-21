@@ -1,8 +1,7 @@
 import os
 
-os.environ["PORTAINER_URL"] = "http://portainer.arpa"
+os.environ["PORTAINER_URL"] = "http://portainer.example"
 os.environ["PORTAINER_TOKEN"] = "ptr_P444Nokxd9Tn4yr47e26yc5PmGGaR3zVcfvaPUPxmZg="
-os.environ["PORTAINER_SSL_VERIFY"] = "False"
 
 
 import asyncio
@@ -18,7 +17,7 @@ async def test_graph():
         print("=== STACKS QUERY TEST ===")
         graph_bundle = initialize_graph_from_workspace(
             agent_model="nvidia/nemotron-3-super",
-            base_url="http://vllm.arpa/v1",
+            base_url="http://vllm.example/v1",
             api_key="llama",
         )
 
@@ -69,7 +68,7 @@ async def test_graph():
 
     except Exception as e:
         print("\n=== ERROR ===")
-        print(f"Error: {e}")
+        print(f"Operation failed: {type(e).__name__}")
         import traceback
 
         traceback.print_exc()

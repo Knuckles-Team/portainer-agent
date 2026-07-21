@@ -48,15 +48,15 @@ uv run portainer-mcp
 
 ## Prebuilt Docker image
 
-A multi-stage, slim image is published on every release (entrypoint `portainer-mcp`):
+A multi-stage runtime image is published on every release (entrypoint `portainer-mcp`):
 
 ```bash
-docker pull knucklessg1/portainer-agent:latest
+docker pull example/portainer-agent@sha256:<digest>
 
 docker run --rm -i \
   -e PORTAINER_URL=http://your-portainer:9000 \
   -e PORTAINER_TOKEN=your_api_token \
-  knucklessg1/portainer-agent:latest        # stdio transport (default)
+  example/portainer-agent@sha256:<digest>        # stdio transport (default)
 ```
 
 For an HTTP server with a published port and the A2A agent, see

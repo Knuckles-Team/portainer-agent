@@ -1,0 +1,4 @@
+interface:
+  display_name: "Portainer Agent Operations"
+  short_description: "Help with Portainer Agent Operations tasks"
+  default_prompt: "Use $portainer-agent-operations to complete a governed provider workflow."

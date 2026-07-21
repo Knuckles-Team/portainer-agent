@@ -20,7 +20,7 @@ stack runs one Portainer instance on `:9000` (HTTP) with persistent data:
 # docker/portainer.compose.yml
 services:
   portainer:
-    image: docker.io/portainer/portainer-ce:latest
+    image: docker.io/portainer/portainer-ce@sha256:<digest>
     container_name: portainer
     hostname: portainer
     restart: unless-stopped
@@ -59,7 +59,8 @@ token** (User settings → Access tokens) for `PORTAINER_TOKEN`.
 ```bash
 export PORTAINER_URL=http://localhost:9000
 export PORTAINER_TOKEN=your_api_token
-export PORTAINER_SSL_VERIFY=False          # only if using the self-signed :9443 endpoint
+# TLS policy is resolved from the XDG AgentConfig profile.
+export SSL_CERT_FILE=/run/secrets/private-ca-bundle.pem
 
 portainer-mcp --transport streamable-http --host 0.0.0.0 --port 8000
 ```
@@ -73,7 +74,7 @@ server reaches Portainer by container name:
 # docker/stack.compose.yml
 services:
   portainer:
-    image: docker.io/portainer/portainer-ce:latest
+    image: docker.io/portainer/portainer-ce@sha256:<digest>
     hostname: portainer
     ports: ["9000:9000"]
     volumes:
@@ -81,7 +82,7 @@ services:
       - portainer:/data
 
   portainer-agent-mcp:
-    image: knucklessg1/portainer-agent:latest
+    image: example/portainer-agent@sha256:<digest>
     depends_on: [portainer]
     environment:
       - PORTAINER_URL=http://portainer:9000

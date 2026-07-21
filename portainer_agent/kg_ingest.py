@@ -1,18 +1,9 @@
-"""Native epistemic-graph ingestion for Portainer records (typed graph nodes).
+"""Native epistemic-graph ingestion for Portainer infrastructure records.
 
-CONCEPT:AU-KG.ingest.enterprise-source-extractor. The connector natively pushes its
-data into the ONE epistemic-graph knowledge graph as **typed OWL nodes**
-(``:Environment``, ``:Stack``, ``:Container``, ``:Service``, …) + links, using the
-lightweight engine client (``GraphComputeEngine()._client`` + ``txn``) — the same fast
-client the blob ``MediaStore`` uses, NOT the heavy in-process ingestion engine.
-
-It is a thin mapper over the shared primitive
-``agent_utilities.knowledge_graph.memory.native_ingest``; when that primitive (or a
-reachable engine) is absent, every entry point **no-ops** (returns ``None``) via a
-self-contained txn fallback, so the connector keeps working with zero KG infrastructure.
-Nodes carry the shared provenance (``domain``/``source``) and match the classes federated
-by ``portainer_agent.ontology`` (``portainer.ttl``). Node ids follow
-``portainer:<class>:<externalId>``.
+All writes use the required ``agent_utilities.knowledge_graph.memory.native_ingest``
+primitive. Nodes use canonical ``node_type`` and edges use canonical ``relationship``;
+nodes and edges commit in one native transaction. Missing engine dependencies, rejected
+records, conflicts, and transaction failures propagate as ``NativeIngestError``.
 """
 
 from __future__ import annotations
@@ -21,31 +12,14 @@ import logging
 from typing import Any
 from urllib.parse import urlsplit
 
+from agent_utilities.knowledge_graph.memory.native_ingest import (
+    ingest_entities as _native_ingest_entities,
+)
+
 logger = logging.getLogger("portainer_agent.kg")
 
 _SOURCE = "portainer-agent"
 _DOMAIN = "portainer"
-_DEFAULT_GRAPH = "__commons__"
-
-
-def _client() -> tuple[Any | None, str]:
-    """Return ``(engine_client, graph_name)`` or ``(None, "")`` when unavailable."""
-    try:
-        from agent_utilities.knowledge_graph.core.graph_compute import (
-            GraphComputeEngine,
-        )
-    except Exception as e:  # noqa: BLE001 — KG stack absent
-        logger.debug("KG ingest unavailable (import): %s", e)
-        return None, ""
-    try:
-        engine = GraphComputeEngine()
-        client = getattr(engine, "_client", None)
-        if client is None:
-            return None, ""
-        return client, (getattr(engine, "graph_name", None) or _DEFAULT_GRAPH)
-    except Exception as e:  # noqa: BLE001 — engine unreachable
-        logger.debug("KG ingest: engine unreachable: %s", e)
-        return None, ""
 
 
 def ingest_entities(
@@ -56,64 +30,16 @@ def ingest_entities(
     domain: str = _DOMAIN,
     client: Any | None = None,
     graph: str | None = None,
-) -> dict[str, int] | None:
-    """Write typed OWL nodes (+ edges) into epistemic-graph via the fast engine client.
-
-    Prefers the shared ``native_ingest`` primitive; falls back to a self-contained txn
-    write when it (or a reachable engine) is absent. ``entities``:
-    ``[{"id":..., "type":<owl:Class>, ...props}]``; ``relationships``:
-    ``[{"source":id, "target":id, "type":rel}]``. Returns ``{"nodes":n, "edges":m}`` or
-    ``None`` (no engine / failure; never raises). ``client``/``graph`` may be injected
-    (tests); otherwise resolved on demand.
-    """
-    entities = [e for e in (entities or []) if e.get("id")]
-    if not entities:
-        return None
-
-    # Preferred path: the shared fleet primitive (once shipped in agent_utilities).
-    if client is None:
-        try:
-            from agent_utilities.knowledge_graph.memory.native_ingest import (
-                ingest_entities as _shared_ingest,
-            )
-
-            return _shared_ingest(entities, relationships, source=source, domain=domain)
-        except Exception as e:  # noqa: BLE001 — primitive absent: self-contained fallback
-            logger.debug("KG ingest: shared primitive unavailable: %s", e)
-
-    if client is None:
-        client, graph = _client()
-    if client is None:
-        return None
-    graph = graph or _DEFAULT_GRAPH
-
-    try:
-        txn = client.txn.begin(graph=graph)
-        for ent in entities:
-            props = {k: v for k, v in ent.items() if k != "id" and v is not None}
-            props.setdefault("source", source)
-            props.setdefault("domain", domain)
-            client.txn.add_node(txn, ent["id"], props)
-        committed = client.txn.commit(txn)
-    except Exception as e:  # noqa: BLE001 — engine/txn failure is non-fatal
-        logger.warning("KG ingest: txn failed: %s", e)
-        return None
-    if not committed:
-        logger.warning("KG ingest: txn not committed (conflict)")
-        return None
-
-    edges = 0
-    for rel in relationships or []:
-        try:
-            client.edges.add(
-                rel["source"], rel["target"], {"type": rel.get("type", "RELATED")}
-            )
-            edges += 1
-        except Exception as e:  # noqa: BLE001 — pure edge link, best-effort
-            logger.debug("KG ingest: edge skipped: %s", e)
-
-    logger.info("KG ingest: wrote %d nodes, %d edges", len(entities), edges)
-    return {"nodes": len(entities), "edges": edges}
+) -> dict[str, int]:
+    """Write canonical typed nodes and relationships in one native transaction."""
+    return _native_ingest_entities(
+        entities,
+        relationships,
+        source=source,
+        domain=domain,
+        client=client,
+        graph=graph,
+    )
 
 
 def _get(rec: dict[str, Any], *keys: str, default: Any = None) -> Any:
@@ -129,7 +55,7 @@ def ingest_environments(
     *,
     client: Any | None = None,
     graph: str | None = None,
-) -> dict[str, int] | None:
+) -> dict[str, int]:
     """Map Portainer endpoint records → ``:Environment`` (+ ``:EndpointGroup``) nodes."""
     entities: list[dict[str, Any]] = []
     relationships: list[dict[str, Any]] = []
@@ -140,7 +66,7 @@ def ingest_environments(
         entities.append(
             {
                 "id": f"portainer:environment:{eid}",
-                "type": "Environment",
+                "node_type": "Environment",
                 "name": _get(ep, "Name", "name"),
                 "environmentType": _get(ep, "Type", "type"),
                 "endpointUrl": _get(ep, "URL", "url"),
@@ -153,7 +79,7 @@ def ingest_environments(
             entities.append(
                 {
                     "id": f"portainer:endpointgroup:{gid}",
-                    "type": "EndpointGroup",
+                    "node_type": "EndpointGroup",
                     "portainerId": str(gid),
                 }
             )
@@ -161,7 +87,7 @@ def ingest_environments(
                 {
                     "source": f"portainer:environment:{eid}",
                     "target": f"portainer:endpointgroup:{gid}",
-                    "type": "partOfEndpointGroup",
+                    "relationship": "partOfEndpointGroup",
                 }
             )
     return ingest_entities(entities, relationships, client=client, graph=graph)
@@ -228,7 +154,7 @@ def ingest_stacks(
     *,
     client: Any | None = None,
     graph: str | None = None,
-) -> dict[str, int] | None:
+) -> dict[str, int]:
     """Map Portainer stack records → ``:Stack`` nodes linked to their ``:Environment``.
 
     Git-backed stacks (``GitConfig``) additionally get ``repositoryUrl`` /
@@ -245,7 +171,7 @@ def ingest_stacks(
         stack_node = f"portainer:stack:{sid}"
         stack_entity: dict[str, Any] = {
             "id": stack_node,
-            "type": "Stack",
+            "node_type": "Stack",
             "name": _get(st, "Name", "name"),
             "stackType": _get(st, "Type", "type"),
             "status": _stack_status(_get(st, "Status", "status")),
@@ -259,9 +185,15 @@ def ingest_stacks(
                 stack_entity["repositoryRef"] = repo_ref
             if compose_path:
                 stack_entity["composePath"] = compose_path
-            entities.append({"id": repo_node, "type": "Repository", "url": repo_url})
+            entities.append(
+                {"id": repo_node, "node_type": "Repository", "url": repo_url}
+            )
             relationships.append(
-                {"source": stack_node, "target": repo_node, "type": "deployedFrom"}
+                {
+                    "source": stack_node,
+                    "target": repo_node,
+                    "relationship": "deployedFrom",
+                }
             )
         entities.append(stack_entity)
         env = _get(st, "EndpointId", "endpointId")
@@ -270,7 +202,7 @@ def ingest_stacks(
                 {
                     "source": stack_node,
                     "target": f"portainer:environment:{env}",
-                    "type": "inEnvironment",
+                    "relationship": "inEnvironment",
                 }
             )
     return ingest_entities(entities, relationships, client=client, graph=graph)
@@ -282,7 +214,7 @@ def ingest_containers(
     *,
     client: Any | None = None,
     graph: str | None = None,
-) -> dict[str, int] | None:
+) -> dict[str, int]:
     """Map Docker container records → ``:Container`` nodes in an ``:Environment``.
 
     Links each container to the stack it was deployed by (``com.docker.compose.project``
@@ -305,7 +237,7 @@ def ingest_containers(
         entities.append(
             {
                 "id": node_id,
-                "type": "Container",
+                "node_type": "Container",
                 "name": name,
                 "imageName": _get(c, "Image", "image"),
                 "status": _get(c, "State", "state"),
@@ -313,7 +245,7 @@ def ingest_containers(
             }
         )
         relationships.append(
-            {"source": node_id, "target": env_node, "type": "inEnvironment"}
+            {"source": node_id, "target": env_node, "relationship": "inEnvironment"}
         )
         labels = _get(c, "Labels", "labels", default={}) or {}
         project = labels.get("com.docker.stack.namespace") or labels.get(
@@ -324,7 +256,7 @@ def ingest_containers(
                 {
                     "source": node_id,
                     "target": f"portainer:stack:name:{project}",
-                    "type": "deployedByStack",
+                    "relationship": "deployedByStack",
                 }
             )
     return ingest_entities(entities, relationships, client=client, graph=graph)
