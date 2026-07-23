@@ -20,7 +20,7 @@
 ![PyPI - Wheel](https://img.shields.io/pypi/wheel/portainer-agent)
 ![PyPI - Implementation](https://img.shields.io/pypi/implementation/portainer-agent)
 
-*Version: 1.1.0*
+*Version: 2.0.0*
 
 > **Documentation** — Installation, deployment, usage across the API, CLI, and MCP
 > interfaces, and guidance for provisioning the Portainer platform are maintained in

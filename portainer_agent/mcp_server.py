@@ -34,7 +34,7 @@ from starlette.responses import JSONResponse
 from portainer_agent.api_client import PortainerApi
 from portainer_agent.auth import get_client
 
-__version__ = "1.1.0"
+__version__ = "2.0.0"
 
 logger = get_logger(name="portainer-agent")
 logger.setLevel(logging.INFO)
