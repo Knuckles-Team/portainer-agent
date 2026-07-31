@@ -1,7 +1,7 @@
 {
   "_comment": "Tier-1 mcp_tool source presets for portainer-agent (AU-KG.ingest.mcp-tool-connector). Sync Portainer environments and stacks into the KG via the portainer-agent MCP server. Contributed presets win over the central MCP_TOOL_PRESETS. For typed-node native ingestion prefer the portainer_ingest_* tools; these presets cover document-shaped mirroring.",
   "portainer-environments": {
-    "server": "portainer-agent",
+    "server": "portainer-mcp",
     "tool": "portainer_environment",
     "action": "get_endpoints",
     "records_path": "data",
@@ -11,7 +11,7 @@
     "doc_type": "environment"
   },
   "portainer-stacks": {
-    "server": "portainer-agent",
+    "server": "portainer-mcp",
     "tool": "portainer_stack",
     "action": "get_stacks",
     "records_path": "data",
