@@ -3,7 +3,7 @@ connector: portainer-agent
 ontology_source: portainer
 sync:
 - preset: portainer-environments
-  server: portainer-agent
+  server: portainer-mcp
   tool: portainer_environment
   action: get_endpoints
   records_path: data
@@ -14,7 +14,7 @@ sync:
   doc_type: environment
   tool_schema_sha256: b50529ca205c7216273190f09e90c507282e9b072f31d151b2f637d4197eb3cb
 - preset: portainer-stacks
-  server: portainer-agent
+  server: portainer-mcp
   tool: portainer_stack
   action: get_stacks
   records_path: data
