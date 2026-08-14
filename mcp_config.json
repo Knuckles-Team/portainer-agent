@@ -7,14 +7,12 @@
         "portainer-mcp"
       ],
       "env": {
-        "MCP_TOOL_MODE": "condensed",
+        "MCP_TOOL_MODE": "intent",
         "AUTHTOOL": "True",
         "DOCKERTOOL": "True",
         "EDGETOOL": "True",
         "ENVIRONMENTTOOL": "True",
-        "GITLAB_TOKEN": "",
         "KUBERNETESTOOL": "True",
-        "PORTAINER_GIT_TOKEN": "",
         "PORTAINER_GIT_USERNAME": "oauth2",
         "PORTAINER_TOKEN": "your_portainer_api_token_here",
         "PORTAINER_URL": "http://localhost:9000",
