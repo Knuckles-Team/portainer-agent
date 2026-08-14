@@ -22,8 +22,8 @@ from agent_utilities.core.transport_security import (
     ResolvedTLSProfile,
     resolve_configured_tls_profile,
 )
-from agent_utilities.http import AuthHeaderInjector, TokenAuth
-from agent_utilities.http import BaseApiClient as FleetApiClient
+from agent_utilities.httpsupport import AuthHeaderInjector, TokenAuth
+from agent_utilities.httpsupport import BaseApiClient as FleetApiClient
 
 #: Request headers managed by the session/transport rather than forwarded.
 _HOP_HEADERS = {"host", "content-length"}

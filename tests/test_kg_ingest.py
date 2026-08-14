@@ -8,8 +8,14 @@ mapping. CONCEPT:AU-KG.ingest.enterprise-source-extractor.
 
 from __future__ import annotations
 
+from typing import Any
+
+import msgpack
 import pytest
 from agent_utilities.knowledge_graph.memory.native_ingest import NativeIngestError
+from agent_utilities.security.brain_context import ActorContext, use_actor
+from agent_utilities.models.company_brain import ActorType
+from agent_utilities.knowledge_graph.core.session import GraphSession, use_session
 
 from portainer_agent.kg_ingest import (
     ingest_containers,
@@ -19,30 +25,92 @@ from portainer_agent.kg_ingest import (
 )
 
 
-class _FakeTxn:
-    def __init__(self):
-        self.nodes = {}
-        self.edges = []
-        self.committed = False
+@pytest.fixture(autouse=True)
+def _governed_session():
+    actor = ActorContext(
+        actor_id="subject:opaque:synthetic",
+        actor_type=ActorType.AUTOMATED_SERVICE,
+        roles=(),
+        tenant_id="tenant:opaque:synthetic",
+        authenticated=True,
+    )
+    session = GraphSession(
+        actor=actor,
+        tenant=actor.tenant_id,
+        scopes=frozenset({"kg:write"}),
+        graph="graph:opaque:synthetic",
+        policy_version="policy:opaque:synthetic",
+        audience="epistemic-graph",
+    )
+    with use_actor(actor), use_session(session):
+        yield
 
-    def begin(self, graph=None):
-        self.graph = graph
-        return "txn-1"
 
-    def add_node(self, txn, node_id, props):
-        self.nodes[node_id] = props
+class _FakeNodes:
+    def __init__(self) -> None:
+        self.values: dict[str, dict[str, Any]] = {}
 
-    def add_edge(self, txn, source, target, props):
-        self.edges.append((source, target, props))
+    def properties(self, node_id: str) -> dict[str, Any] | None:
+        return self.values.get(node_id)
 
-    def commit(self, txn):
-        self.committed = True
-        return True
+    def list(self) -> list[tuple[str, dict[str, Any]]]:
+        return list(self.values.items())
+
+
+class _FakeChanges:
+    def __init__(self, nodes: _FakeNodes) -> None:
+        self.nodes = nodes
+        self.edges: list[tuple[str, str, dict[str, Any]]] = []
+        self.applied: list[dict[str, Any]] = []
+        self.records: dict[str, dict[str, Any]] = {}
+        self.versions: dict[str, dict[str, Any]] = {}
+
+    def get(self, envelope_id: str) -> dict[str, Any] | None:
+        return self.records.get(envelope_id)
+
+    def content_version(self, object_id: str) -> dict[str, Any] | None:
+        return self.versions.get(object_id)
+
+    def cursor(self, _source: str, _partition: str = "") -> None:
+        return None
+
+    def apply(self, envelope: dict[str, Any]) -> dict[str, Any]:
+        self.applied.append(envelope)
+        mutation = envelope["mutation"]
+        for operation in mutation["operations"]:
+            method = operation["method"]
+            params = method["params"]
+            properties = msgpack.unpackb(params["properties_msgpack"], raw=False)
+            if method["method"] == "AddNode":
+                self.nodes.values[params["node_id"]] = properties
+            elif method["method"] == "AddEdge":
+                self.edges.append(
+                    (params["source_id"], params["target_id"], properties)
+                )
+        version = envelope["content_version"]
+        self.versions[version["object_id"]] = version
+        self.records[envelope["envelope_id"]] = envelope
+        return {
+            "batch_id": mutation["batch_id"],
+            "replayed": False,
+            "projection_pending": False,
+        }
+
+
+class _FakeRdf:
+    def validate_shacl(self, _shapes: str, _data_graph: str) -> dict[str, Any]:
+        return {"conforms": True, "results": []}
 
 
 class _FakeClient:
-    def __init__(self):
-        self.txn = _FakeTxn()
+    def __init__(self) -> None:
+        self.nodes = _FakeNodes()
+        self.changes = _FakeChanges(self.nodes)
+        self.rdf = _FakeRdf()
+
+    @staticmethod
+    def supports(operation: str) -> bool:
+        return operation == "ApplyChangeEnvelope"
 
 
 def test_ingest_entities_writes_nodes_and_edges():
@@ -54,15 +122,14 @@ def test_ingest_entities_writes_nodes_and_edges():
         ],
         [{"source": "b", "target": "a", "relationship": "inEnvironment"}],
         client=c,
-        graph="__commons__",
     )
     assert res == {"nodes": 2, "edges": 1}
-    assert c.txn.committed is True
-    assert set(c.txn.nodes) == {"a", "b"}
+    assert len(c.changes.applied) == 1
+    assert set(c.nodes.values) == {"a", "b"}
     # provenance is stamped
-    assert c.txn.nodes["a"]["source"] == "portainer-agent"
-    assert c.txn.nodes["a"]["domain"] == "portainer"
-    assert c.txn.edges == [("b", "a", {"relationship": "inEnvironment"})]
+    assert c.nodes.values["a"]["source"] == "portainer-agent"
+    assert c.nodes.values["a"]["domain"] == "portainer"
+    assert c.changes.edges == [("b", "a", {"relationship": "inEnvironment"})]
 
 
 def test_ingest_environments_maps_env_and_group():
@@ -79,17 +146,16 @@ def test_ingest_environments_maps_env_and_group():
             }
         ],
         client=c,
-        graph="__commons__",
     )
     assert res == {"nodes": 2, "edges": 1}
-    env = c.txn.nodes["portainer:environment:1"]
+    env = c.nodes.values["portainer:environment:1"]
     assert env["node_type"] == "Environment"
     assert env["environmentType"] == 2
     assert env["endpointUrl"] == "tcp://node:9001"
     assert env["status"] == "up"
     assert env["portainerId"] == "1"
-    assert c.txn.nodes["portainer:endpointgroup:3"]["node_type"] == "EndpointGroup"
-    assert c.txn.edges == [
+    assert c.nodes.values["portainer:endpointgroup:3"]["node_type"] == "EndpointGroup"
+    assert c.changes.edges == [
         (
             "portainer:environment:1",
             "portainer:endpointgroup:3",
@@ -103,14 +169,13 @@ def test_ingest_stacks_links_environment():
     res = ingest_stacks(
         [{"Id": 5, "Name": "web", "Type": 2, "Status": 1, "EndpointId": 1}],
         client=c,
-        graph="__commons__",
     )
     assert res == {"nodes": 1, "edges": 1}
-    st = c.txn.nodes["portainer:stack:5"]
+    st = c.nodes.values["portainer:stack:5"]
     assert st["node_type"] == "Stack"
     assert st["stackType"] == 2
     assert st["status"] == "active"
-    assert c.txn.edges == [
+    assert c.changes.edges == [
         ("portainer:stack:5", "portainer:environment:1", {"relationship": "inEnvironment"})
     ]
 
@@ -134,29 +199,28 @@ def test_ingest_stacks_git_backed_creates_repository_and_deployed_from_edge():
             }
         ],
         client=c,
-        graph="__commons__",
     )
     assert res == {"nodes": 2, "edges": 2}
-    st = c.txn.nodes["portainer:stack:5"]
+    st = c.nodes.values["portainer:stack:5"]
     assert st["repositoryUrl"] == "https://github.com/acme/web-stack"
     assert st["repositoryRef"] == "refs/heads/main"
     # explicit GitConfig.ConfigFilePath wins over the top-level EntryPoint
     assert st["composePath"] == "deploy/docker-compose.yml"
 
     repo_node = "git:repo:github.com/acme/web-stack"
-    repo = c.txn.nodes[repo_node]
+    repo = c.nodes.values[repo_node]
     assert repo["node_type"] == "Repository"
     assert repo["url"] == "https://github.com/acme/web-stack"
     assert (
         "portainer:stack:5",
         repo_node,
         {"relationship": "deployedFrom"},
-    ) in c.txn.edges
+    ) in c.changes.edges
     assert (
         "portainer:stack:5",
         "portainer:environment:1",
         {"relationship": "inEnvironment"},
-    ) in c.txn.edges
+    ) in c.changes.edges
 
 
 def test_ingest_stacks_git_backed_scp_style_and_entrypoint_fallback():
@@ -173,15 +237,14 @@ def test_ingest_stacks_git_backed_scp_style_and_entrypoint_fallback():
             }
         ],
         client=c,
-        graph="__commons__",
     )
     assert res == {"nodes": 2, "edges": 1}
-    st = c.txn.nodes["portainer:stack:6"]
+    st = c.nodes.values["portainer:stack:6"]
     assert st["repositoryUrl"] == "https://gitlab.example.com/team/api"
     # no ReferenceName/ConfigFilePath supplied -> falls back to EntryPoint, no ref
     assert st["composePath"] == "docker-compose.yml"
     assert "repositoryRef" not in st
-    assert c.txn.nodes["git:repo:gitlab.example.com/team/api"]["node_type"] == "Repository"
+    assert c.nodes.values["git:repo:gitlab.example.com/team/api"]["node_type"] == "Repository"
 
 
 def test_ingest_stacks_without_git_config_has_no_repository_node():
@@ -189,15 +252,14 @@ def test_ingest_stacks_without_git_config_has_no_repository_node():
     res = ingest_stacks(
         [{"Id": 7, "Name": "plain", "EndpointId": 1, "GitConfig": None}],
         client=c,
-        graph="__commons__",
     )
     assert res == {"nodes": 1, "edges": 1}
-    st = c.txn.nodes["portainer:stack:7"]
+    st = c.nodes.values["portainer:stack:7"]
     assert "repositoryUrl" not in st
     assert "repositoryRef" not in st
     assert "composePath" not in st
-    assert not any(n.startswith("git:repo:") for n in c.txn.nodes)
-    assert c.txn.edges == [
+    assert not any(n.startswith("git:repo:") for n in c.nodes.values)
+    assert c.changes.edges == [
         ("portainer:stack:7", "portainer:environment:1", {"relationship": "inEnvironment"})
     ]
 
@@ -233,10 +295,9 @@ def test_ingest_containers_links_env_and_stack():
         ],
         environment_id=1,
         client=c,
-        graph="__commons__",
     )
     assert res == {"nodes": 1, "edges": 2}
-    node = c.txn.nodes["portainer:container:1_abc123"]
+    node = c.nodes.values["portainer:container:1_abc123"]
     assert node["node_type"] == "Container"
     assert node["name"] == "web_1"
     assert node["imageName"] == "nginx:latest"
@@ -246,12 +307,12 @@ def test_ingest_containers_links_env_and_stack():
         "portainer:container:1_abc123",
         "portainer:environment:1",
         {"relationship": "inEnvironment"},
-    ) in c.txn.edges
+    ) in c.changes.edges
     assert (
         "portainer:container:1_abc123",
         "portainer:stack:name:web",
         {"relationship": "deployedByStack"},
-    ) in c.txn.edges
+    ) in c.changes.edges
 
 
 def test_retired_structural_alias_is_rejected():
