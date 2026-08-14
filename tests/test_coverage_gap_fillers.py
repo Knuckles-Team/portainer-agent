@@ -360,17 +360,26 @@ def test_api_client_get_stack_logs_swarm():
     client = PortainerApi(base_url="http://test", token="test")
 
     # Mock internal methods
-    client.get_stack = MagicMock(return_value={"Name": "swarm_stack", "Type": 1})
-    client.list_services = MagicMock(return_value=[{"ID": "svc123", "Spec": {"Name": "service1"}}])
-    client.get_service_logs = MagicMock(return_value="swarm_logs")
+    with (
+        patch.object(
+            client, "get_stack", return_value={"Name": "swarm_stack", "Type": 1}
+        ) as mock_get_stack,
+        patch.object(
+            client,
+            "list_services",
+            return_value=[{"ID": "svc123", "Spec": {"Name": "service1"}}],
+        ) as mock_list_services,
+        patch.object(
+            client, "get_service_logs", return_value="swarm_logs"
+        ) as mock_get_service_logs,
+    ):
+        logs = client.get_stack_logs(endpoint_id=1, stack_id=10)
+        assert "--- Service: service1 ---" in logs
+        assert "swarm_logs" in logs
 
-    logs = client.get_stack_logs(endpoint_id=1, stack_id=10)
-    assert "--- Service: service1 ---" in logs
-    assert "swarm_logs" in logs
-
-    client.get_stack.assert_called_once_with(10)
-    client.list_services.assert_called_once()
-    client.get_service_logs.assert_called_once_with(1, "svc123")
+        mock_get_stack.assert_called_once_with(10)
+        mock_list_services.assert_called_once()
+        mock_get_service_logs.assert_called_once_with(1, "svc123")
 
 
 def test_api_client_get_stack_logs_compose_fallback():
@@ -378,17 +387,26 @@ def test_api_client_get_stack_logs_compose_fallback():
 
     client = PortainerApi(base_url="http://test", token="test")
 
-    client.get_stack = MagicMock(return_value={"Name": "compose_stack", "Type": 2})
-    # First list_containers returns empty, second returns container
-    client.list_containers = MagicMock(side_effect=[[], [{"Id": "cont123", "Names": ["/container1"]}]])
-    client.get_container_logs = MagicMock(return_value="container_logs")
+    with (
+        patch.object(
+            client, "get_stack", return_value={"Name": "compose_stack", "Type": 2}
+        ),
+        # First list_containers returns empty, second returns container
+        patch.object(
+            client,
+            "list_containers",
+            side_effect=[[], [{"Id": "cont123", "Names": ["/container1"]}]],
+        ) as mock_list_containers,
+        patch.object(
+            client, "get_container_logs", return_value="container_logs"
+        ) as mock_get_container_logs,
+    ):
+        logs = client.get_stack_logs(endpoint_id=1, stack_id=10)
+        assert "--- Container: container1 ---" in logs
+        assert "container_logs" in logs
 
-    logs = client.get_stack_logs(endpoint_id=1, stack_id=10)
-    assert "--- Container: container1 ---" in logs
-    assert "container_logs" in logs
-
-    assert client.list_containers.call_count == 2
-    client.get_container_logs.assert_called_once_with(1, "cont123")
+        assert mock_list_containers.call_count == 2
+        mock_get_container_logs.assert_called_once_with(1, "cont123")
 
 
 # --- 5. Tests for portainer_agent/mcp_server.py ---
