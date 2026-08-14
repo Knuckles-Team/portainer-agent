@@ -20,7 +20,7 @@
 ![PyPI - Wheel](https://img.shields.io/pypi/wheel/portainer-agent)
 ![PyPI - Implementation](https://img.shields.io/pypi/implementation/portainer-agent)
 
-*Version: 2.0.0*
+*Version: 2.1.0*
 
 > **Documentation** — Installation, deployment, usage across the API, CLI, and MCP
 > interfaces, and guidance for provisioning the Portainer platform are maintained in
@@ -61,7 +61,7 @@ This table is auto-generated from the live server — do not edit by hand.
 
 <!-- MCP-TOOLS-TABLE:START -->
 
-#### Condensed action-routed tools (default — `MCP_TOOL_MODE=condensed`)
+#### Condensed action-routed tools (`MCP_TOOL_MODE=condensed`)
 
 | MCP Tool | Toggle Env Var | Description |
 |----------|----------------|-------------|
@@ -69,6 +69,8 @@ This table is auto-generated from the live server — do not edit by hand.
 | `portainer_docker` | `DOCKERTOOL` | Manage docker operations. |
 | `portainer_edge` | `EDGETOOL` | Manage edge operations. |
 | `portainer_environment` | `ENVIRONMENTTOOL` | Manage environment operations. |
+| `portainer_ingest_containers` | `SYSTEMTOOL` | Natively ingest an environment's Docker containers into epistemic-graph. |
+| `portainer_ingest_environments` | `SYSTEMTOOL` | Natively ingest Portainer environments (+ stacks) into epistemic-graph. |
 | `portainer_kubernetes` | `KUBERNETESTOOL` | Manage kubernetes operations. |
 | `portainer_registry` | `REGISTRYTOOL` | Manage registry operations. |
 | `portainer_stack` | `STACKTOOL` |  |
@@ -79,7 +81,7 @@ This table is auto-generated from the live server — do not edit by hand.
 #### Verbose 1:1 API-mapped tools (`MCP_TOOL_MODE=verbose` or `both`)
 
 <details>
-<summary>228 per-operation tools — one per public API method (click to expand)</summary>
+<summary>227 per-operation tools — one per public API method (click to expand)</summary>
 
 | MCP Tool | Toggle Env Var | Description |
 |----------|----------------|-------------|
@@ -170,13 +172,13 @@ This table is auto-generated from the live server — do not edit by hand.
 | `portainer_get_edge_stack_file` | `APITOOL` | Get the compose file content for an edge stack. |
 | `portainer_get_edge_stack_status` | `APITOOL` | Get edge stack deployment status. |
 | `portainer_get_edge_stacks` | `APITOOL` | List edge stacks. |
-| `portainer_get_endpoint` | `APITOOL` | Get a specific environment by ID. |
+| `portainer_get_endpoint` | `APITOOL` | Get a specific environment by ID. Denied if not entitled. |
 | `portainer_get_endpoint_group` | `APITOOL` | Get a specific endpoint group. |
 | `portainer_get_endpoint_groups` | `APITOOL` | List all endpoint groups. |
 | `portainer_get_endpoint_registries` | `APITOOL` | List registries for an environment. |
 | `portainer_get_endpoint_relations` | `APITOOL` | Get environment relations. |
 | `portainer_get_endpoint_settings` | `APITOOL` | Get environment settings. |
-| `portainer_get_endpoints` | `APITOOL` | List all environments (endpoints). |
+| `portainer_get_endpoints` | `APITOOL` | List all environments (endpoints) the caller is entitled to. |
 | `portainer_get_helm_release_history` | `APITOOL` | Get Helm release history. |
 | `portainer_get_helm_releases` | `APITOOL` | List Helm releases for an environment. |
 | `portainer_get_helm_templates` | `APITOOL` | List Helm chart templates. |
@@ -279,7 +281,6 @@ This table is auto-generated from the live server — do not edit by hand.
 | `portainer_remove_network` | `APITOOL` | Remove a network. |
 | `portainer_remove_service` | `APITOOL` | Remove a Swarm service. |
 | `portainer_remove_volume` | `APITOOL` | Remove a volume. |
-| `portainer_request` | `BASE_API_CLIENTTOOL` | Generic authenticated passthrough to ANY Portainer API endpoint. |
 | `portainer_restart_container` | `APITOOL` | Restart a container. |
 | `portainer_restore` | `APITOOL` | Restore Portainer data from a backup. |
 | `portainer_rollback_helm_release` | `APITOOL` | Rollback a Helm release to a specific revision. |
@@ -314,7 +315,7 @@ This table is auto-generated from the live server — do not edit by hand.
 
 </details>
 
-_10 action-routed tool(s) (default) · 228 verbose 1:1 tool(s). Each is enabled unless its `<DOMAIN>TOOL` toggle is set false; `MCP_TOOL_MODE` selects the surface (`condensed` default · `verbose` 1:1 · `both`). Auto-generated — do not edit._
+_12 action-routed tool(s) · 227 verbose 1:1 tool(s). Each is enabled unless its `<DOMAIN>TOOL` toggle is set false; `MCP_TOOL_MODE` selects the surface (**`intent` default** — the six verb-tools, granular set loaded on demand · `condensed` action-routed · `verbose` 1:1 · `both`). Auto-generated — do not edit._
 <!-- MCP-TOOLS-TABLE:END -->
 
 Detailed tool schemas, parameter shapes, and validation constraints are preserved in [docs/usage.md](docs/usage.md).
@@ -591,18 +592,18 @@ Detailed graph node architecture explanations, custom skill configurations, and 
 | `TRANSPORT` | `stdio` | options: stdio, streamable-http, sse |
 | `ENABLE_OTEL` | `True` |  |
 | `OTEL_EXPORTER_OTLP_ENDPOINT` | `http://localhost:8080/api/public/otel` |  |
-| `OTEL_EXPORTER_OTLP_PUBLIC_KEY` | `pk-...` |  |
-| `OTEL_EXPORTER_OTLP_SECRET_KEY` | `sk-...` |  |
+| `OTEL_EXPORTER_OTLP_PUBLIC_KEY` | secret-injected |  |
+| `OTEL_EXPORTER_OTLP_SECRET_KEY` | secret-injected |  |
 | `OTEL_EXPORTER_OTLP_PROTOCOL` | `http/protobuf` |  |
 | `EUNOMIA_TYPE` | `none` | options: none, embedded, remote |
 | `EUNOMIA_POLICY_FILE` | `mcp_policies.json` |  |
 | `EUNOMIA_REMOTE_URL` | `http://eunomia-server:8000` |  |
 | `PORTAINER_URL` | `http://localhost:9000` |  |
-| `PORTAINER_PASSWORD` | `your_portainer_password_here` |  |
-| `PORTAINER_TOKEN` | `your_portainer_api_token_here` |  |
+| `PORTAINER_PASSWORD` | secret-injected |  |
+| `PORTAINER_TOKEN` | secret-injected |  |
 | `PORTAINER_GIT_USERNAME` | `oauth2` | username for git-backed stack auth (default: oauth2) |
-| `PORTAINER_GIT_TOKEN` | — | token for private git repos used by stacks |
-| `GITLAB_TOKEN` | — | fallback token when PORTAINER_GIT_TOKEN is unset |
+| `PORTAINER_GIT_TOKEN` | secret-injected | token for private git repos used by stacks |
+| `GITLAB_TOKEN` | secret-injected | fallback token when PORTAINER_GIT_TOKEN is unset |
 | `AUTHTOOL` | `True` |  |
 | `ENVIRONMENTTOOL` | `True` |  |
 | `DOCKERTOOL` | `True` |  |
@@ -618,22 +619,22 @@ Detailed graph node architecture explanations, custom skill configurations, and 
 
 | Variable | Example | Description |
 |----------|---------|-------------|
-| `MCP_TOOL_MODE` | `condensed` | Tool surface: `condensed` | `verbose` | `both` |
+| `MCP_TOOL_MODE` | `intent` | Tool surface: `intent` \| `condensed` \| `verbose` \| `both` |
 | `MCP_ENABLED_TOOLS` | — | Comma-separated tool allow-list |
 | `MCP_DISABLED_TOOLS` | — | Comma-separated tool deny-list |
 | `MCP_ENABLED_TAGS` | — | Comma-separated tag allow-list |
 | `MCP_DISABLED_TAGS` | — | Comma-separated tag deny-list |
-| `MCP_CLIENT_AUTH` | — | Outbound MCP auth (`oidc-client-credentials` for fleet calls) |
+| `MCP_CLIENT_AUTH` | — | Outbound MCP child auth: `oidc-client-credentials` \| `basic` \| `none` |
 | `OIDC_CLIENT_ID` | — | OIDC client id (service-account auth) |
-| `OIDC_CLIENT_SECRET` | — | OIDC client secret (service-account auth) |
+| `OIDC_CLIENT_SECRET_REF` | `secret://identity/oidc-client-secret` | Runtime secret reference for the OIDC service account |
+| `MCP_BASIC_AUTH_USERNAME` | — | HTTP Basic username (`MCP_CLIENT_AUTH=basic`) |
+| `MCP_BASIC_AUTH_PASSWORD_REF` | `secret://identity/mcp-basic-password` | Runtime secret reference for HTTP Basic auth (`MCP_CLIENT_AUTH=basic`) |
 | `DEBUG` | `False` | Verbose logging |
 | `PYTHONUNBUFFERED` | `1` | Unbuffered stdout (recommended in containers) |
 | `MCP_URL` | `http://localhost:8000/mcp` | URL of the MCP server the agent connects to |
 | `PROVIDER` | `openai` | LLM provider for the agent |
 | `MODEL_ID` | `gpt-4o` | Model id for the agent |
 | `ENABLE_WEB_UI` | `True` | Serve the AG-UI web interface |
-| `TLS_PROFILE` | — | XDG AgentConfig TLS profile selector; verification is mandatory |
-| `TLS_PROFILE_REF` | — | Secret reference containing a runtime TLS profile |
 
 _27 package + 16 inherited variable(s). Auto-generated from `.env.example` + the shared agent-utilities set — do not edit._
 <!-- ENV-VARS-TABLE:END -->
