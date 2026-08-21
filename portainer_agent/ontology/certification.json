@@ -1,8 +1,7 @@
 {
   "api_version": "graphos.io/v1",
   "artifacts": {
-    "a2a.json": "ddf4590c5e3caa68880e215692954737d5f83f0c3f55ca1053f526a9f7fd3384",
-    "connector_manifest.yml": "70fa75ab4b9f011773cac2b6efad468b0ca597edc66303cb94c78cc1bbc0db76",
+    "connector_manifest.yml": "8a2633a4ddd035d3df6dd3345cd01226d80980d5ca833be3b8d08c473216a1cf",
     "portainer_agent/connectors/mcp_source_presets.json": "0f51ebeab6e7b0add980649351b7405a92336777f7e44023b4f07b76d5a49307",
     "portainer_agent/connectors/tool_schema_fingerprints.json": "8409deb0ff91c6713e798e31473469920fb8f8f773aa03c5cd32da4f598edd65",
     "portainer_agent/ontology/fixtures/records.json": "1eb99785c42e27c6d6079c6ffceeff383de149de3740bacc9cfa9f183b8e764f",
@@ -19,19 +18,19 @@
     "synthetic_fixture_contract": "passed"
   },
   "compatibility": {
-    "agent_utilities": ">=2.1.0,<3",
+    "agent_utilities": ">=2.4.0,<3",
     "bundle_schema": "2",
-    "epistemic_graph": ">=2.23.0,<3"
+    "epistemic_graph": ">=2.26.0,<3"
   },
   "connector": "portainer-agent",
   "kind": "ConnectorSourceAttestation",
   "live_certified": false,
   "mode": "offline-source",
   "schema_version": "2",
-  "signature": "9MHCgvurFB5ep-FyYBBfMfWnFpHwl3Z26FJ5kKvtwEiW-BZQhJfn4E4f1f5sAhubiLTVLRs157w16HRAfOZ2CQ",
-  "signature_algorithm": "ed25519",
-  "signer": "ontology-manifest-generator",
-  "signing_public_key": "QkigdPNpcUU7x7NcSkwCsUXIQpaFncMQbYSoiSgI2SY",
+  "signature": null,
+  "signature_algorithm": "none",
+  "signer": "UNSIGNED-PREVIEW",
+  "signing_public_key": "",
   "status": "source-validated",
-  "validated_at": "2026-07-31T04:00:00Z"
+  "validated_at": "2026-08-21T04:30:39Z"
 }
