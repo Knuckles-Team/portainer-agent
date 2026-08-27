@@ -58,13 +58,8 @@ def format_timestamp(epoch_or_str):
     return str(epoch_or_str).replace("T", " ").split(".")[0]
 
 
-def main():
-    args = parse_arguments()
-
-    stacks_data = load_json_file(args.stacks_json)
-    services_data = load_json_file(args.services_json)
-
-    # Build a mapping of stacks by their Name (namespace)
+def _build_stacks_index(stacks_data):
+    """Build a mapping of stacks by their Name (namespace)."""
     stacks_dict = {}
     for stack in stacks_data:
         name = stack.get("Name")
@@ -85,71 +80,96 @@ def main():
             "git_ref": git_ref,
             "services": [],
         }
+    return stacks_dict
 
-    # Process services and correlate them to stacks
+
+def _resolve_service_namespace(svc, svc_name, labels):
+    # 1. Check direct label
+    namespace = labels.get("com.docker.stack.namespace")
+
+    # 2. Check PreviousSpec labels
+    if not namespace:
+        prev_spec = svc.get("PreviousSpec", {})
+        prev_labels = prev_spec.get("Labels", {})
+        namespace = prev_labels.get("com.docker.stack.namespace")
+
+    # 3. Guess namespace from service name prefix (namespace_servicename)
+    if not namespace and "_" in svc_name:
+        namespace = svc_name.split("_")[0]
+
+    return namespace
+
+
+def _resolve_service_replicas(spec):
+    replicas = spec.get("Mode", {}).get("Replicated", {}).get("Replicas")
+    if replicas is None:
+        if spec.get("Mode", {}).get("Global") is not None:
+            replicas = "Global"
+        else:
+            replicas = 1
+    return replicas
+
+
+def _resolve_service_image(spec, labels):
+    image = labels.get("com.docker.stack.image")
+    if not image:
+        container_spec = spec.get("TaskTemplate", {}).get("ContainerSpec", {})
+        image = container_spec.get("Image", "N/A")
+        # Clean image digest if present
+        if "@sha256:" in image:
+            image = image.split("@sha256:")[0]
+    return image
+
+
+def _build_service_info(svc):
+    """Resolve one Swarm service's namespace + normalized info dict."""
+    spec = svc.get("Spec", {})
+    svc_name = spec.get("Name", "unnamed-service")
+    labels = spec.get("Labels", {})
+
+    namespace = _resolve_service_namespace(svc, svc_name, labels)
+    replicas = _resolve_service_replicas(spec)
+    image = _resolve_service_image(spec, labels)
+
+    # Get Placement Constraints
+    placement = spec.get("TaskTemplate", {}).get("Placement", {})
+    constraints = placement.get("Constraints", [])
+
+    # Update Status
+    update_status = svc.get("UpdateStatus", {})
+
+    svc_info = {
+        "id": svc.get("ID"),
+        "name": svc_name,
+        "image": image,
+        "replicas": replicas,
+        "constraints": constraints,
+        "update_state": update_status.get("State", "completed"),
+        "update_message": update_status.get("Message", ""),
+        "update_started": format_timestamp(update_status.get("StartedAt")),
+        "update_completed": format_timestamp(update_status.get("CompletedAt")),
+        "created_at": format_timestamp(svc.get("CreatedAt")),
+        "updated_at": format_timestamp(svc.get("UpdatedAt")),
+    }
+    return namespace, svc_info
+
+
+def _correlate_services(services_data, stacks_dict):
+    """Process services and correlate them to stacks (mutates stacks_dict in
+    place); returns the list of (namespace, svc_info) orphan services."""
     orphan_services = []
     for svc in services_data:
-        spec = svc.get("Spec", {})
-        svc_name = spec.get("Name", "unnamed-service")
-        labels = spec.get("Labels", {})
-
-        # 1. Check direct label
-        namespace = labels.get("com.docker.stack.namespace")
-
-        # 2. Check PreviousSpec labels
-        if not namespace:
-            prev_spec = svc.get("PreviousSpec", {})
-            prev_labels = prev_spec.get("Labels", {})
-            namespace = prev_labels.get("com.docker.stack.namespace")
-
-        # 3. Guess namespace from service name prefix (namespace_servicename)
-        if not namespace and "_" in svc_name:
-            namespace = svc_name.split("_")[0]
-
-        # Get Replicas
-        replicas = spec.get("Mode", {}).get("Replicated", {}).get("Replicas")
-        if replicas is None:
-            if spec.get("Mode", {}).get("Global") is not None:
-                replicas = "Global"
-            else:
-                replicas = 1
-
-        # Get Image
-        image = labels.get("com.docker.stack.image")
-        if not image:
-            container_spec = spec.get("TaskTemplate", {}).get("ContainerSpec", {})
-            image = container_spec.get("Image", "N/A")
-            # Clean image digest if present
-            if "@sha256:" in image:
-                image = image.split("@sha256:")[0]
-
-        # Get Placement Constraints
-        placement = spec.get("TaskTemplate", {}).get("Placement", {})
-        constraints = placement.get("Constraints", [])
-
-        # Update Status
-        update_status = svc.get("UpdateStatus", {})
-
-        svc_info = {
-            "id": svc.get("ID"),
-            "name": svc_name,
-            "image": image,
-            "replicas": replicas,
-            "constraints": constraints,
-            "update_state": update_status.get("State", "completed"),
-            "update_message": update_status.get("Message", ""),
-            "update_started": format_timestamp(update_status.get("StartedAt")),
-            "update_completed": format_timestamp(update_status.get("CompletedAt")),
-            "created_at": format_timestamp(svc.get("CreatedAt")),
-            "updated_at": format_timestamp(svc.get("UpdatedAt")),
-        }
-
+        namespace, svc_info = _build_service_info(svc)
         if namespace in stacks_dict:
             stacks_dict[namespace]["services"].append(svc_info)
         else:
             orphan_services.append((namespace, svc_info))
+    return orphan_services
 
-    # Classify Stack Health States
+
+def _classify_stack_health(stacks_dict):
+    """Classify each stack's health state; returns (healthy, degraded,
+    unhealthy) lists. Mutates each stack dict with a "health" key."""
     healthy_stacks = []
     degraded_stacks = []
     unhealthy_stacks = []
@@ -185,7 +205,17 @@ def main():
             stack["health"] = "Healthy"
             healthy_stacks.append(stack)
 
-    # Format the Markdown Report
+    return healthy_stacks, degraded_stacks, unhealthy_stacks
+
+
+def _render_summary(
+    stacks_data,
+    services_data,
+    healthy_stacks,
+    degraded_stacks,
+    unhealthy_stacks,
+    orphan_services,
+):
     md = []
     md.append("# 📋 Homelab Swarm Stack Health Report")
     md.append(
@@ -209,155 +239,186 @@ def main():
         f"| **Standalone Swarm Services** | {len(orphan_services)} | 🌐 Unmanaged by Portainer Stacks |"
     )
     md.append("\n")
+    return md
 
-    # Recommendations Section
-    md.append("## 💡 Key Diagnostics & Recommendations\n")
-    if unhealthy_stacks:
-        md.append("### Critical Remediation Actions Required:\n")
-        for s in unhealthy_stacks:
-            md.append(f"- **Stack `{s['name']}` is Unhealthy**:")
-            for svc in s["services"]:
-                if svc["update_state"] in ["paused", "failed"]:
-                    md.append(
-                        f"  - Service `{svc['name']}` update state is `{svc['update_state']}`. Error message: *{svc['update_message'] or 'No message available'}*"
-                    )
-            md.append(
-                "  - *Action*: Inspect the task exit codes and container logs using `docker service ps` and `docker service logs`."
+
+def _render_unhealthy_recommendations(unhealthy_stacks):
+    md = []
+    if not unhealthy_stacks:
+        return md
+    md.append("### Critical Remediation Actions Required:\n")
+    for s in unhealthy_stacks:
+        md.append(f"- **Stack `{s['name']}` is Unhealthy**:")
+        for svc in s["services"]:
+            if svc["update_state"] in ["paused", "failed"]:
+                md.append(
+                    f"  - Service `{svc['name']}` update state is `{svc['update_state']}`. Error message: *{svc['update_message'] or 'No message available'}*"
+                )
+        md.append(
+            "  - *Action*: Inspect the task exit codes and container logs using `docker service ps` and `docker service logs`."
+        )
+        md.append("\n")
+    return md
+
+
+def _render_degraded_recommendations(degraded_stacks):
+    md = []
+    if not degraded_stacks:
+        return md
+    md.append("### Warning / Active Updates:\n")
+    for s in degraded_stacks:
+        md.append(f"- **Stack `{s['name']}` is Degraded**:")
+        for svc in s["services"]:
+            if svc["update_state"] in [
+                "updating",
+                "rollback_started",
+                "rollback_paused",
+                "rollback_completed",
+            ]:
+                md.append(
+                    f"  - Service `{svc['name']}` update state is `{svc['update_state']}`."
+                )
+        md.append(
+            "  - *Action*: Monitor the roll-out progression or check if resources are constrained on the active node."
+        )
+        md.append("\n")
+    return md
+
+
+def _render_git_alignment_warnings(stacks_data):
+    md = []
+    orphan_git_stacks = [s for s in stacks_data if not s.get("GitConfig")]
+    if not orphan_git_stacks:
+        return md
+    md.append("### Git Source of Truth Alignment:\n")
+    md.append(
+        f"- **{len(orphan_git_stacks)}** stacks are deployed manually/ad-hoc (no associated Git configuration):"
+    )
+    for s in sorted(orphan_git_stacks, key=lambda x: x.get("Name", "")):
+        md.append(f"  - `{s.get('Name')}` (ID: {s.get('Id')})")
+    md.append(
+        "  - *Action*: Seed GitLab repositories for these orphan stacks to ensure configuration management, change control, and pipeline stability."
+    )
+    md.append("\n")
+    return md
+
+
+def _render_recommendations(unhealthy_stacks, degraded_stacks, stacks_data):
+    md = ["## 💡 Key Diagnostics & Recommendations\n"]
+    md.extend(_render_unhealthy_recommendations(unhealthy_stacks))
+    md.extend(_render_degraded_recommendations(degraded_stacks))
+    md.extend(_render_git_alignment_warnings(stacks_data))
+    return md
+
+
+def _render_unhealthy_section(unhealthy_stacks):
+    md = []
+    md.append("## 🔴 Unhealthy Stacks (Action Required)\n")
+    if not unhealthy_stacks:
+        md.append("*No unhealthy stacks found.*\n")
+        return md
+    for stack in sorted(unhealthy_stacks, key=lambda x: x["name"]):
+        md.append(f"### 📦 Stack: `{stack['name']}` (ID: {stack['id']})")
+        md.append("| Attribute | Value |")
+        md.append("| :--- | :--- |")
+        md.append(f"| **Status** | {stack['status']} |")
+        md.append(f"| **Created At** | {stack['created_at']} |")
+        md.append(
+            f"| **Last Updated** | {stack['updated_at']} by `{stack['updated_by']}` |"
+        )
+        git_status = (
+            f"[`{stack['git_repo']}`]({stack['git_repo']}) (ref: `{stack['git_ref']}`)"
+            if stack["git_repo"]
+            else "None (Manual / Ad-hoc)"
+        )
+        md.append(f"| **Git Config** | {git_status} |")
+        md.append("\n")
+
+        md.append("#### Services Detail:")
+        md.append(
+            "| Service Name | Image | Replicas | Update State | Status Message |"
+        )
+        md.append("| :--- | :--- | :---: | :---: | :--- |")
+        for s in stack["services"]:
+            status_emoji = (
+                "🔴 " + s["update_state"]
+                if s["update_state"] in ["paused", "failed"]
+                else "🟢 healthy"
             )
-            md.append("\n")
+            msg = s["update_message"] if s["update_message"] else "-"
+            md.append(
+                f"| `{s['name']}` | `{s['image']}` | {s['replicas']} | {status_emoji} | {msg} |"
+            )
+        md.append("\n---\n")
+    return md
 
-    if degraded_stacks:
-        md.append("### Warning / Active Updates:\n")
-        for s in degraded_stacks:
-            md.append(f"- **Stack `{s['name']}` is Degraded**:")
-            for svc in s["services"]:
-                if svc["update_state"] in [
+
+def _render_degraded_section(degraded_stacks):
+    md = []
+    md.append("## 🟡 Degraded Stacks\n")
+    if not degraded_stacks:
+        md.append("*No degraded stacks found.*\n")
+        return md
+    for stack in sorted(degraded_stacks, key=lambda x: x["name"]):
+        md.append(f"### 📦 Stack: `{stack['name']}` (ID: {stack['id']})")
+        md.append("| Attribute | Value |")
+        md.append("| :--- | :--- |")
+        md.append(f"| **Created At** | {stack['created_at']} |")
+        md.append(
+            f"| **Last Updated** | {stack['updated_at']} by `{stack['updated_by']}` |"
+        )
+        md.append("\n")
+
+        md.append("#### Services Detail:")
+        md.append(
+            "| Service Name | Image | Replicas | Update State | Status Message |"
+        )
+        md.append("| :--- | :--- | :---: | :---: | :--- |")
+        for s in stack["services"]:
+            status_emoji = (
+                "🟡 " + s["update_state"]
+                if s["update_state"]
+                in [
                     "updating",
                     "rollback_started",
                     "rollback_paused",
                     "rollback_completed",
-                ]:
-                    md.append(
-                        f"  - Service `{svc['name']}` update state is `{svc['update_state']}`."
-                    )
+                ]
+                else "🟢 completed"
+            )
+            msg = s["update_message"] if s["update_message"] else "-"
             md.append(
-                "  - *Action*: Monitor the roll-out progression or check if resources are constrained on the active node."
-            )
-            md.append("\n")
-
-    # Git configuration warnings
-    orphan_git_stacks = [s for s in stacks_data if not s.get("GitConfig")]
-    if orphan_git_stacks:
-        md.append("### Git Source of Truth Alignment:\n")
-        md.append(
-            f"- **{len(orphan_git_stacks)}** stacks are deployed manually/ad-hoc (no associated Git configuration):"
-        )
-        for s in sorted(orphan_git_stacks, key=lambda x: x.get("Name", "")):
-            md.append(f"  - `{s.get('Name')}` (ID: {s.get('Id')})")
-        md.append(
-            "  - *Action*: Seed GitLab repositories for these orphan stacks to ensure configuration management, change control, and pipeline stability."
-        )
-        md.append("\n")
-
-    md.append("---\n")
-
-    # Unhealthy Stacks Section
-    md.append("## 🔴 Unhealthy Stacks (Action Required)\n")
-    if not unhealthy_stacks:
-        md.append("*No unhealthy stacks found.*\n")
-    else:
-        for stack in sorted(unhealthy_stacks, key=lambda x: x["name"]):
-            md.append(f"### 📦 Stack: `{stack['name']}` (ID: {stack['id']})")
-            md.append("| Attribute | Value |")
-            md.append("| :--- | :--- |")
-            md.append(f"| **Status** | {stack['status']} |")
-            md.append(f"| **Created At** | {stack['created_at']} |")
-            md.append(
-                f"| **Last Updated** | {stack['updated_at']} by `{stack['updated_by']}` |"
-            )
-            git_status = (
-                f"[`{stack['git_repo']}`]({stack['git_repo']}) (ref: `{stack['git_ref']}`)"
-                if stack["git_repo"]
-                else "None (Manual / Ad-hoc)"
-            )
-            md.append(f"| **Git Config** | {git_status} |")
-            md.append("\n")
-
-            md.append("#### Services Detail:")
-            md.append(
-                "| Service Name | Image | Replicas | Update State | Status Message |"
-            )
-            md.append("| :--- | :--- | :---: | :---: | :--- |")
-            for s in stack["services"]:
-                status_emoji = (
-                    "🔴 " + s["update_state"]
-                    if s["update_state"] in ["paused", "failed"]
-                    else "🟢 healthy"
-                )
-                msg = s["update_message"] if s["update_message"] else "-"
-                md.append(
-                    f"| `{s['name']}` | `{s['image']}` | {s['replicas']} | {status_emoji} | {msg} |"
-                )
-            md.append("\n---\n")
-
-    # Degraded Stacks Section
-    md.append("## 🟡 Degraded Stacks\n")
-    if not degraded_stacks:
-        md.append("*No degraded stacks found.*\n")
-    else:
-        for stack in sorted(degraded_stacks, key=lambda x: x["name"]):
-            md.append(f"### 📦 Stack: `{stack['name']}` (ID: {stack['id']})")
-            md.append("| Attribute | Value |")
-            md.append("| :--- | :--- |")
-            md.append(f"| **Created At** | {stack['created_at']} |")
-            md.append(
-                f"| **Last Updated** | {stack['updated_at']} by `{stack['updated_by']}` |"
-            )
-            md.append("\n")
-
-            md.append("#### Services Detail:")
-            md.append(
-                "| Service Name | Image | Replicas | Update State | Status Message |"
-            )
-            md.append("| :--- | :--- | :---: | :---: | :--- |")
-            for s in stack["services"]:
-                status_emoji = (
-                    "🟡 " + s["update_state"]
-                    if s["update_state"]
-                    in [
-                        "updating",
-                        "rollback_started",
-                        "rollback_paused",
-                        "rollback_completed",
-                    ]
-                    else "🟢 completed"
-                )
-                msg = s["update_message"] if s["update_message"] else "-"
-                md.append(
-                    f"| `{s['name']}` | `{s['image']}` | {s['replicas']} | {status_emoji} | {msg} |"
-                )
-            md.append("\n---\n")
-
-    # Standalone/Orphan Services Section
-    if orphan_services:
-        md.append("## 🌐 Standalone Swarm Services\n")
-        md.append(
-            "These are active Swarm services that are not currently associated with a Portainer stack namespace.\n"
-        )
-        md.append("| Service Name | Image | Replicas | Status |")
-        md.append("| :--- | :--- | :---: | :--- |")
-        for _namespace, s in sorted(orphan_services, key=lambda x: x[1]["name"]):
-            status_str = (
-                f"🔴 {s['update_state']}"
-                if s["update_state"] in ["paused", "failed"]
-                else "🟢 operational"
-            )
-            md.append(
-                f"| `{s['name']}` | `{s['image']}` | {s['replicas']} | {status_str} |"
+                f"| `{s['name']}` | `{s['image']}` | {s['replicas']} | {status_emoji} | {msg} |"
             )
         md.append("\n---\n")
+    return md
 
-    # Healthy Stacks Section
+
+def _render_orphan_services_section(orphan_services):
+    md = []
+    if not orphan_services:
+        return md
+    md.append("## 🌐 Standalone Swarm Services\n")
+    md.append(
+        "These are active Swarm services that are not currently associated with a Portainer stack namespace.\n"
+    )
+    md.append("| Service Name | Image | Replicas | Status |")
+    md.append("| :--- | :--- | :---: | :--- |")
+    for _namespace, s in sorted(orphan_services, key=lambda x: x[1]["name"]):
+        status_str = (
+            f"🔴 {s['update_state']}"
+            if s["update_state"] in ["paused", "failed"]
+            else "🟢 operational"
+        )
+        md.append(
+            f"| `{s['name']}` | `{s['image']}` | {s['replicas']} | {status_str} |"
+        )
+    md.append("\n---\n")
+    return md
+
+
+def _render_healthy_section(healthy_stacks):
+    md = []
     md.append("## 🟢 Healthy Stacks\n")
     md.append(
         "These stacks are fully operational with all services running normally.\n"
@@ -370,13 +431,14 @@ def main():
         md.append(
             f"| `{stack['name']}` | {stack['id']} | {svc_count} | {git_backed} | {stack['updated_at']} |"
         )
+    return md
 
-    # Write or Print Report
-    report_content = "\n".join(md)
-    if args.output:
+
+def _write_or_print_report(report_content, output_path):
+    if output_path:
         try:
-            os.makedirs(os.path.dirname(os.path.abspath(args.output)), exist_ok=True)
-            with open(args.output, "w", encoding="utf-8") as f:
+            os.makedirs(os.path.dirname(os.path.abspath(output_path)), exist_ok=True)
+            with open(output_path, "w", encoding="utf-8") as f:
                 f.write(report_content)
             print("Diagnostics report written successfully")
         except Exception as exc:
@@ -387,6 +449,49 @@ def main():
             sys.exit(1)
     else:
         print(report_content)
+
+
+def main():
+    args = parse_arguments()
+
+    stacks_data = load_json_file(args.stacks_json)
+    services_data = load_json_file(args.services_json)
+
+    stacks_dict = _build_stacks_index(stacks_data)
+    orphan_services = _correlate_services(services_data, stacks_dict)
+    healthy_stacks, degraded_stacks, unhealthy_stacks = _classify_stack_health(
+        stacks_dict
+    )
+
+    md = []
+    md.extend(
+        _render_summary(
+            stacks_data,
+            services_data,
+            healthy_stacks,
+            degraded_stacks,
+            unhealthy_stacks,
+            orphan_services,
+        )
+    )
+    md.extend(_render_recommendations(unhealthy_stacks, degraded_stacks, stacks_data))
+    md.append("---\n")
+
+    # Unhealthy Stacks Section
+    md.extend(_render_unhealthy_section(unhealthy_stacks))
+
+    # Degraded Stacks Section
+    md.extend(_render_degraded_section(degraded_stacks))
+
+    # Standalone/Orphan Services Section
+    md.extend(_render_orphan_services_section(orphan_services))
+
+    # Healthy Stacks Section
+    md.extend(_render_healthy_section(healthy_stacks))
+
+    # Write or Print Report
+    report_content = "\n".join(md)
+    _write_or_print_report(report_content, args.output)
 
 
 if __name__ == "__main__":
