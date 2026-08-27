@@ -243,7 +243,7 @@ def _render_summary(
 
 
 def _render_unhealthy_recommendations(unhealthy_stacks):
-    md = []
+    md: list[str] = []
     if not unhealthy_stacks:
         return md
     md.append("### Critical Remediation Actions Required:\n")
@@ -262,7 +262,7 @@ def _render_unhealthy_recommendations(unhealthy_stacks):
 
 
 def _render_degraded_recommendations(degraded_stacks):
-    md = []
+    md: list[str] = []
     if not degraded_stacks:
         return md
     md.append("### Warning / Active Updates:\n")
@@ -286,7 +286,7 @@ def _render_degraded_recommendations(degraded_stacks):
 
 
 def _render_git_alignment_warnings(stacks_data):
-    md = []
+    md: list[str] = []
     orphan_git_stacks = [s for s in stacks_data if not s.get("GitConfig")]
     if not orphan_git_stacks:
         return md
@@ -335,9 +335,7 @@ def _render_unhealthy_section(unhealthy_stacks):
         md.append("\n")
 
         md.append("#### Services Detail:")
-        md.append(
-            "| Service Name | Image | Replicas | Update State | Status Message |"
-        )
+        md.append("| Service Name | Image | Replicas | Update State | Status Message |")
         md.append("| :--- | :--- | :---: | :---: | :--- |")
         for s in stack["services"]:
             status_emoji = (
@@ -370,9 +368,7 @@ def _render_degraded_section(degraded_stacks):
         md.append("\n")
 
         md.append("#### Services Detail:")
-        md.append(
-            "| Service Name | Image | Replicas | Update State | Status Message |"
-        )
+        md.append("| Service Name | Image | Replicas | Update State | Status Message |")
         md.append("| :--- | :--- | :---: | :---: | :--- |")
         for s in stack["services"]:
             status_emoji = (
@@ -395,7 +391,7 @@ def _render_degraded_section(degraded_stacks):
 
 
 def _render_orphan_services_section(orphan_services):
-    md = []
+    md: list[str] = []
     if not orphan_services:
         return md
     md.append("## 🌐 Standalone Swarm Services\n")

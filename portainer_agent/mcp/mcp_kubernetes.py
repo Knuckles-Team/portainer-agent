@@ -3,6 +3,8 @@
 Auto-generated from mcp_server.py during ecosystem standardization.
 """
 
+from typing import Any
+
 from agent_utilities.mcp.concurrency import run_blocking
 from fastmcp import FastMCP
 from fastmcp.dependencies import Depends
@@ -50,7 +52,7 @@ def register_kubernetes_tools(mcp: FastMCP):
 
         # Group 2: helm actions -- kwargs built from named params, then
         # None-valued entries are filtered out before the call.
-        filtered_specs = {
+        filtered_specs: dict[str, tuple[Any, dict[str, Any]]] = {
             "get_helm_releases": (
                 client.get_helm_releases,
                 {"endpoint_id": endpoint_id},
@@ -71,7 +73,7 @@ def register_kubernetes_tools(mcp: FastMCP):
 
         # Group 3: namespace/node management -- params passed straight
         # through to the client WITHOUT None-filtering (unlike groups 1/2).
-        direct_specs = {
+        direct_specs: dict[str, tuple[Any, dict[str, Any]]] = {
             "get_k8s_namespace": (
                 client.get_kubernetes_namespace,
                 {"environment_id": environment_id, "namespace": namespace},

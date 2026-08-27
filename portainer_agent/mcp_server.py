@@ -896,10 +896,7 @@ def register_stack_tools(mcp: FastMCP):
 
             # Map standard update options from direct arguments if not set in resolved_kwargs
             s_file_content = get_val(["stack_file_content", "StackFileContent"])
-            if (
-                s_file_content is not None
-                and "StackFileContent" not in resolved_kwargs
-            ):
+            if s_file_content is not None and "StackFileContent" not in resolved_kwargs:
                 resolved_kwargs["StackFileContent"] = s_file_content
             s_env = get_val(["env", "Env"])
             if s_env is not None and "Env" not in resolved_kwargs:
@@ -1026,9 +1023,7 @@ def register_stack_tools(mcp: FastMCP):
                 raise ValueError(
                     "Missing required parameter for export_all_stacks: target_dir"
                 )
-            return await run_blocking(
-                client.export_all_stacks, target_dir=str(t_dir)
-            )
+            return await run_blocking(client.export_all_stacks, target_dir=str(t_dir))
 
         handlers: dict[str, Any] = {
             "get_stacks": _get_stacks,
@@ -1133,7 +1128,7 @@ def register_kubernetes_tools(mcp: FastMCP):
 
         # Group 2: helm actions -- kwargs built from named params, then
         # None-valued entries are filtered out before the call.
-        filtered_specs = {
+        filtered_specs: dict[str, tuple[Any, dict[str, Any]]] = {
             "get_helm_releases": (
                 client.get_helm_releases,
                 {"endpoint_id": endpoint_id},
@@ -1154,7 +1149,7 @@ def register_kubernetes_tools(mcp: FastMCP):
 
         # Group 3: namespace/node management -- params passed straight
         # through to the client WITHOUT None-filtering (unlike groups 1/2).
-        direct_specs = {
+        direct_specs: dict[str, tuple[Any, dict[str, Any]]] = {
             "get_k8s_namespace": (
                 client.get_kubernetes_namespace,
                 {"environment_id": environment_id, "namespace": namespace},
