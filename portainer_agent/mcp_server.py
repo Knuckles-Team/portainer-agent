@@ -44,6 +44,83 @@ def wrap_list(res: Any) -> Any:
     return {"data": res} if isinstance(res, list) else res
 
 
+def _none_if_field_info(value: Any) -> Any:
+    """Normalize a raw pydantic FieldInfo default (seen when a tool coroutine
+    is invoked directly -- e.g. in tests -- rather than through FastMCP) to
+    None. Extracted verbatim from register_stack_tools.portainer_stack's
+    former inline FieldInfo-cleanup block (CXA-FL-PORTAINERAGENT-01); no
+    logic change."""
+    from pydantic.fields import FieldInfo
+
+    return None if isinstance(value, FieldInfo) else value
+
+
+def _parse_stack_params_json(params_json: Any) -> dict:
+    """Parse portainer_stack's ``params_json`` argument into a dict.
+
+    Extracted verbatim from register_stack_tools.portainer_stack
+    (CXA-FL-PORTAINERAGENT-01); no logic change."""
+    import json
+
+    if not params_json:
+        return {}
+    try:
+        params = json.loads(params_json)
+    except Exception as e:
+        raise ValueError(f"Invalid params_json: {type(e).__name__}") from e
+    return params if isinstance(params, dict) else {}
+
+
+def _normalize_stack_action(action_normalized: str, get_val: Any) -> str:
+    """Backward-compatible action-name routing for portainer_stack.
+
+    Extracted verbatim from register_stack_tools.portainer_stack
+    (CXA-FL-PORTAINERAGENT-01); no logic change."""
+    if action_normalized == "create_standalone_stack":
+        # Backward compatible check: if repo_url exists, route to repo
+        url_val = get_val(["repo_url", "RepositoryURL", "repository_url"])
+        if url_val:
+            return "create_standalone_stack_from_repository"
+        return "create_standalone_stack_from_string"
+    if action_normalized == "create_standalone_stack_from_repo":
+        return "create_standalone_stack_from_repository"
+    return action_normalized
+
+
+def _strip_explicit_stack_keys(resolved_kwargs: dict, explicit_keys: list) -> dict:
+    """Remove explicitly-parsed parameter keys (and case variants) from
+    portainer_stack's dynamic kwargs dict in place, so they aren't passed
+    twice to the underlying client method. Extracted verbatim from
+    register_stack_tools.portainer_stack (CXA-FL-PORTAINERAGENT-01); no
+    logic change."""
+    for ek in explicit_keys:
+        variants = [ek, ek.lower(), ek.upper(), ek.capitalize()]
+        if len(ek) > 1:
+            variants.append(ek[0].lower() + ek[1:])
+            variants.append(ek[0].upper() + ek[1:])
+        for pk in variants:
+            if pk in resolved_kwargs:
+                try:
+                    del resolved_kwargs[pk]
+                except KeyError:
+                    pass
+    return resolved_kwargs
+
+
+def _reinject_stack_env_prune(resolved_kwargs: dict, get_val: Any) -> dict:
+    """Re-inject env/prune into portainer_stack's dynamic kwargs dict, if
+    present, in place. Extracted verbatim from
+    register_stack_tools.portainer_stack (CXA-FL-PORTAINERAGENT-01); no
+    logic change."""
+    env_val = get_val(["env", "Env"])
+    if env_val is not None:
+        resolved_kwargs["Env"] = env_val
+    prune_val = get_val(["prune", "Prune"])
+    if prune_val is not None:
+        resolved_kwargs["Prune"] = prune_val
+    return resolved_kwargs
+
+
 def register_auth_tools(mcp: FastMCP):
     @mcp.tool(tags={"Auth"})
     async def portainer_auth(
@@ -585,37 +662,17 @@ def register_stack_tools(mcp: FastMCP):
         client=Depends(get_client),
     ) -> dict:
         # Clean up Pydantic FieldInfo default values when called directly in tests
-        from pydantic.fields import FieldInfo
+        stack_id = _none_if_field_info(stack_id)
+        endpoint_id = _none_if_field_info(endpoint_id)
+        stack_file_content = _none_if_field_info(stack_file_content)
+        env = _none_if_field_info(env)
+        prune = _none_if_field_info(prune)
+        name = _none_if_field_info(name)
+        repo_url = _none_if_field_info(repo_url)
+        swarm_id = _none_if_field_info(swarm_id)
+        params_json = _none_if_field_info(params_json)
 
-        if isinstance(stack_id, FieldInfo):
-            stack_id = None
-        if isinstance(endpoint_id, FieldInfo):
-            endpoint_id = None
-        if isinstance(stack_file_content, FieldInfo):
-            stack_file_content = None
-        if isinstance(env, FieldInfo):
-            env = None
-        if isinstance(prune, FieldInfo):
-            prune = None
-        if isinstance(name, FieldInfo):
-            name = None
-        if isinstance(repo_url, FieldInfo):
-            repo_url = None
-        if isinstance(swarm_id, FieldInfo):
-            swarm_id = None
-        if isinstance(params_json, FieldInfo):
-            params_json = None
-
-        import json
-
-        params = {}
-        if params_json:
-            try:
-                params = json.loads(params_json)
-                if not isinstance(params, dict):
-                    params = {}
-            except Exception as e:
-                raise ValueError(f"Invalid params_json: {type(e).__name__}") from e
+        params = _parse_stack_params_json(params_json)
 
         # Field map with defaults
         field_map = {
@@ -644,15 +701,7 @@ def register_stack_tools(mcp: FastMCP):
 
         # Clean/normalize action name & route backwards compatibility
         action_normalized = action.strip()
-        if action_normalized == "create_standalone_stack":
-            # Backward compatible check: if repo_url exists, route to repo
-            url_val = get_val(["repo_url", "RepositoryURL", "repository_url"])
-            if url_val:
-                action_normalized = "create_standalone_stack_from_repository"
-            else:
-                action_normalized = "create_standalone_stack_from_string"
-        elif action_normalized == "create_standalone_stack_from_repo":
-            action_normalized = "create_standalone_stack_from_repository"
+        action_normalized = _normalize_stack_action(action_normalized, get_val)
 
         valid_actions = (
             "get_stacks",
@@ -710,50 +759,34 @@ def register_stack_tools(mcp: FastMCP):
             "action",
             "params_json",
         ]
-        # Remove explicitly parsed keys from resolved_kwargs to pass extra kwargs dynamically
-        for ek in explicit_keys:
-            variants = [ek, ek.lower(), ek.upper(), ek.capitalize()]
-            if len(ek) > 1:
-                variants.append(ek[0].lower() + ek[1:])
-                variants.append(ek[0].upper() + ek[1:])
-            for pk in variants:
-                if pk in resolved_kwargs:
-                    try:
-                        del resolved_kwargs[pk]
-                    except KeyError:
-                        pass
+        resolved_kwargs = _strip_explicit_stack_keys(resolved_kwargs, explicit_keys)
 
         # Re-inject env and prune if present
-        env_val = get_val(["env", "Env"])
-        if env_val is not None:
-            resolved_kwargs["Env"] = env_val
-        prune_val = get_val(["prune", "Prune"])
-        if prune_val is not None:
-            resolved_kwargs["Prune"] = prune_val
+        resolved_kwargs = _reinject_stack_env_prune(resolved_kwargs, get_val)
 
-        if action_normalized == "get_stacks":
+        async def _get_stacks():
             res = await run_blocking(client.get_stacks, **resolved_kwargs)
             return {"data": res} if isinstance(res, list) else res
 
-        elif action_normalized == "get_stack":
+        async def _get_stack():
             s_id = get_val(["stack_id"])
             if s_id is None:
                 raise ValueError("Missing parameter: stack_id")
             return await run_blocking(client.get_stack, stack_id=int(s_id))
 
-        elif action_normalized == "get_stack_by_name":
+        async def _get_stack_by_name():
             n = get_val(["name"])
             if not n:
                 raise ValueError("Missing parameter: name")
             return await run_blocking(client.get_stack_by_name, name=str(n))
 
-        elif action_normalized == "get_stack_file":
+        async def _get_stack_file():
             s_id = get_val(["stack_id"])
             if s_id is None:
                 raise ValueError("Missing parameter: stack_id")
             return await run_blocking(client.get_stack_file, stack_id=int(s_id))
 
-        elif action_normalized == "create_standalone_stack_from_string":
+        async def _create_standalone_stack_from_string():
             n = get_val(["name", "Name", "StackName"])
             fc = get_val(["file_content", "StackFileContent", "stack_file_content"])
             ep_id = get_val(["endpoint_id", "endpointId"])
@@ -769,7 +802,7 @@ def register_stack_tools(mcp: FastMCP):
                 **resolved_kwargs,
             )
 
-        elif action_normalized == "create_standalone_stack_from_repository":
+        async def _create_standalone_stack_from_repository():
             n = get_val(["name", "Name", "StackName"])
             u = get_val(["repo_url", "RepositoryURL", "repository_url"])
             ep_id = get_val(["endpoint_id", "endpointId"])
@@ -785,7 +818,7 @@ def register_stack_tools(mcp: FastMCP):
                 **resolved_kwargs,
             )
 
-        elif action_normalized == "create_swarm_stack_from_string":
+        async def _create_swarm_stack_from_string():
             n = get_val(["name", "Name", "StackName"])
             fc = get_val(["file_content", "StackFileContent", "stack_file_content"])
             sw_id = get_val(["swarm_id", "SwarmID"])
@@ -803,7 +836,7 @@ def register_stack_tools(mcp: FastMCP):
                 **resolved_kwargs,
             )
 
-        elif action_normalized == "create_swarm_stack_from_repository":
+        async def _create_swarm_stack_from_repository():
             n = get_val(["name", "Name", "StackName"])
             u = get_val(["repo_url", "RepositoryURL", "repository_url"])
             sw_id = get_val(["swarm_id", "SwarmID"])
@@ -821,7 +854,7 @@ def register_stack_tools(mcp: FastMCP):
                 **resolved_kwargs,
             )
 
-        elif action_normalized == "create_kubernetes_stack_from_string":
+        async def _create_kubernetes_stack_from_string():
             n = get_val(["name", "Name", "StackName"])
             fc = get_val(["file_content", "StackFileContent", "stack_file_content"])
             ep_id = get_val(["endpoint_id", "endpointId"])
@@ -837,7 +870,7 @@ def register_stack_tools(mcp: FastMCP):
                 **resolved_kwargs,
             )
 
-        elif action_normalized == "create_kubernetes_stack_from_repository":
+        async def _create_kubernetes_stack_from_repository():
             n = get_val(["name", "Name", "StackName"])
             u = get_val(["repo_url", "RepositoryURL", "repository_url"])
             ep_id = get_val(["endpoint_id", "endpointId"])
@@ -853,7 +886,7 @@ def register_stack_tools(mcp: FastMCP):
                 **resolved_kwargs,
             )
 
-        elif action_normalized == "update_stack":
+        async def _update_stack():
             s_id = get_val(["stack_id"])
             ep_id = get_val(["endpoint_id", "endpointId"])
             if s_id is None or ep_id is None:
@@ -863,7 +896,10 @@ def register_stack_tools(mcp: FastMCP):
 
             # Map standard update options from direct arguments if not set in resolved_kwargs
             s_file_content = get_val(["stack_file_content", "StackFileContent"])
-            if s_file_content is not None and "StackFileContent" not in resolved_kwargs:
+            if (
+                s_file_content is not None
+                and "StackFileContent" not in resolved_kwargs
+            ):
                 resolved_kwargs["StackFileContent"] = s_file_content
             s_env = get_val(["env", "Env"])
             if s_env is not None and "Env" not in resolved_kwargs:
@@ -879,7 +915,7 @@ def register_stack_tools(mcp: FastMCP):
                 **resolved_kwargs,
             )
 
-        elif action_normalized == "delete_stack":
+        async def _delete_stack():
             s_id = get_val(["stack_id"])
             ep_id = get_val(["endpoint_id", "endpointId"])
             if s_id is None or ep_id is None:
@@ -890,7 +926,7 @@ def register_stack_tools(mcp: FastMCP):
                 client.delete_stack, stack_id=int(s_id), endpoint_id=int(ep_id)
             )
 
-        elif action_normalized == "start_stack":
+        async def _start_stack():
             s_id = get_val(["stack_id"])
             ep_id = get_val(["endpoint_id", "endpointId"])
             if s_id is None or ep_id is None:
@@ -901,7 +937,7 @@ def register_stack_tools(mcp: FastMCP):
                 client.start_stack, stack_id=int(s_id), endpoint_id=int(ep_id)
             )
 
-        elif action_normalized == "stop_stack":
+        async def _stop_stack():
             s_id = get_val(["stack_id"])
             ep_id = get_val(["endpoint_id", "endpointId"])
             if s_id is None or ep_id is None:
@@ -912,7 +948,7 @@ def register_stack_tools(mcp: FastMCP):
                 client.stop_stack, stack_id=int(s_id), endpoint_id=int(ep_id)
             )
 
-        elif action_normalized == "migrate_stack":
+        async def _migrate_stack():
             s_id = get_val(["stack_id"])
             ep_id = get_val(["endpoint_id", "endpointId"])
             target_ep_id = get_val(
@@ -930,7 +966,7 @@ def register_stack_tools(mcp: FastMCP):
                 **resolved_kwargs,
             )
 
-        elif action_normalized == "update_stack_git":
+        async def _update_stack_git():
             s_id = get_val(["stack_id"])
             ep_id = get_val(["endpoint_id", "endpointId"])
             if s_id is None or ep_id is None:
@@ -950,7 +986,7 @@ def register_stack_tools(mcp: FastMCP):
                 **resolved_kwargs,
             )
 
-        elif action_normalized == "redeploy_stack_git":
+        async def _redeploy_stack_git():
             s_id = get_val(["stack_id"])
             ep_id = get_val(["endpoint_id", "endpointId"])
             if s_id is None or ep_id is None:
@@ -970,7 +1006,7 @@ def register_stack_tools(mcp: FastMCP):
                 **resolved_kwargs,
             )
 
-        elif action_normalized == "associate_stack":
+        async def _associate_stack():
             s_id = get_val(["stack_id"])
             ep_id = get_val(["endpoint_id", "endpointId"])
             if s_id is None or ep_id is None:
@@ -984,14 +1020,46 @@ def register_stack_tools(mcp: FastMCP):
                 **resolved_kwargs,
             )
 
-        elif action_normalized == "export_all_stacks":
+        async def _export_all_stacks():
             t_dir = get_val(["target_dir", "targetDir"])
             if not t_dir:
                 raise ValueError(
                     "Missing required parameter for export_all_stacks: target_dir"
                 )
-            return await run_blocking(client.export_all_stacks, target_dir=str(t_dir))
+            return await run_blocking(
+                client.export_all_stacks, target_dir=str(t_dir)
+            )
 
+        handlers: dict[str, Any] = {
+            "get_stacks": _get_stacks,
+            "get_stack": _get_stack,
+            "get_stack_by_name": _get_stack_by_name,
+            "get_stack_file": _get_stack_file,
+            "create_standalone_stack_from_string": _create_standalone_stack_from_string,
+            "create_standalone_stack_from_repository": _create_standalone_stack_from_repository,
+            "create_swarm_stack_from_string": _create_swarm_stack_from_string,
+            "create_swarm_stack_from_repository": _create_swarm_stack_from_repository,
+            "create_kubernetes_stack_from_string": _create_kubernetes_stack_from_string,
+            "create_kubernetes_stack_from_repository": _create_kubernetes_stack_from_repository,
+            "update_stack": _update_stack,
+            "delete_stack": _delete_stack,
+            "start_stack": _start_stack,
+            "stop_stack": _stop_stack,
+            "migrate_stack": _migrate_stack,
+            "update_stack_git": _update_stack_git,
+            "redeploy_stack_git": _redeploy_stack_git,
+            "associate_stack": _associate_stack,
+            "export_all_stacks": _export_all_stacks,
+        }
+
+        handler = handlers.get(action_normalized)
+        if handler is not None:
+            return await handler()
+
+        # Unreachable in practice: resolve_action() above already guarantees
+        # action_normalized is either a valid_actions member (handled by one
+        # of the branches in `handlers`) or has already raised. Kept verbatim
+        # as dead-code fallback -- see BUGS FOUND (not fixed, behavior-preserving).
         raise ValueError(
             f"Unknown action: {action}. Must be one of: 'get_stacks', 'get_stack', 'get_stack_by_name', 'get_stack_file', 'export_all_stacks', 'create_standalone_stack_from_string', 'create_standalone_stack_from_repository', 'create_swarm_stack_from_string', 'create_swarm_stack_from_repository', 'create_kubernetes_stack_from_string', 'create_kubernetes_stack_from_repository', 'update_stack', 'delete_stack', 'start_stack', 'stop_stack', 'migrate_stack', 'update_stack_git', 'redeploy_stack_git', 'associate_stack'"
         )
