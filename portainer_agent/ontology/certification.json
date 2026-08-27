@@ -1,7 +1,7 @@
 {
   "api_version": "graphos.io/v1",
   "artifacts": {
-    "connector_manifest.yml": "8a2633a4ddd035d3df6dd3345cd01226d80980d5ca833be3b8d08c473216a1cf",
+    "connector_manifest.yml": "f553f8f32e5b66b29ff3320e53f05c37404a7cbcc90a179823fca9e8071544ac",
     "portainer_agent/connectors/mcp_source_presets.json": "0f51ebeab6e7b0add980649351b7405a92336777f7e44023b4f07b76d5a49307",
     "portainer_agent/connectors/tool_schema_fingerprints.json": "8409deb0ff91c6713e798e31473469920fb8f8f773aa03c5cd32da4f598edd65",
     "portainer_agent/ontology/fixtures/records.json": "1eb99785c42e27c6d6079c6ffceeff383de149de3740bacc9cfa9f183b8e764f",
@@ -18,9 +18,9 @@
     "synthetic_fixture_contract": "passed"
   },
   "compatibility": {
-    "agent_utilities": ">=2.4.0,<3",
+    "agent_utilities": ">=2.5.0,<3",
     "bundle_schema": "2",
-    "epistemic_graph": ">=2.26.0,<3"
+    "epistemic_graph": ">=2.27.0,<3"
   },
   "connector": "portainer-agent",
   "kind": "ConnectorSourceAttestation",
@@ -32,5 +32,5 @@
   "signer": "UNSIGNED-PREVIEW",
   "signing_public_key": "",
   "status": "source-validated",
-  "validated_at": "2026-08-21T04:30:39Z"
+  "validated_at": "2026-08-26T13:42:55Z"
 }
