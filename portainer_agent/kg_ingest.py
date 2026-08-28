@@ -93,6 +93,31 @@ def ingest_environments(
     return ingest_entities(entities, relationships, client=client, graph=graph)
 
 
+def _host_path_from_url_scheme(raw: str) -> tuple[str, str] | None:
+    """``(host, path)`` from an HTTP(S)-style remote, or ``None`` if not one."""
+    if "://" not in raw:
+        return None
+    parts = urlsplit(raw)
+    return (parts.hostname or "").lower(), parts.path or ""
+
+
+def _host_path_from_scp_style(raw: str) -> tuple[str, str] | None:
+    """``(host, path)`` from an SCP-style remote (``git@host:owner/name.git``)."""
+    if "@" not in raw or ":" not in raw:
+        return None
+    _, _, rest = raw.partition("@")
+    host, _, path = rest.partition(":")
+    return host.lower(), path
+
+
+def _clean_repo_path(path: str) -> str:
+    """Strip surrounding slashes and a trailing ``.git`` for a stable repo id."""
+    path = path.strip("/")
+    if path.endswith(".git"):
+        path = path[: -len(".git")]
+    return path
+
+
 def _normalize_repo_url(url: Any) -> tuple[str, str] | None:
     """Normalize a git remote URL -> ``(clean_url, repo_node_id)``, or ``None``.
 
@@ -112,20 +137,11 @@ def _normalize_repo_url(url: Any) -> tuple[str, str] | None:
     raw = url.strip()
     if not raw:
         return None
-    if "://" in raw:
-        parts = urlsplit(raw)
-        host = (parts.hostname or "").lower()
-        path = parts.path or ""
-    elif "@" in raw and ":" in raw:
-        # SCP-style remote, e.g. git@github.com:owner/name.git
-        _, _, rest = raw.partition("@")
-        host, _, path = rest.partition(":")
-        host = host.lower()
-    else:
+    host_path = _host_path_from_url_scheme(raw) or _host_path_from_scp_style(raw)
+    if host_path is None:
         return None
-    path = path.strip("/")
-    if path.endswith(".git"):
-        path = path[: -len(".git")]
+    host, path = host_path
+    path = _clean_repo_path(path)
     if not host or not path:
         return None
     return f"https://{host}/{path}", f"git:repo:{host}/{path}"
