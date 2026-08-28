@@ -55,6 +55,17 @@ def _none_if_field_info(value: Any) -> Any:
     return None if isinstance(value, FieldInfo) else value
 
 
+def _filtered_kwargs(**raw: Any) -> dict[str, Any]:
+    """Build a kwargs dict from named values, dropping any that are None.
+
+    Shared replacement for the flat dict-dispatch tables across the
+    portainer_* tools (CX complexity-collapse, wD3-FL-06); equivalent to
+    each tool's own former inline
+    ``kwargs = {k: v for k, v in kwargs.items() if v is not None}`` filter
+    -- no behavior change."""
+    return {k: v for k, v in raw.items() if v is not None}
+
+
 def _parse_stack_params_json(params_json: Any) -> dict:
     """Parse portainer_stack's ``params_json`` argument into a dict.
 
@@ -133,27 +144,26 @@ def register_auth_tools(mcp: FastMCP):
         client=Depends(get_client),
     ) -> dict:
         """Manage auth operations."""
-        kwargs: dict[str, Any]
         valid_actions = ("authenticate", "logout", "validate_oauth")
         resolved = resolve_action(action, valid_actions, service="portainer-agent")
         if isinstance(resolved, dict):
             return resolved
         action = resolved
-        if action == "authenticate":
-            kwargs = {"username": username, "password": password}
-            kwargs = {k: v for k, v in kwargs.items() if v is not None}
-            return await run_blocking(client.authenticate, **kwargs)
-        if action == "logout":
-            kwargs = {}
-            kwargs = {k: v for k, v in kwargs.items() if v is not None}
-            return await run_blocking(client.logout, **kwargs)
-        if action == "validate_oauth":
-            kwargs = {"code": code}
-            kwargs = {k: v for k, v in kwargs.items() if v is not None}
-            return await run_blocking(client.validate_oauth, **kwargs)
-        raise ValueError(
-            f"Unknown action: {action}. Must be one of: authenticate', 'logout', 'validate_oauth"
-        )
+
+        specs: dict[str, tuple[Any, dict[str, Any]]] = {
+            "authenticate": (
+                client.authenticate,
+                _filtered_kwargs(username=username, password=password),
+            ),
+            "logout": (client.logout, _filtered_kwargs()),
+            "validate_oauth": (client.validate_oauth, _filtered_kwargs(code=code)),
+        }
+        if action not in specs:
+            raise ValueError(
+                f"Unknown action: {action}. Must be one of: authenticate', 'logout', 'validate_oauth"
+            )
+        method, kwargs = specs[action]
+        return await run_blocking(method, **kwargs)
 
 
 def register_environment_tools(mcp: FastMCP):
@@ -177,7 +187,6 @@ def register_environment_tools(mcp: FastMCP):
         client=Depends(get_client),
     ) -> dict:
         """Manage environment operations."""
-        kwargs: dict[str, Any]
         valid_actions = (
             "get_endpoints",
             "get_endpoint",
@@ -196,50 +205,9 @@ def register_environment_tools(mcp: FastMCP):
         if isinstance(resolved, dict):
             return resolved
         action = resolved
-        if action == "get_endpoints":
-            kwargs = {"limit": limit, "offset": offset}
-            kwargs = {k: v for k, v in kwargs.items() if v is not None}
-            return wrap_list(await run_blocking(client.get_endpoints, **kwargs))
-        if action == "get_endpoint":
-            kwargs = {"endpoint_id": endpoint_id}
-            kwargs = {k: v for k, v in kwargs.items() if v is not None}
-            return await run_blocking(client.get_endpoint, **kwargs)
-        if action == "create_endpoint":
-            kwargs = {
-                "name": name,
-                "endpoint_type": endpoint_type,
-                "url": url,
-            }  # type: ignore
-            kwargs = {k: v for k, v in kwargs.items() if v is not None}
-            return await run_blocking(client.create_endpoint, **kwargs)
-        if action == "update_endpoint":
-            kwargs = {"endpoint_id": endpoint_id}
-            kwargs = {k: v for k, v in kwargs.items() if v is not None}
-            return await run_blocking(client.update_endpoint, **kwargs)
-        if action == "delete_endpoint":
-            kwargs = {"endpoint_id": endpoint_id}
-            kwargs = {k: v for k, v in kwargs.items() if v is not None}
-            return await run_blocking(client.delete_endpoint, **kwargs)
-        if action == "snapshot_endpoint":
-            kwargs = {"endpoint_id": endpoint_id}
-            kwargs = {k: v for k, v in kwargs.items() if v is not None}
-            return await run_blocking(client.snapshot_endpoint, **kwargs)
-        if action == "snapshot_all_endpoints":
-            kwargs = {}
-            kwargs = {k: v for k, v in kwargs.items() if v is not None}
-            return await run_blocking(client.snapshot_all_endpoints, **kwargs)
-        if action == "get_endpoint_groups":
-            kwargs = {}
-            kwargs = {k: v for k, v in kwargs.items() if v is not None}
-            return wrap_list(await run_blocking(client.get_endpoint_groups, **kwargs))
-        if action == "create_endpoint_group":
-            kwargs = {"name": name, "description": description}  # type: ignore
-            kwargs = {k: v for k, v in kwargs.items() if v is not None}
-            return await run_blocking(client.create_endpoint_group, **kwargs)
-        if action == "delete_endpoint_group":
-            kwargs = {"group_id": group_id}
-            kwargs = {k: v for k, v in kwargs.items() if v is not None}
-            return await run_blocking(client.delete_endpoint_group, **kwargs)
+
+        # get_endpoint_settings / update_endpoint_settings don't follow the
+        # flat filtered-kwargs shape below (settings is spread as **payload).
         if action == "get_endpoint_settings":
             return await run_blocking(
                 client.get_endpoint_settings, endpoint_id=endpoint_id
@@ -251,9 +219,68 @@ def register_environment_tools(mcp: FastMCP):
                 endpoint_id=endpoint_id,
                 **payload,
             )
-        raise ValueError(
-            f"Unknown action: {action}. Must be one of: get_endpoints', 'get_endpoint', 'create_endpoint', 'update_endpoint', 'delete_endpoint', 'snapshot_endpoint', 'snapshot_all_endpoints', 'get_endpoint_groups', 'create_endpoint_group', 'delete_endpoint_group', 'get_endpoint_settings', 'update_endpoint_settings"
-        )
+
+        # (method, kwargs, wrap_as_list) -- wrap_as_list mirrors the two
+        # actions that formerly called wrap_list() on their result.
+        specs: dict[str, tuple[Any, dict[str, Any], bool]] = {
+            "get_endpoints": (
+                client.get_endpoints,
+                _filtered_kwargs(limit=limit, offset=offset),
+                True,
+            ),
+            "get_endpoint": (
+                client.get_endpoint,
+                _filtered_kwargs(endpoint_id=endpoint_id),
+                False,
+            ),
+            "create_endpoint": (
+                client.create_endpoint,
+                _filtered_kwargs(name=name, endpoint_type=endpoint_type, url=url),
+                False,
+            ),
+            "update_endpoint": (
+                client.update_endpoint,
+                _filtered_kwargs(endpoint_id=endpoint_id),
+                False,
+            ),
+            "delete_endpoint": (
+                client.delete_endpoint,
+                _filtered_kwargs(endpoint_id=endpoint_id),
+                False,
+            ),
+            "snapshot_endpoint": (
+                client.snapshot_endpoint,
+                _filtered_kwargs(endpoint_id=endpoint_id),
+                False,
+            ),
+            "snapshot_all_endpoints": (
+                client.snapshot_all_endpoints,
+                _filtered_kwargs(),
+                False,
+            ),
+            "get_endpoint_groups": (
+                client.get_endpoint_groups,
+                _filtered_kwargs(),
+                True,
+            ),
+            "create_endpoint_group": (
+                client.create_endpoint_group,
+                _filtered_kwargs(name=name, description=description),
+                False,
+            ),
+            "delete_endpoint_group": (
+                client.delete_endpoint_group,
+                _filtered_kwargs(group_id=group_id),
+                False,
+            ),
+        }
+        if action not in specs:
+            raise ValueError(
+                f"Unknown action: {action}. Must be one of: get_endpoints', 'get_endpoint', 'create_endpoint', 'update_endpoint', 'delete_endpoint', 'snapshot_endpoint', 'snapshot_all_endpoints', 'get_endpoint_groups', 'create_endpoint_group', 'delete_endpoint_group', 'get_endpoint_settings', 'update_endpoint_settings"
+            )
+        method, kwargs, as_list = specs[action]
+        result = await run_blocking(method, **kwargs)
+        return wrap_list(result) if as_list else result
 
 
 def _handle_container_actions(
@@ -263,79 +290,62 @@ def _handle_container_actions(
     container_id: str | None,
     tail: int | None,
 ) -> dict:
-    kwargs: dict[str, Any]
-    if action == "get_container_gpus":
-        kwargs = {
-            "environment_id": environment_id,
-            "container_id": container_id,
-        }  # type: ignore
-        kwargs = {k: v for k, v in kwargs.items() if v is not None}
-        return client.get_container_gpus(**kwargs)
-    if action == "docker_list_containers":
-        kwargs = {}
-        if environment_id is not None:
-            kwargs["endpoint_id"] = environment_id
-        kwargs = {k: v for k, v in kwargs.items() if v is not None}
-        return {"data": client.list_containers(**kwargs)}
-    if action == "docker_inspect_container":
-        kwargs = {}
-        if environment_id is not None:
-            kwargs["endpoint_id"] = environment_id
-        if container_id is not None:
-            kwargs["container_id"] = container_id
-        kwargs = {k: v for k, v in kwargs.items() if v is not None}
-        return {"data": client.inspect_container(**kwargs)}
-    if action == "docker_get_container_logs":
-        kwargs = {}
-        if environment_id is not None:
-            kwargs["endpoint_id"] = environment_id
-        if container_id is not None:
-            kwargs["container_id"] = container_id
-        if tail is not None:
-            kwargs["tail"] = tail
-        kwargs = {k: v for k, v in kwargs.items() if v is not None}
-        return {"data": client.get_container_logs(**kwargs)}
-    if action == "docker_get_container_stats":
-        kwargs = {}
-        if environment_id is not None:
-            kwargs["endpoint_id"] = environment_id
-        if container_id is not None:
-            kwargs["container_id"] = container_id
-        kwargs = {k: v for k, v in kwargs.items() if v is not None}
-        return {"data": client.get_container_stats(**kwargs)}
-    if action == "docker_start_container":
-        kwargs = {}
-        if environment_id is not None:
-            kwargs["endpoint_id"] = environment_id
-        if container_id is not None:
-            kwargs["container_id"] = container_id
-        kwargs = {k: v for k, v in kwargs.items() if v is not None}
-        return {"data": client.start_container(**kwargs)}
-    if action == "docker_stop_container":
-        kwargs = {}
-        if environment_id is not None:
-            kwargs["endpoint_id"] = environment_id
-        if container_id is not None:
-            kwargs["container_id"] = container_id
-        kwargs = {k: v for k, v in kwargs.items() if v is not None}
-        return {"data": client.stop_container(**kwargs)}
-    if action == "docker_restart_container":
-        kwargs = {}
-        if environment_id is not None:
-            kwargs["endpoint_id"] = environment_id
-        if container_id is not None:
-            kwargs["container_id"] = container_id
-        kwargs = {k: v for k, v in kwargs.items() if v is not None}
-        return {"data": client.restart_container(**kwargs)}
-    if action == "docker_remove_container":
-        kwargs = {}
-        if environment_id is not None:
-            kwargs["endpoint_id"] = environment_id
-        if container_id is not None:
-            kwargs["container_id"] = container_id
-        kwargs = {k: v for k, v in kwargs.items() if v is not None}
-        return {"data": client.remove_container(**kwargs)}
-    raise ValueError(f"Unknown container action: {action}")
+    # (method, kwargs, wrap_as_data) -- wrap_as_data mirrors which branches
+    # formerly returned {"data": client.X(**kwargs)} vs. the raw result.
+    specs: dict[str, tuple[Any, dict[str, Any], bool]] = {
+        "get_container_gpus": (
+            client.get_container_gpus,
+            _filtered_kwargs(environment_id=environment_id, container_id=container_id),
+            False,
+        ),
+        "docker_list_containers": (
+            client.list_containers,
+            _filtered_kwargs(endpoint_id=environment_id),
+            True,
+        ),
+        "docker_inspect_container": (
+            client.inspect_container,
+            _filtered_kwargs(endpoint_id=environment_id, container_id=container_id),
+            True,
+        ),
+        "docker_get_container_logs": (
+            client.get_container_logs,
+            _filtered_kwargs(
+                endpoint_id=environment_id, container_id=container_id, tail=tail
+            ),
+            True,
+        ),
+        "docker_get_container_stats": (
+            client.get_container_stats,
+            _filtered_kwargs(endpoint_id=environment_id, container_id=container_id),
+            True,
+        ),
+        "docker_start_container": (
+            client.start_container,
+            _filtered_kwargs(endpoint_id=environment_id, container_id=container_id),
+            True,
+        ),
+        "docker_stop_container": (
+            client.stop_container,
+            _filtered_kwargs(endpoint_id=environment_id, container_id=container_id),
+            True,
+        ),
+        "docker_restart_container": (
+            client.restart_container,
+            _filtered_kwargs(endpoint_id=environment_id, container_id=container_id),
+            True,
+        ),
+        "docker_remove_container": (
+            client.remove_container,
+            _filtered_kwargs(endpoint_id=environment_id, container_id=container_id),
+            True,
+        ),
+    }
+    if action not in specs:
+        raise ValueError(f"Unknown container action: {action}")
+    method, kwargs, as_data = specs[action]
+    result = method(**kwargs)
+    return {"data": result} if as_data else result
 
 
 def _handle_service_actions(
@@ -345,31 +355,26 @@ def _handle_service_actions(
     service_id: str | None,
     tail: int | None,
 ) -> dict:
-    kwargs: dict[str, Any]
     if action == "docker_list_services":
-        kwargs = {"endpoint_id": environment_id}
-        kwargs = {k: v for k, v in kwargs.items() if v is not None}
-        res = client.list_services(**kwargs)
+        res = client.list_services(**_filtered_kwargs(endpoint_id=environment_id))
         return {"data": res} if isinstance(res, list) else res
-    if action == "docker_inspect_service":
-        kwargs = {}
-        if environment_id is not None:
-            kwargs["endpoint_id"] = environment_id
-        if service_id is not None:
-            kwargs["service_id"] = service_id
-        kwargs = {k: v for k, v in kwargs.items() if v is not None}
-        return {"data": client.inspect_service(**kwargs)}
-    if action == "docker_get_service_logs":
-        kwargs = {}
-        if environment_id is not None:
-            kwargs["endpoint_id"] = environment_id
-        if service_id is not None:
-            kwargs["service_id"] = service_id
-        if tail is not None:
-            kwargs["tail"] = tail
-        kwargs = {k: v for k, v in kwargs.items() if v is not None}
-        return {"data": client.get_service_logs(**kwargs)}
-    raise ValueError(f"Unknown service action: {action}")
+
+    specs: dict[str, tuple[Any, dict[str, Any]]] = {
+        "docker_inspect_service": (
+            client.inspect_service,
+            _filtered_kwargs(endpoint_id=environment_id, service_id=service_id),
+        ),
+        "docker_get_service_logs": (
+            client.get_service_logs,
+            _filtered_kwargs(
+                endpoint_id=environment_id, service_id=service_id, tail=tail
+            ),
+        ),
+    }
+    if action not in specs:
+        raise ValueError(f"Unknown service action: {action}")
+    method, kwargs = specs[action]
+    return {"data": method(**kwargs)}
 
 
 def _handle_resource_actions(
@@ -377,60 +382,28 @@ def _handle_resource_actions(
     action: str,
     environment_id: int | None,
 ) -> dict:
-    kwargs: dict[str, Any]
     if action == "get_docker_dashboard":
-        kwargs = {"environment_id": environment_id}
-        kwargs = {k: v for k, v in kwargs.items() if v is not None}
-        return client.get_docker_dashboard(**kwargs)
-    if action == "docker_list_images":
-        kwargs = {}
-        kwargs = {k: v for k, v in kwargs.items() if v is not None}
-        return client.docker_list_images(**kwargs)
-    if action == "docker_inspect_image":
-        kwargs = {}
-        kwargs = {k: v for k, v in kwargs.items() if v is not None}
-        return client.docker_inspect_image(**kwargs)
-    if action == "docker_list_networks":
-        kwargs = {}
-        kwargs = {k: v for k, v in kwargs.items() if v is not None}
-        return client.docker_list_networks(**kwargs)
-    if action == "docker_inspect_network":
-        kwargs = {}
-        kwargs = {k: v for k, v in kwargs.items() if v is not None}
-        return client.docker_inspect_network(**kwargs)
-    if action == "docker_list_volumes":
-        kwargs = {}
-        kwargs = {k: v for k, v in kwargs.items() if v is not None}
-        return client.docker_list_volumes(**kwargs)
-    if action == "docker_inspect_volume":
-        kwargs = {}
-        kwargs = {k: v for k, v in kwargs.items() if v is not None}
-        return client.docker_inspect_volume(**kwargs)
-    if action == "docker_get_info":
-        kwargs = {}
-        kwargs = {k: v for k, v in kwargs.items() if v is not None}
-        return client.docker_get_info(**kwargs)
-    if action == "docker_get_version":
-        kwargs = {}
-        kwargs = {k: v for k, v in kwargs.items() if v is not None}
-        return client.docker_get_version(**kwargs)
-    if action == "docker_get_system_df":
-        kwargs = {}
-        kwargs = {k: v for k, v in kwargs.items() if v is not None}
-        return client.docker_get_system_df(**kwargs)
-    if action == "docker_create_container":
-        kwargs = {}
-        kwargs = {k: v for k, v in kwargs.items() if v is not None}
-        return client.docker_create_container(**kwargs)
-    if action == "docker_create_network":
-        kwargs = {}
-        kwargs = {k: v for k, v in kwargs.items() if v is not None}
-        return client.docker_create_network(**kwargs)
-    if action == "docker_create_volume":
-        kwargs = {}
-        kwargs = {k: v for k, v in kwargs.items() if v is not None}
-        return client.docker_create_volume(**kwargs)
-    raise ValueError(f"Unknown resource action: {action}")
+        return client.get_docker_dashboard(
+            **_filtered_kwargs(environment_id=environment_id)
+        )
+
+    no_arg_methods: dict[str, Any] = {
+        "docker_list_images": client.docker_list_images,
+        "docker_inspect_image": client.docker_inspect_image,
+        "docker_list_networks": client.docker_list_networks,
+        "docker_inspect_network": client.docker_inspect_network,
+        "docker_list_volumes": client.docker_list_volumes,
+        "docker_inspect_volume": client.docker_inspect_volume,
+        "docker_get_info": client.docker_get_info,
+        "docker_get_version": client.docker_get_version,
+        "docker_get_system_df": client.docker_get_system_df,
+        "docker_create_container": client.docker_create_container,
+        "docker_create_network": client.docker_create_network,
+        "docker_create_volume": client.docker_create_volume,
+    }
+    if action not in no_arg_methods:
+        raise ValueError(f"Unknown resource action: {action}")
+    return no_arg_methods[action]()
 
 
 def _handle_exec_stack_actions(
@@ -444,48 +417,35 @@ def _handle_exec_stack_actions(
     detach: bool | None,
     tty: bool | None,
 ) -> dict:
-    kwargs: dict[str, Any]
-    if action == "docker_create_exec":
-        kwargs = {}
-        if environment_id is not None:
-            kwargs["endpoint_id"] = environment_id
-        if container_id is not None:
-            kwargs["container_id"] = container_id
-        config: dict[str, Any] = {}
-        if cmd is not None:
-            config["Cmd"] = cmd
-        if detach is not None:
-            config["Detach"] = detach
-        if tty is not None:
-            config["Tty"] = tty
-        kwargs["config"] = config
+    def _create_exec() -> dict:
+        kwargs = _filtered_kwargs(endpoint_id=environment_id, container_id=container_id)
+        kwargs["config"] = _filtered_kwargs(Cmd=cmd, Detach=detach, Tty=tty)
         return {"data": client.create_exec(**kwargs)}
-    if action == "docker_start_exec":
-        kwargs = {}
-        if environment_id is not None:
-            kwargs["endpoint_id"] = environment_id
-        if exec_id is not None:
-            kwargs["exec_id"] = exec_id
-        exec_config: dict[str, Any] = {}
-        if detach is not None:
-            exec_config["Detach"] = detach
-        if tty is not None:
-            exec_config["Tty"] = tty
-        kwargs["config"] = exec_config
+
+    def _start_exec() -> dict:
+        kwargs = _filtered_kwargs(endpoint_id=environment_id, exec_id=exec_id)
+        kwargs["config"] = _filtered_kwargs(Detach=detach, Tty=tty)
         return {"data": client.start_exec(**kwargs)}
-    if action == "docker_inspect_exec":
-        kwargs = {}
-        if environment_id is not None:
-            kwargs["endpoint_id"] = environment_id
-        if exec_id is not None:
-            kwargs["exec_id"] = exec_id
+
+    def _inspect_exec() -> dict:
+        kwargs = _filtered_kwargs(endpoint_id=environment_id, exec_id=exec_id)
         return {"data": client.inspect_exec(**kwargs)}
-    if action == "docker_get_stack_logs":
-        kwargs = {"endpoint_id": environment_id, "stack_id": stack_id}
-        kwargs = {k: v for k, v in kwargs.items() if v is not None}
+
+    def _get_stack_logs() -> dict:
+        kwargs = _filtered_kwargs(endpoint_id=environment_id, stack_id=stack_id)
         res = client.get_stack_logs(**kwargs)
         return {"data": res} if isinstance(res, str) else res
-    raise ValueError(f"Unknown exec/stack action: {action}")
+
+    handlers: dict[str, Any] = {
+        "docker_create_exec": _create_exec,
+        "docker_start_exec": _start_exec,
+        "docker_inspect_exec": _inspect_exec,
+        "docker_get_stack_logs": _get_stack_logs,
+    }
+    handler = handlers.get(action)
+    if handler is None:
+        raise ValueError(f"Unknown exec/stack action: {action}")
+    return handler()
 
 
 def register_docker_tools(mcp: FastMCP):
@@ -670,6 +630,7 @@ def register_stack_tools(mcp: FastMCP):
         name = _none_if_field_info(name)
         repo_url = _none_if_field_info(repo_url)
         swarm_id = _none_if_field_info(swarm_id)
+        target_dir = _none_if_field_info(target_dir)
         params_json = _none_if_field_info(params_json)
 
         params = _parse_stack_params_json(params_json)
@@ -684,6 +645,12 @@ def register_stack_tools(mcp: FastMCP):
             "name": name,
             "repo_url": repo_url,
             "swarm_id": swarm_id,
+            # BUG-CX-033 fix (CX complexity-collapse, wD3-FL-06): target_dir
+            # was accepted as a real Field(...) parameter but never added to
+            # field_map, so get_val(["target_dir", "targetDir"]) could only
+            # ever resolve it via params_json -- passing it as the named
+            # tool parameter was silently ignored. See BUGS FOUND.
+            "target_dir": target_dir,
         }
 
         # Parameter resolver: searches case-insensitive variants in params_json first, then fields
@@ -1108,6 +1075,22 @@ def register_kubernetes_tools(mcp: FastMCP):
             return resolved
         action = resolved
 
+        # BUG-CX-036 fix (CX complexity-collapse, wD3-FL-06): normalize raw
+        # pydantic FieldInfo defaults to None. Unlike portainer_stack, this
+        # function had no FieldInfo-cleanup block, so calling the coroutine
+        # directly (bypassing FastMCP's own default resolution -- e.g. from
+        # a test) with a parameter omitted left the raw Field(...) object in
+        # place; Group 2's "filter out None" step does not catch it (a
+        # FieldInfo is not None), and Group 3 never filters at all, so the
+        # FieldInfo reached the client call as the argument value instead of
+        # None. See BUGS FOUND / tests/test_portainer_kubernetes_characterization.py.
+        endpoint_id = _none_if_field_info(endpoint_id)
+        chart_name = _none_if_field_info(chart_name)
+        release_name = _none_if_field_info(release_name)
+        environment_id = _none_if_field_info(environment_id)
+        namespace = _none_if_field_info(namespace)
+        node_name = _none_if_field_info(node_name)
+
         # Group 1: no-argument passthrough reads -- kwargs is always {} (an
         # empty dict filtered by "v is not None" is still {}).
         no_arg_methods = {
@@ -1210,7 +1193,6 @@ def register_edge_tools(mcp: FastMCP):
         client=Depends(get_client),
     ) -> dict:
         """Manage edge operations."""
-        kwargs: dict[str, Any]
         valid_actions = (
             "get_edge_groups",
             "create_edge_group",
@@ -1228,53 +1210,41 @@ def register_edge_tools(mcp: FastMCP):
         if isinstance(resolved, dict):
             return resolved
         action = resolved
-        if action == "get_edge_groups":
-            kwargs = {}
-            kwargs = {k: v for k, v in kwargs.items() if v is not None}
-            return await run_blocking(client.get_edge_groups, **kwargs)
-        if action == "create_edge_group":
-            kwargs = {"name": name}
-            kwargs = {k: v for k, v in kwargs.items() if v is not None}
-            return await run_blocking(client.create_edge_group, **kwargs)
-        if action == "delete_edge_group":
-            kwargs = {"group_id": group_id}
-            kwargs = {k: v for k, v in kwargs.items() if v is not None}
-            return await run_blocking(client.delete_edge_group, **kwargs)
-        if action == "get_edge_stacks":
-            kwargs = {}
-            kwargs = {k: v for k, v in kwargs.items() if v is not None}
-            return await run_blocking(client.get_edge_stacks, **kwargs)
-        if action == "get_edge_stack":
-            kwargs = {"stack_id": stack_id}
-            kwargs = {k: v for k, v in kwargs.items() if v is not None}
-            return await run_blocking(client.get_edge_stack, **kwargs)
-        if action == "create_edge_stack":
-            kwargs = {}
-            kwargs = {k: v for k, v in kwargs.items() if v is not None}
-            return await run_blocking(client.create_edge_stack, **kwargs)
-        if action == "delete_edge_stack":
-            kwargs = {"stack_id": stack_id}
-            kwargs = {k: v for k, v in kwargs.items() if v is not None}
-            return await run_blocking(client.delete_edge_stack, **kwargs)
-        if action == "get_edge_jobs":
-            kwargs = {}
-            kwargs = {k: v for k, v in kwargs.items() if v is not None}
-            return await run_blocking(client.get_edge_jobs, **kwargs)
-        if action == "get_edge_job":
-            kwargs = {"job_id": job_id}
-            kwargs = {k: v for k, v in kwargs.items() if v is not None}
-            return await run_blocking(client.get_edge_job, **kwargs)
-        if action == "create_edge_job":
-            kwargs = {}
-            kwargs = {k: v for k, v in kwargs.items() if v is not None}
-            return await run_blocking(client.create_edge_job, **kwargs)
-        if action == "delete_edge_job":
-            kwargs = {"job_id": job_id}
-            kwargs = {k: v for k, v in kwargs.items() if v is not None}
-            return await run_blocking(client.delete_edge_job, **kwargs)
-        raise ValueError(
-            f"Unknown action: {action}. Must be one of: get_edge_groups', 'create_edge_group', 'delete_edge_group', 'get_edge_stacks', 'get_edge_stack', 'create_edge_stack', 'delete_edge_stack', 'get_edge_jobs', 'get_edge_job', 'create_edge_job', 'delete_edge_job"
-        )
+
+        specs: dict[str, tuple[Any, dict[str, Any]]] = {
+            "get_edge_groups": (client.get_edge_groups, _filtered_kwargs()),
+            "create_edge_group": (
+                client.create_edge_group,
+                _filtered_kwargs(name=name),
+            ),
+            "delete_edge_group": (
+                client.delete_edge_group,
+                _filtered_kwargs(group_id=group_id),
+            ),
+            "get_edge_stacks": (client.get_edge_stacks, _filtered_kwargs()),
+            "get_edge_stack": (
+                client.get_edge_stack,
+                _filtered_kwargs(stack_id=stack_id),
+            ),
+            "create_edge_stack": (client.create_edge_stack, _filtered_kwargs()),
+            "delete_edge_stack": (
+                client.delete_edge_stack,
+                _filtered_kwargs(stack_id=stack_id),
+            ),
+            "get_edge_jobs": (client.get_edge_jobs, _filtered_kwargs()),
+            "get_edge_job": (client.get_edge_job, _filtered_kwargs(job_id=job_id)),
+            "create_edge_job": (client.create_edge_job, _filtered_kwargs()),
+            "delete_edge_job": (
+                client.delete_edge_job,
+                _filtered_kwargs(job_id=job_id),
+            ),
+        }
+        if action not in specs:
+            raise ValueError(
+                f"Unknown action: {action}. Must be one of: get_edge_groups', 'create_edge_group', 'delete_edge_group', 'get_edge_stacks', 'get_edge_stack', 'create_edge_stack', 'delete_edge_stack', 'get_edge_jobs', 'get_edge_job', 'create_edge_job', 'delete_edge_job"
+            )
+        method, kwargs = specs[action]
+        return await run_blocking(method, **kwargs)
 
 
 def register_template_tools(mcp: FastMCP):
@@ -1287,7 +1257,6 @@ def register_template_tools(mcp: FastMCP):
         client=Depends(get_client),
     ) -> dict:
         """Manage template operations."""
-        kwargs: dict[str, Any]
         valid_actions = (
             "get_templates",
             "get_custom_templates",
@@ -1301,37 +1270,37 @@ def register_template_tools(mcp: FastMCP):
         if isinstance(resolved, dict):
             return resolved
         action = resolved
-        if action == "get_templates":
-            kwargs = {}
-            kwargs = {k: v for k, v in kwargs.items() if v is not None}
-            return await run_blocking(client.get_templates, **kwargs)
-        if action == "get_custom_templates":
-            kwargs = {}
-            kwargs = {k: v for k, v in kwargs.items() if v is not None}
-            return await run_blocking(client.get_custom_templates, **kwargs)
-        if action == "get_custom_template":
-            kwargs = {"template_id": template_id}
-            kwargs = {k: v for k, v in kwargs.items() if v is not None}
-            return await run_blocking(client.get_custom_template, **kwargs)
-        if action == "create_custom_template":
-            kwargs = {}
-            kwargs = {k: v for k, v in kwargs.items() if v is not None}
-            return await run_blocking(client.create_custom_template, **kwargs)
-        if action == "delete_custom_template":
-            kwargs = {"template_id": template_id}
-            kwargs = {k: v for k, v in kwargs.items() if v is not None}
-            return await run_blocking(client.delete_custom_template, **kwargs)
-        if action == "get_custom_template_file":
-            kwargs = {"template_id": template_id}
-            kwargs = {k: v for k, v in kwargs.items() if v is not None}
-            return await run_blocking(client.get_custom_template_file, **kwargs)
-        if action == "get_helm_templates":
-            kwargs = {}
-            kwargs = {k: v for k, v in kwargs.items() if v is not None}
-            return await run_blocking(client.get_helm_templates, **kwargs)
-        raise ValueError(
-            f"Unknown action: {action}. Must be one of: get_templates', 'get_custom_templates', 'get_custom_template', 'create_custom_template', 'delete_custom_template', 'get_custom_template_file', 'get_helm_templates"
-        )
+
+        specs: dict[str, tuple[Any, dict[str, Any]]] = {
+            "get_templates": (client.get_templates, _filtered_kwargs()),
+            "get_custom_templates": (
+                client.get_custom_templates,
+                _filtered_kwargs(),
+            ),
+            "get_custom_template": (
+                client.get_custom_template,
+                _filtered_kwargs(template_id=template_id),
+            ),
+            "create_custom_template": (
+                client.create_custom_template,
+                _filtered_kwargs(),
+            ),
+            "delete_custom_template": (
+                client.delete_custom_template,
+                _filtered_kwargs(template_id=template_id),
+            ),
+            "get_custom_template_file": (
+                client.get_custom_template_file,
+                _filtered_kwargs(template_id=template_id),
+            ),
+            "get_helm_templates": (client.get_helm_templates, _filtered_kwargs()),
+        }
+        if action not in specs:
+            raise ValueError(
+                f"Unknown action: {action}. Must be one of: get_templates', 'get_custom_templates', 'get_custom_template', 'create_custom_template', 'delete_custom_template', 'get_custom_template_file', 'get_helm_templates"
+            )
+        method, kwargs = specs[action]
+        return await run_blocking(method, **kwargs)
 
 
 def register_user_tools(mcp: FastMCP):
@@ -1357,7 +1326,6 @@ def register_user_tools(mcp: FastMCP):
     ) -> dict:
         """Manage user operations (incl. per-user Git credentials for binding to
         git-backed stacks via RepositoryGitCredentialID)."""
-        kwargs: dict[str, Any]
         valid_actions = (
             "get_users",
             "get_user",
@@ -1379,16 +1347,23 @@ def register_user_tools(mcp: FastMCP):
         if isinstance(resolved, dict):
             return resolved
         action = resolved
-        if action == "get_user_git_credentials":
+
+        # Git-credential actions: kept as closures (unlike the flat group
+        # below) because each builds its kwargs differently -- some pass
+        # user_id/credential_id straight through unfiltered, one only
+        # conditionally adds authorization_type. Preserved verbatim.
+        async def _get_user_git_credentials():
             return await run_blocking(client.get_user_git_credentials, user_id=user_id)
-        if action == "get_user_git_credential":
+
+        async def _get_user_git_credential():
             return await run_blocking(
                 client.get_user_git_credential,
                 user_id=user_id,
                 credential_id=credential_id,
             )
-        if action == "create_user_git_credential":
-            kwargs = {
+
+        async def _create_user_git_credential():
+            kwargs: dict[str, Any] = {
                 "user_id": user_id,
                 "name": name,
                 "username": username,
@@ -1397,72 +1372,57 @@ def register_user_tools(mcp: FastMCP):
             if authorization_type is not None:
                 kwargs["authorization_type"] = authorization_type
             return await run_blocking(client.create_user_git_credential, **kwargs)
-        if action == "update_user_git_credential":
-            kwargs = {
-                "name": name,
-                "username": username,
-                "password": password,
-            }
-            kwargs = {k: v for k, v in kwargs.items() if v is not None}
+
+        async def _update_user_git_credential():
+            kwargs = _filtered_kwargs(name=name, username=username, password=password)
             return await run_blocking(
                 client.update_user_git_credential,
                 user_id=user_id,
                 credential_id=credential_id,
                 **kwargs,
             )
-        if action == "delete_user_git_credential":
+
+        async def _delete_user_git_credential():
             return await run_blocking(
                 client.delete_user_git_credential,
                 user_id=user_id,
                 credential_id=credential_id,
             )
-        if action == "get_users":
-            kwargs = {}
-            kwargs = {k: v for k, v in kwargs.items() if v is not None}
-            return await run_blocking(client.get_users, **kwargs)
-        if action == "get_user":
-            kwargs = {"user_id": user_id}
-            kwargs = {k: v for k, v in kwargs.items() if v is not None}
-            return await run_blocking(client.get_user, **kwargs)
-        if action == "get_current_user":
-            kwargs = {}
-            kwargs = {k: v for k, v in kwargs.items() if v is not None}
-            return await run_blocking(client.get_current_user, **kwargs)
-        if action == "create_user":
-            kwargs = {
-                "username": username,
-                "password": password,
-                "role": role,
-            }
-            kwargs = {k: v for k, v in kwargs.items() if v is not None}
-            return await run_blocking(client.create_user, **kwargs)
-        if action == "delete_user":
-            kwargs = {"user_id": user_id}
-            kwargs = {k: v for k, v in kwargs.items() if v is not None}
-            return await run_blocking(client.delete_user, **kwargs)
-        if action == "get_teams":
-            kwargs = {}
-            kwargs = {k: v for k, v in kwargs.items() if v is not None}
-            return await run_blocking(client.get_teams, **kwargs)
-        if action == "create_team":
-            kwargs = {"name": name}
-            kwargs = {k: v for k, v in kwargs.items() if v is not None}
-            return await run_blocking(client.create_team, **kwargs)
-        if action == "delete_team":
-            kwargs = {"team_id": team_id}
-            kwargs = {k: v for k, v in kwargs.items() if v is not None}
-            return await run_blocking(client.delete_team, **kwargs)
-        if action == "get_roles":
-            kwargs = {}
-            kwargs = {k: v for k, v in kwargs.items() if v is not None}
-            return await run_blocking(client.get_roles, **kwargs)
-        if action == "get_user_tokens":
-            kwargs = {"user_id": user_id}
-            kwargs = {k: v for k, v in kwargs.items() if v is not None}
-            return await run_blocking(client.get_user_tokens, **kwargs)
-        raise ValueError(
-            f"Unknown action: {action}. Must be one of: get_users', 'get_user', 'get_current_user', 'create_user', 'delete_user', 'get_teams', 'create_team', 'delete_team', 'get_roles', 'get_user_tokens"
-        )
+
+        git_credential_handlers: dict[str, Any] = {
+            "get_user_git_credentials": _get_user_git_credentials,
+            "get_user_git_credential": _get_user_git_credential,
+            "create_user_git_credential": _create_user_git_credential,
+            "update_user_git_credential": _update_user_git_credential,
+            "delete_user_git_credential": _delete_user_git_credential,
+        }
+        if action in git_credential_handlers:
+            return await git_credential_handlers[action]()
+
+        specs: dict[str, tuple[Any, dict[str, Any]]] = {
+            "get_users": (client.get_users, _filtered_kwargs()),
+            "get_user": (client.get_user, _filtered_kwargs(user_id=user_id)),
+            "get_current_user": (client.get_current_user, _filtered_kwargs()),
+            "create_user": (
+                client.create_user,
+                _filtered_kwargs(username=username, password=password, role=role),
+            ),
+            "delete_user": (client.delete_user, _filtered_kwargs(user_id=user_id)),
+            "get_teams": (client.get_teams, _filtered_kwargs()),
+            "create_team": (client.create_team, _filtered_kwargs(name=name)),
+            "delete_team": (client.delete_team, _filtered_kwargs(team_id=team_id)),
+            "get_roles": (client.get_roles, _filtered_kwargs()),
+            "get_user_tokens": (
+                client.get_user_tokens,
+                _filtered_kwargs(user_id=user_id),
+            ),
+        }
+        if action not in specs:
+            raise ValueError(
+                f"Unknown action: {action}. Must be one of: get_users', 'get_user', 'get_current_user', 'create_user', 'delete_user', 'get_teams', 'create_team', 'delete_team', 'get_roles', 'get_user_tokens"
+            )
+        method, kwargs = specs[action]
+        return await run_blocking(method, **kwargs)
 
 
 def register_registry_tools(mcp: FastMCP):
@@ -1478,7 +1438,6 @@ def register_registry_tools(mcp: FastMCP):
         client=Depends(get_client),
     ) -> dict:
         """Manage registry operations."""
-        kwargs: dict[str, Any]
         valid_actions = (
             "get_registries",
             "get_registry",
@@ -1489,29 +1448,28 @@ def register_registry_tools(mcp: FastMCP):
         if isinstance(resolved, dict):
             return resolved
         action = resolved
-        if action == "get_registries":
-            kwargs = {}
-            kwargs = {k: v for k, v in kwargs.items() if v is not None}
-            return await run_blocking(client.get_registries, **kwargs)
-        if action == "get_registry":
-            kwargs = {"registry_id": registry_id}
-            kwargs = {k: v for k, v in kwargs.items() if v is not None}
-            return await run_blocking(client.get_registry, **kwargs)
-        if action == "create_registry":
-            kwargs = {
-                "name": name,
-                "registry_type": registry_type,
-                "url": url,
-            }
-            kwargs = {k: v for k, v in kwargs.items() if v is not None}
-            return await run_blocking(client.create_registry, **kwargs)
-        if action == "delete_registry":
-            kwargs = {"registry_id": registry_id}
-            kwargs = {k: v for k, v in kwargs.items() if v is not None}
-            return await run_blocking(client.delete_registry, **kwargs)
-        raise ValueError(
-            f"Unknown action: {action}. Must be one of: get_registries', 'get_registry', 'create_registry', 'delete_registry"
-        )
+
+        specs: dict[str, tuple[Any, dict[str, Any]]] = {
+            "get_registries": (client.get_registries, _filtered_kwargs()),
+            "get_registry": (
+                client.get_registry,
+                _filtered_kwargs(registry_id=registry_id),
+            ),
+            "create_registry": (
+                client.create_registry,
+                _filtered_kwargs(name=name, registry_type=registry_type, url=url),
+            ),
+            "delete_registry": (
+                client.delete_registry,
+                _filtered_kwargs(registry_id=registry_id),
+            ),
+        }
+        if action not in specs:
+            raise ValueError(
+                f"Unknown action: {action}. Must be one of: get_registries', 'get_registry', 'create_registry', 'delete_registry"
+            )
+        method, kwargs = specs[action]
+        return await run_blocking(method, **kwargs)
 
 
 def register_system_tools(mcp: FastMCP):
@@ -1555,7 +1513,6 @@ def register_system_tools(mcp: FastMCP):
             (http_method + api_path [+ query_json/body_json]) — covers the full
             Portainer REST API surface, including operations without a typed action.
         """
-        kwargs: dict[str, Any]
         valid_actions = (
             "get_status",
             "get_system_info",
@@ -1585,49 +1542,25 @@ def register_system_tools(mcp: FastMCP):
                 params=_json.loads(query_json) if query_json else None,
                 data=_json.loads(body_json) if body_json else None,
             )
-        if action == "get_status":
-            kwargs = {}
-            kwargs = {k: v for k, v in kwargs.items() if v is not None}
-            return await run_blocking(client.get_status, **kwargs)
-        if action == "get_system_info":
-            kwargs = {}
-            kwargs = {k: v for k, v in kwargs.items() if v is not None}
-            return await run_blocking(client.get_system_info, **kwargs)
-        if action == "get_system_version":
-            kwargs = {}
-            kwargs = {k: v for k, v in kwargs.items() if v is not None}
-            return await run_blocking(client.get_system_version, **kwargs)
-        if action == "get_settings":
-            kwargs = {}
-            kwargs = {k: v for k, v in kwargs.items() if v is not None}
-            return await run_blocking(client.get_settings, **kwargs)
-        if action == "update_settings":
-            kwargs = {}
-            kwargs = {k: v for k, v in kwargs.items() if v is not None}
-            return await run_blocking(client.update_settings, **kwargs)
-        if action == "get_tags":
-            kwargs = {}
-            kwargs = {k: v for k, v in kwargs.items() if v is not None}
-            return await run_blocking(client.get_tags, **kwargs)
-        if action == "create_tag":
-            kwargs = {"name": name}
-            kwargs = {k: v for k, v in kwargs.items() if v is not None}
-            return await run_blocking(client.create_tag, **kwargs)
-        if action == "delete_tag":
-            kwargs = {"tag_id": tag_id}
-            kwargs = {k: v for k, v in kwargs.items() if v is not None}
-            return await run_blocking(client.delete_tag, **kwargs)
-        if action == "get_motd":
-            kwargs = {}
-            kwargs = {k: v for k, v in kwargs.items() if v is not None}
-            return await run_blocking(client.get_motd, **kwargs)
-        if action == "backup_portainer":
-            kwargs = {}
-            kwargs = {k: v for k, v in kwargs.items() if v is not None}
-            return await run_blocking(client.backup_portainer, **kwargs)
-        raise ValueError(
-            f"Unknown action: {action}. Must be one of: get_status', 'get_system_info', 'get_system_version', 'get_settings', 'update_settings', 'get_tags', 'create_tag', 'delete_tag', 'get_motd', 'backup_portainer"
-        )
+
+        specs: dict[str, tuple[Any, dict[str, Any]]] = {
+            "get_status": (client.get_status, _filtered_kwargs()),
+            "get_system_info": (client.get_system_info, _filtered_kwargs()),
+            "get_system_version": (client.get_system_version, _filtered_kwargs()),
+            "get_settings": (client.get_settings, _filtered_kwargs()),
+            "update_settings": (client.update_settings, _filtered_kwargs()),
+            "get_tags": (client.get_tags, _filtered_kwargs()),
+            "create_tag": (client.create_tag, _filtered_kwargs(name=name)),
+            "delete_tag": (client.delete_tag, _filtered_kwargs(tag_id=tag_id)),
+            "get_motd": (client.get_motd, _filtered_kwargs()),
+            "backup_portainer": (client.backup_portainer, _filtered_kwargs()),
+        }
+        if action not in specs:
+            raise ValueError(
+                f"Unknown action: {action}. Must be one of: get_status', 'get_system_info', 'get_system_version', 'get_settings', 'update_settings', 'get_tags', 'create_tag', 'delete_tag', 'get_motd', 'backup_portainer"
+            )
+        method, kwargs = specs[action]
+        return await run_blocking(method, **kwargs)
 
     @mcp.tool(tags={"System", "kg"})
     async def portainer_ingest_environments(
