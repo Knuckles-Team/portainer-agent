@@ -323,21 +323,31 @@ def test_export_all_stacks_requires_target_dir(stack_fn):
         _run(stack_fn(action="export_all_stacks", client=client))
 
 
-def test_export_all_stacks_named_param_is_silently_ignored(stack_fn):
-    """BUG (see BUGS FOUND): ``target_dir`` is a real ``Field(...)`` parameter
-    on the tool signature but is never added to ``field_map``, so ``get_val``
-    can only ever see it via ``params_json`` -- passing it as a normal named
-    kwarg is silently dropped and this still raises "missing" even though the
-    caller supplied it."""
+def test_export_all_stacks_named_param_now_reaches_the_client(stack_fn):
+    """BUG-CX-033 FIX (CX complexity-collapse, wD3-FL-06): ``target_dir`` is a
+    real ``Field(...)`` parameter on the tool signature. It used to be
+    silently dropped -- never added to ``field_map``, so ``get_val`` could
+    only ever see it via ``params_json`` -- meaning this call raised
+    "missing" even though the caller supplied it directly. ``target_dir`` is
+    now in ``field_map`` (cleaned via ``_none_if_field_info`` like every
+    other named stack parameter), so passing it as a normal named kwarg
+    reaches the client.
+
+    This test FAILED before the fix (asserted the ValueError + that the
+    client was never called) and PASSES after."""
     client = MagicMock()
-    with pytest.raises(ValueError, match="target_dir"):
-        _run(stack_fn(action="export_all_stacks", target_dir="/tmp/x", client=client))
-    client.export_all_stacks.assert_not_called()
+    client.export_all_stacks.return_value = {"ok": True}
+    result = _run(
+        stack_fn(action="export_all_stacks", target_dir="/tmp/x", client=client)
+    )
+    client.export_all_stacks.assert_called_once_with(target_dir="/tmp/x")
+    assert result == {"ok": True}
 
 
 def test_export_all_stacks_calls_client_via_params_json(stack_fn):
-    """Because of the field_map gap above, params_json is the ONLY way to
-    actually reach ``client.export_all_stacks`` today."""
+    """params_json remains a second, still-working way to reach
+    ``client.export_all_stacks`` (in addition to the named target_dir
+    parameter, fixed above)."""
     client = MagicMock()
     client.export_all_stacks.return_value = {"ok": True}
     result = _run(

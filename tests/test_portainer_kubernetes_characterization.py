@@ -88,31 +88,29 @@ def test_get_helm_releases_passes_endpoint_id_when_present(k8s_fn):
 
 def test_get_helm_releases_omits_endpoint_id_when_none(k8s_fn):
     """None-filtering: an explicit endpoint_id=None kwarg isn't passed at
-    all. Note: this function has NO FieldInfo-default cleanup (unlike
-    portainer_stack) -- simply OMITTING endpoint_id when calling the
-    coroutine directly (as a test does, bypassing FastMCP's own default
-    resolution) leaks the raw Field(...) FieldInfo object through as the
-    value instead of None (see BUGS FOUND); passing None explicitly is the
-    only way to exercise the filtering branch outside real FastMCP."""
+    all."""
     client = MagicMock()
     client.get_helm_releases.return_value = {"releases": []}
     _run(k8s_fn(action="get_helm_releases", endpoint_id=None, client=client))
     client.get_helm_releases.assert_called_once_with()
 
 
-def test_get_helm_releases_leaks_raw_field_info_when_endpoint_id_omitted(k8s_fn):
-    """BUG (see BUGS FOUND): omitting endpoint_id entirely (rather than
-    passing None) leaks the raw pydantic FieldInfo default through to the
-    client, because -- unlike portainer_stack -- this function has no
-    FieldInfo-cleanup block."""
-    from pydantic.fields import FieldInfo
+def test_get_helm_releases_omits_endpoint_id_when_omitted_entirely(k8s_fn):
+    """BUG-CX-036 FIX (CX complexity-collapse, wD3-FL-06): omitting
+    endpoint_id entirely (rather than passing it explicitly as None) used to
+    leak the raw pydantic FieldInfo default through to the client, because
+    -- unlike portainer_stack -- this function had no FieldInfo-cleanup
+    block. portainer_kubernetes now normalizes every named parameter with
+    `_none_if_field_info()` before dispatch, same as portainer_stack, so
+    omitting endpoint_id now behaves identically to passing it explicitly as
+    None: it is filtered out of the call, not leaked as a FieldInfo object.
 
+    This test FAILED before the fix (it asserted
+    ``isinstance(kwargs["endpoint_id"], FieldInfo)``) and PASSES after."""
     client = MagicMock()
     client.get_helm_releases.return_value = {"releases": []}
     _run(k8s_fn(action="get_helm_releases", client=client))
-    client.get_helm_releases.assert_called_once()
-    _, kwargs = client.get_helm_releases.call_args
-    assert isinstance(kwargs["endpoint_id"], FieldInfo)
+    client.get_helm_releases.assert_called_once_with()
 
 
 def test_install_helm_chart_filters_none_chart_name(k8s_fn):
@@ -227,6 +225,22 @@ def test_get_k8s_namespace_passes_none_through_when_omitted(k8s_fn):
             action="get_k8s_namespace", environment_id=3, namespace=None, client=client
         )
     )
+    client.get_kubernetes_namespace.assert_called_once_with(
+        environment_id=3, namespace=None
+    )
+
+
+def test_get_k8s_namespace_passes_none_through_when_namespace_omitted_entirely(k8s_fn):
+    """BUG-CX-036 FIX companion (CX complexity-collapse, wD3-FL-06): this
+    group (Group 3) still does NOT filter None out -- that asymmetry vs.
+    Group 2 is preserved on purpose. What changed is what "no value
+    provided" resolves to: omitting namespace entirely now normalizes to
+    None (via `_none_if_field_info()`) and is passed through as
+    namespace=None, identical to passing it explicitly -- instead of
+    leaking the raw pydantic FieldInfo default object."""
+    client = MagicMock()
+    client.get_kubernetes_namespace.return_value = {}
+    _run(k8s_fn(action="get_k8s_namespace", environment_id=3, client=client))
     client.get_kubernetes_namespace.assert_called_once_with(
         environment_id=3, namespace=None
     )
