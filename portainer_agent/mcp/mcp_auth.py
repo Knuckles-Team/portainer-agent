@@ -3,14 +3,18 @@
 Auto-generated from mcp_server.py during ecosystem standardization.
 """
 
-from typing import Any
-
-from agent_utilities.mcp.concurrency import run_blocking
 from fastmcp import FastMCP
 from fastmcp.dependencies import Depends
 from pydantic import Field
 
 from portainer_agent.auth import get_client
+from portainer_agent.mcp.action_kwargs import ActionCall, dispatch_client_action
+
+_AUTH_ACTIONS: dict[str, ActionCall] = {
+    "authenticate": ActionCall(params=("username", "password")),
+    "logout": ActionCall(),
+    "validate_oauth": ActionCall(params=("code",)),
+}
 
 
 def register_auth_tools(mcp: FastMCP):
@@ -25,19 +29,13 @@ def register_auth_tools(mcp: FastMCP):
         client=Depends(get_client),
     ) -> dict:
         """Manage auth operations."""
-        kwargs: dict[str, Any]
-        if action == "authenticate":
-            kwargs = {"username": username, "password": password}
-            kwargs = {k: v for k, v in kwargs.items() if v is not None}
-            return await run_blocking(client.authenticate, **kwargs)
-        if action == "logout":
-            kwargs = {}
-            kwargs = {k: v for k, v in kwargs.items() if v is not None}
-            return await run_blocking(client.logout, **kwargs)
-        if action == "validate_oauth":
-            kwargs = {"code": code}
-            kwargs = {k: v for k, v in kwargs.items() if v is not None}
-            return await run_blocking(client.validate_oauth, **kwargs)
-        raise ValueError(
-            f"Unknown action: {action}. Must be one of: authenticate', 'logout', 'validate_oauth"
+        if action not in _AUTH_ACTIONS:
+            raise ValueError(
+                f"Unknown action: {action}. Must be one of: authenticate', 'logout', 'validate_oauth"
+            )
+        return await dispatch_client_action(
+            action=action,
+            client=client,
+            values={"username": username, "password": password, "code": code},
+            actions=_AUTH_ACTIONS,
         )
