@@ -237,7 +237,17 @@ def test_agent_server_main_execution():
 
 
 def test_main_module():
-    with patch("portainer_agent.agent_server.agent_server") as mock_agent_server:
+    # runpy.run_module(..., run_name="__main__") re-executes the module's
+    # own argparse against the LIVE sys.argv, so any pytest flag (e.g.
+    # `-p no:randomly`) leaks in and is rejected by the module's CLI
+    # parser. Pin argv to a clean single-element list for the duration of
+    # the run so the module under test sees the same argv regardless of how
+    # pytest was invoked (agent_server is mocked out here too, but this
+    # keeps the runpy call site safe if that mock is ever loosened).
+    with (
+        patch("portainer_agent.agent_server.agent_server") as mock_agent_server,
+        patch("sys.argv", ["__main__.py"]),
+    ):
         runpy.run_module("portainer_agent.__main__", run_name="__main__")
         mock_agent_server.assert_called_once()
 
@@ -719,6 +729,13 @@ def test_mcp_server_main_execution():
 
     mock_mcp = MagicMock()
 
+    # runpy.run_module(..., run_name="__main__") re-executes the module's
+    # own argparse against the LIVE sys.argv, so any pytest flag (e.g.
+    # `-p no:randomly`) leaks in and is rejected by the module's CLI
+    # parser. Pin argv to a clean single-element list for the duration of
+    # the run so the module under test sees the same argv regardless of how
+    # pytest was invoked (get_mcp_instance is mocked out here too, but this
+    # keeps the runpy call site safe if that mock is ever loosened).
     with (
         patch(
             "portainer_agent.mcp_server.get_mcp_instance",
@@ -726,6 +743,7 @@ def test_mcp_server_main_execution():
         ),
         patch("sys.exit"),
         patch("fastmcp.FastMCP.run") as mock_run,
+        patch("sys.argv", ["mcp_server.py"]),
     ):
         runpy.run_module("portainer_agent.mcp_server", run_name="__main__")
         mock_run.assert_called_with(transport="stdio")
