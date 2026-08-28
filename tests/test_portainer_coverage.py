@@ -25,6 +25,55 @@ def _mock_session():
         yield session
 
 
+def _is_id_like_param(name: str) -> bool:
+    """Whether a parameter name looks like it identifies an endpoint/environment/resource."""
+    return "endpoint_id" in name or "environment_id" in name or "id" in name
+
+
+def _guess_kwarg_value(param: inspect.Parameter) -> Any:
+    """Guess a plausible value for one client-method parameter by name/annotation."""
+    if _is_id_like_param(param.name):
+        return 123
+    if "name" in param.name:
+        return "testname"
+    if "path" in param.name:
+        return "testpath"
+    if param.annotation == int:
+        return 1
+    if param.annotation == bool:
+        return True
+    if param.annotation == list:
+        return []
+    if param.annotation == dict:
+        return {}
+    return "test"
+
+
+def _build_call_kwargs(sig: inspect.Signature) -> dict[str, Any]:
+    """Guess a kwargs dict covering every non-``kwargs`` parameter in ``sig``."""
+    return {
+        param.name: _guess_kwarg_value(param)
+        for param in sig.parameters.values()
+        if param.name != "kwargs"
+    }
+
+
+def _split_positional_args(
+    sig: inspect.Signature, kwargs: dict[str, Any]
+) -> tuple[list[Any], dict[str, Any]]:
+    """Pull required positional parameters out of ``kwargs`` into a positional list."""
+    pos_args = []
+    for param in sig.parameters.values():
+        if param.default == inspect.Parameter.empty and param.kind in (
+            inspect.Parameter.POSITIONAL_OR_KEYWORD,
+            inspect.Parameter.POSITIONAL_ONLY,
+        ):
+            pos_args.append(kwargs.get(param.name, "test"))
+            if param.name in kwargs:
+                del kwargs[param.name]
+    return pos_args, kwargs
+
+
 def test_api_brute_force(_mock_session):
     client = PortainerApi(base_url="http://test.portainer.com", token="mock_token")
 
@@ -35,31 +84,7 @@ def test_api_brute_force(_mock_session):
 
         print(f"Calling {name}...")
         sig = inspect.signature(method)
-        kwargs: dict[str, Any] = {}
-        for param in sig.parameters.values():
-            if param.name == "kwargs":
-                continue
-            # Guessing values
-            if (
-                "endpoint_id" in param.name
-                or "environment_id" in param.name
-                or "id" in param.name
-            ):
-                kwargs[param.name] = 123
-            elif "name" in param.name:
-                kwargs[param.name] = "testname"
-            elif "path" in param.name:
-                kwargs[param.name] = "testpath"
-            elif param.annotation == int:
-                kwargs[param.name] = 1
-            elif param.annotation == bool:
-                kwargs[param.name] = True
-            elif param.annotation == list:
-                kwargs[param.name] = []
-            elif param.annotation == dict:
-                kwargs[param.name] = {}
-            else:
-                kwargs[param.name] = "test"
+        kwargs = _build_call_kwargs(sig)
 
         try:
             # Also add some generic kwargs
@@ -74,15 +99,7 @@ def test_api_brute_force(_mock_session):
             )
 
             # Check for positional arguments
-            pos_args = []
-            for param in sig.parameters.values():
-                if param.default == inspect.Parameter.empty and param.kind in (
-                    inspect.Parameter.POSITIONAL_OR_KEYWORD,
-                    inspect.Parameter.POSITIONAL_ONLY,
-                ):
-                    pos_args.append(kwargs.get(param.name, "test"))
-                    if param.name in kwargs:
-                        del kwargs[param.name]
+            pos_args, kwargs = _split_positional_args(sig, kwargs)
 
             method(*pos_args, **kwargs)
         except Exception as e:

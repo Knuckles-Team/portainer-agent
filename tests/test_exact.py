@@ -5,6 +5,8 @@ os.environ["PORTAINER_TOKEN"] = "TEST"
 
 
 import asyncio
+import json
+from typing import Any
 
 import pytest
 
@@ -37,6 +39,44 @@ from agent_utilities.graph import (
 )
 
 
+def _as_result_dict(result: Any) -> dict:
+    """Normalize a GraphResponse (pydantic model), dict, or other result to a dict."""
+    if hasattr(result, "model_dump"):
+        return result.model_dump()
+    if isinstance(result, dict):
+        return result
+    return {"results": {"output": str(result)}}
+
+
+def _print_json_list_or_text(content: str) -> None:
+    """Pretty-print a JSON-list preview, a JSON scalar, or raw (possibly truncated) text."""
+    try:
+        parsed = json.loads(content)
+    except json.JSONDecodeError:
+        print(content[:500] + ("..." if len(content) > 500 else ""))
+        return
+    if isinstance(parsed, list):
+        print(f"Found {len(parsed)} items:")
+        for i, item in enumerate(parsed[:3]):
+            print(f"  {i + 1}. {json.dumps(item, indent=2)}")
+        if len(parsed) > 3:
+            print(f"  ... and {len(parsed) - 3} more items")
+    else:
+        print(f"{json.dumps(parsed, indent=2)}")
+
+
+def _print_domain_result(domain: str, content: Any) -> None:
+    """Print one domain's result section, formatting dict/JSON-string/other content."""
+    print(f"\n{domain.upper()} RESULT:")
+    if isinstance(content, dict):
+        print(json.dumps(content, indent=2))
+        return
+    if isinstance(content, str):
+        _print_json_list_or_text(content)
+        return
+    print(str(content)[:500] + ("..." if len(str(content)) > 500 else ""))
+
+
 @pytest.mark.skip(reason="Requires external model service")
 async def test_exact():
     import logging
@@ -55,14 +95,7 @@ async def test_exact():
         print(f"Executing: {query}")
         result = await run_graph(graph=graph, config=config, query=query)
 
-        # Handle GraphResponse object (Pydantic model) or dict
-        if hasattr(result, "model_dump"):
-            res_dict = result.model_dump()
-        elif isinstance(result, dict):
-            res_dict = result
-        else:
-            # Fallback for unexpected types
-            res_dict = {"results": {"output": str(result)}}
+        res_dict = _as_result_dict(result)
 
         print("\n=== EXECUTION COMPLETED ===")
         print(f"Success: {res_dict.get('error') is None}")
@@ -75,34 +108,7 @@ async def test_exact():
         if isinstance(results, dict):
             print("\n=== RESULTS BY DOMAIN ===")
             for domain, domain_result in results.items():
-                print(f"\n{domain.upper()} RESULT:")
-
-                content = domain_result
-                if isinstance(content, dict):
-                    import json
-
-                    print(json.dumps(content, indent=2))
-                    continue
-
-                if isinstance(content, str):
-                    import json
-
-                    try:
-                        parsed = json.loads(content)
-                        if isinstance(parsed, list):
-                            print(f"Found {len(parsed)} items:")
-                            for i, item in enumerate(parsed[:3]):
-                                print(f"  {i + 1}. {json.dumps(item, indent=2)}")
-                            if len(parsed) > 3:
-                                print(f"  ... and {len(parsed) - 3} more items")
-                        else:
-                            print(f"{json.dumps(parsed, indent=2)}")
-                    except json.JSONDecodeError:
-                        print(content[:500] + ("..." if len(content) > 500 else ""))
-                else:
-                    print(
-                        str(content)[:500] + ("..." if len(str(content)) > 500 else "")
-                    )
+                _print_domain_result(domain, domain_result)
 
     except Exception as e:
         print("\n=== ERROR ===")
