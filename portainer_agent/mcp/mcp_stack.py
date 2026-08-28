@@ -3,14 +3,36 @@
 Auto-generated from mcp_server.py during ecosystem standardization.
 """
 
-from typing import Any
-
-from agent_utilities.mcp.concurrency import run_blocking
 from fastmcp import FastMCP
 from fastmcp.dependencies import Depends
 from pydantic import Field
 
 from portainer_agent.auth import get_client
+from portainer_agent.mcp.action_kwargs import ActionCall, dispatch_client_action
+
+_STACK_ACTIONS: dict[str, ActionCall] = {
+    "get_stacks": ActionCall(wrap_list_as_data=True),
+    "get_stack": ActionCall(params=("stack_id",)),
+    "get_stack_file": ActionCall(params=("stack_id",)),
+    "create_standalone_stack": ActionCall(),
+    "create_standalone_stack_from_repo": ActionCall(),
+    "update_stack": ActionCall(
+        params=(
+            "stack_id",
+            "endpoint_id",
+            ("StackFileContent", "stack_file_content"),
+            ("Env", "env"),
+            ("Prune", "prune"),
+        )
+    ),
+    "delete_stack": ActionCall(params=("stack_id", "endpoint_id")),
+    "start_stack": ActionCall(params=("stack_id", "endpoint_id")),
+    "stop_stack": ActionCall(params=("stack_id", "endpoint_id")),
+    "update_stack_git": ActionCall(params=("stack_id", "endpoint_id", "env", "prune")),
+    "redeploy_stack_git": ActionCall(
+        params=("stack_id", "endpoint_id", "env", "prune")
+    ),
+}
 
 
 def register_stack_tools(mcp: FastMCP):
@@ -33,70 +55,19 @@ def register_stack_tools(mcp: FastMCP):
         client=Depends(get_client),
     ) -> dict:
         """Manage stack operations."""
-        kwargs: dict[str, Any]
-        if action == "get_stacks":
-            kwargs = {}
-            kwargs = {k: v for k, v in kwargs.items() if v is not None}
-            res = await run_blocking(client.get_stacks, **kwargs)
-            return {"data": res} if isinstance(res, list) else res
-        if action == "get_stack":
-            kwargs = {"stack_id": stack_id}
-            kwargs = {k: v for k, v in kwargs.items() if v is not None}
-            return await run_blocking(client.get_stack, **kwargs)
-        if action == "get_stack_file":
-            kwargs = {"stack_id": stack_id}
-            kwargs = {k: v for k, v in kwargs.items() if v is not None}
-            return await run_blocking(client.get_stack_file, **kwargs)
-        if action == "create_standalone_stack":
-            kwargs = {}
-            kwargs = {k: v for k, v in kwargs.items() if v is not None}
-            return await run_blocking(client.create_standalone_stack, **kwargs)
-        if action == "create_standalone_stack_from_repo":
-            kwargs = {}
-            kwargs = {k: v for k, v in kwargs.items() if v is not None}
-            return await run_blocking(
-                client.create_standalone_stack_from_repo, **kwargs
+        if action not in _STACK_ACTIONS:
+            raise ValueError(
+                f"Unknown action: {action}. Must be one of: 'get_stacks', 'get_stack', 'get_stack_file', 'create_standalone_stack', 'create_standalone_stack_from_repo', 'update_stack', 'delete_stack', 'start_stack', 'stop_stack', 'update_stack_git', 'redeploy_stack_git'"
             )
-        if action == "update_stack":
-            kwargs = {
+        return await dispatch_client_action(
+            action=action,
+            client=client,
+            values={
                 "stack_id": stack_id,
                 "endpoint_id": endpoint_id,
-                "StackFileContent": stack_file_content,
-                "Env": env,
-                "Prune": prune,
-            }
-            kwargs = {k: v for k, v in kwargs.items() if v is not None}
-            return await run_blocking(client.update_stack, **kwargs)
-        if action == "delete_stack":
-            kwargs = {"stack_id": stack_id, "endpoint_id": endpoint_id}
-            kwargs = {k: v for k, v in kwargs.items() if v is not None}
-            return await run_blocking(client.delete_stack, **kwargs)
-        if action == "start_stack":
-            kwargs = {"stack_id": stack_id, "endpoint_id": endpoint_id}
-            kwargs = {k: v for k, v in kwargs.items() if v is not None}
-            return await run_blocking(client.start_stack, **kwargs)
-        if action == "stop_stack":
-            kwargs = {"stack_id": stack_id, "endpoint_id": endpoint_id}
-            kwargs = {k: v for k, v in kwargs.items() if v is not None}
-            return await run_blocking(client.stop_stack, **kwargs)
-        if action == "update_stack_git":
-            kwargs = {
-                "stack_id": stack_id,
-                "endpoint_id": endpoint_id,
+                "stack_file_content": stack_file_content,
                 "env": env,
                 "prune": prune,
-            }
-            kwargs = {k: v for k, v in kwargs.items() if v is not None}
-            return await run_blocking(client.update_stack_git, **kwargs)
-        if action == "redeploy_stack_git":
-            kwargs = {
-                "stack_id": stack_id,
-                "endpoint_id": endpoint_id,
-                "env": env,
-                "prune": prune,
-            }
-            kwargs = {k: v for k, v in kwargs.items() if v is not None}
-            return await run_blocking(client.redeploy_stack_git, **kwargs)
-        raise ValueError(
-            f"Unknown action: {action}. Must be one of: 'get_stacks', 'get_stack', 'get_stack_file', 'create_standalone_stack', 'create_standalone_stack_from_repo', 'update_stack', 'delete_stack', 'start_stack', 'stop_stack', 'update_stack_git', 'redeploy_stack_git'"
+            },
+            actions=_STACK_ACTIONS,
         )

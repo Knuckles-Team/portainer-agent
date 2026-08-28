@@ -3,14 +3,25 @@
 Auto-generated from mcp_server.py during ecosystem standardization.
 """
 
-from typing import Any
-
-from agent_utilities.mcp.concurrency import run_blocking
 from fastmcp import FastMCP
 from fastmcp.dependencies import Depends
 from pydantic import Field
 
 from portainer_agent.auth import get_client
+from portainer_agent.mcp.action_kwargs import ActionCall, dispatch_client_action
+
+_USER_ACTIONS: dict[str, ActionCall] = {
+    "get_users": ActionCall(),
+    "get_user": ActionCall(params=("user_id",)),
+    "get_current_user": ActionCall(),
+    "create_user": ActionCall(params=("username", "password", "role")),
+    "delete_user": ActionCall(params=("user_id",)),
+    "get_teams": ActionCall(),
+    "create_team": ActionCall(params=("name",)),
+    "delete_team": ActionCall(params=("team_id",)),
+    "get_roles": ActionCall(),
+    "get_user_tokens": ActionCall(params=("user_id",)),
+}
 
 
 def register_user_tools(mcp: FastMCP):
@@ -28,51 +39,20 @@ def register_user_tools(mcp: FastMCP):
         client=Depends(get_client),
     ) -> dict:
         """Manage user operations."""
-        kwargs: dict[str, Any]
-        if action == "get_users":
-            kwargs = {}
-            kwargs = {k: v for k, v in kwargs.items() if v is not None}
-            return await run_blocking(client.get_users, **kwargs)
-        if action == "get_user":
-            kwargs = {"user_id": user_id}
-            kwargs = {k: v for k, v in kwargs.items() if v is not None}
-            return await run_blocking(client.get_user, **kwargs)
-        if action == "get_current_user":
-            kwargs = {}
-            kwargs = {k: v for k, v in kwargs.items() if v is not None}
-            return await run_blocking(client.get_current_user, **kwargs)
-        if action == "create_user":
-            kwargs = {
+        if action not in _USER_ACTIONS:
+            raise ValueError(
+                f"Unknown action: {action}. Must be one of: get_users', 'get_user', 'get_current_user', 'create_user', 'delete_user', 'get_teams', 'create_team', 'delete_team', 'get_roles', 'get_user_tokens"
+            )
+        return await dispatch_client_action(
+            action=action,
+            client=client,
+            values={
+                "user_id": user_id,
                 "username": username,
                 "password": password,
                 "role": role,
-            }
-            kwargs = {k: v for k, v in kwargs.items() if v is not None}
-            return await run_blocking(client.create_user, **kwargs)
-        if action == "delete_user":
-            kwargs = {"user_id": user_id}
-            kwargs = {k: v for k, v in kwargs.items() if v is not None}
-            return await run_blocking(client.delete_user, **kwargs)
-        if action == "get_teams":
-            kwargs = {}
-            kwargs = {k: v for k, v in kwargs.items() if v is not None}
-            return await run_blocking(client.get_teams, **kwargs)
-        if action == "create_team":
-            kwargs = {"name": name}
-            kwargs = {k: v for k, v in kwargs.items() if v is not None}
-            return await run_blocking(client.create_team, **kwargs)
-        if action == "delete_team":
-            kwargs = {"team_id": team_id}
-            kwargs = {k: v for k, v in kwargs.items() if v is not None}
-            return await run_blocking(client.delete_team, **kwargs)
-        if action == "get_roles":
-            kwargs = {}
-            kwargs = {k: v for k, v in kwargs.items() if v is not None}
-            return await run_blocking(client.get_roles, **kwargs)
-        if action == "get_user_tokens":
-            kwargs = {"user_id": user_id}
-            kwargs = {k: v for k, v in kwargs.items() if v is not None}
-            return await run_blocking(client.get_user_tokens, **kwargs)
-        raise ValueError(
-            f"Unknown action: {action}. Must be one of: get_users', 'get_user', 'get_current_user', 'create_user', 'delete_user', 'get_teams', 'create_team', 'delete_team', 'get_roles', 'get_user_tokens"
+                "name": name,
+                "team_id": team_id,
+            },
+            actions=_USER_ACTIONS,
         )

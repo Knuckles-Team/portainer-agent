@@ -6,6 +6,7 @@ os.environ["PORTAINER_TOKEN"] = "ptr_P444Nokxd9Tn4yr47e26yc5PmGGaR3zVcfvaPUPxmZg
 
 import asyncio
 import json
+from typing import Any
 
 import pytest
 
@@ -35,6 +36,35 @@ pytest.importorskip(
 from agent_utilities import initialize_graph_from_workspace, run_graph
 
 
+def _print_json_list_preview(text: str) -> None:
+    """Pretty-print a JSON-list preview (top 5 items), a JSON scalar, or raw text."""
+    try:
+        parsed = json.loads(text)
+    except json.JSONDecodeError:
+        print(text[:500] + ("..." if len(text) > 500 else ""))
+        return
+    if isinstance(parsed, list):
+        print(f"Found {len(parsed)} items:")
+        for i, item in enumerate(parsed[:5]):
+            print(f"  {i + 1}. {json.dumps(item, indent=2)}")
+        if len(parsed) > 5:
+            print(f"  ... and {len(parsed) - 5} more items")
+    else:
+        print(f"{json.dumps(parsed, indent=2)}")
+
+
+def _print_domain_result(domain: str, domain_result: Any) -> None:
+    """Print one domain's result section (type line + JSON/text preview)."""
+    print(f"\n{domain.upper()} RESULT:")
+    print(f"Type: {type(domain_result)}")
+    if isinstance(domain_result, str):
+        _print_json_list_preview(domain_result)
+    else:
+        print(
+            str(domain_result)[:500] + ("..." if len(str(domain_result)) > 500 else "")
+        )
+
+
 @pytest.mark.skip(reason="Requires external model service")
 async def test_graph():
     try:
@@ -60,29 +90,7 @@ async def test_graph():
         if "results" in result and isinstance(result["results"], dict):
             print("\n=== RESULTS BY DOMAIN ===")
             for domain, domain_result in result["results"].items():
-                print(f"\n{domain.upper()} RESULT:")
-                print(f"Type: {type(domain_result)}")
-                if isinstance(domain_result, str):
-                    try:
-                        parsed = json.loads(domain_result)
-                        if isinstance(parsed, list):
-                            print(f"Found {len(parsed)} items:")
-                            for i, item in enumerate(parsed[:5]):
-                                print(f"  {i + 1}. {json.dumps(item, indent=2)}")
-                            if len(parsed) > 5:
-                                print(f"  ... and {len(parsed) - 5} more items")
-                        else:
-                            print(f"{json.dumps(parsed, indent=2)}")
-                    except json.JSONDecodeError:
-                        print(
-                            domain_result[:500]
-                            + ("..." if len(domain_result) > 500 else "")
-                        )
-                else:
-                    print(
-                        str(domain_result)[:500]
-                        + ("..." if len(str(domain_result)) > 500 else "")
-                    )
+                _print_domain_result(domain, domain_result)
 
         if result.get("mermaid"):
             print("\n=== MERMAID DIAGRAM ===")

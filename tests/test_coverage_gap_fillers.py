@@ -4,6 +4,7 @@ import json
 import os
 import runpy
 import sys
+from typing import Any
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -255,6 +256,34 @@ def test_main_module():
 # --- 4. Tests for portainer_agent/api_client.py ---
 
 
+def _guess_required_param_value(p: inspect.Parameter) -> Any:
+    """Guess a placeholder value for one required (no-default) parameter."""
+    if p.annotation is bytes:
+        return b"test"
+    return "test" if p.annotation is str else 1
+
+
+def _build_brute_force_kwargs(
+    sig: inspect.Signature, common_kwargs: dict[str, Any]
+) -> dict[str, Any]:
+    """Build a call-kwargs dict for one ``PortainerApi`` method under test.
+
+    Methods that accept ``**kwargs`` get every common kwarg; others get only
+    the ones they actually declare, plus a guessed value for any other
+    required (no-default) parameter.
+    """
+    has_var_keyword = any(
+        p.kind == inspect.Parameter.VAR_KEYWORD for p in sig.parameters.values()
+    )
+    if has_var_keyword:
+        return common_kwargs.copy()
+    kwargs = {k: v for k, v in common_kwargs.items() if k in sig.parameters}
+    for p_name, p in sig.parameters.items():
+        if p.default == inspect.Parameter.empty and p_name not in kwargs:
+            kwargs[p_name] = _guess_required_param_value(p)
+    return kwargs
+
+
 def test_portainer_api_brute_force(_mock_session):
     from portainer_agent.api_client import PortainerApi
 
@@ -297,19 +326,7 @@ def test_portainer_api_brute_force(_mock_session):
             continue
         print(f"Calling PortainerApi.{name}...")
         sig = inspect.signature(method)
-        has_kwargs = any(
-            p.kind == inspect.Parameter.VAR_KEYWORD for p in sig.parameters.values()
-        )
-        if has_kwargs:
-            kwargs = common_kwargs.copy()
-        else:
-            kwargs = {k: v for k, v in common_kwargs.items() if k in sig.parameters}
-            for p_name, p in sig.parameters.items():
-                if p.default == inspect.Parameter.empty and p_name not in kwargs:
-                    if p.annotation is bytes:
-                        kwargs[p_name] = b"test"
-                    else:
-                        kwargs[p_name] = "test" if p.annotation is str else 1
+        kwargs = _build_brute_force_kwargs(sig, common_kwargs)
         try:
             method(**kwargs)
         except Exception:
@@ -569,6 +586,53 @@ VALID_TOOL_ACTIONS = {
 }
 
 
+async def _call_tool_action(tool: Any, sig: inspect.Signature, act: str, mock_client: Any) -> None:
+    """Call ``tool.fn`` once for one valid action, with plausible values for
+    every parameter the tool's signature actually declares."""
+    target_params = {
+        "action": act,
+        "endpoint_id": 1,
+        "environment_id": None,  # To trigger environment_id = endpoint_id fallback (line 166)
+        "container_id": "test",
+        "stack_id": 1,
+        "user_id": 1,
+        "client": mock_client,
+        "name": "test_stack",
+        "file_content": "version: '3'\nservices:\n  web:\n    image: nginx",
+        "stack_file_content": "version: '3'\nservices:\n  web:\n    image: nginx",
+        "repo_url": "http://gitlab.example/test.git",
+        "swarm_id": "swarm123",
+        "target_endpoint_id": 2,
+        "chart_name": "nginx",
+        "release_name": "web",
+        "params_json": '{"target_endpoint_id": 2}',
+    }
+    filtered_params = {k: v for k, v in target_params.items() if k in sig.parameters}
+    # Call tool.fn directly with dynamic valid parameters
+    await tool.fn(**filtered_params)
+
+
+async def _exercise_tool_actions(tool: Any, actions: list[str], mock_client: Any) -> None:
+    """Exercise every valid action of one MCP tool, then an invalid action to
+    cover the trailing ``raise ValueError`` at the end of its routing function."""
+    sig = inspect.signature(tool.fn)
+    for act in actions:
+        await _call_tool_action(tool, sig, act, mock_client)
+
+    # Test invalid action to cover raise ValueError at the end of each routing function
+    try:
+        target_params = {
+            "action": "invalid_action_value_123",
+            "endpoint_id": 1,
+            "environment_id": None,
+            "client": mock_client,
+        }
+        filtered_params = {k: v for k, v in target_params.items() if k in sig.parameters}
+        await tool.fn(**filtered_params)
+    except ValueError:
+        pass
+
+
 @pytest.mark.asyncio
 async def test_mcp_server_comprehensive_action_routes():
     from portainer_agent.mcp_server import get_mcp_instance
@@ -582,49 +646,8 @@ async def test_mcp_server_comprehensive_action_routes():
     mock_client.get_stack.return_value = {"Name": "test_stack", "Type": 1}
 
     for tool in tool_objs:
-        tool_name = tool.name
-        actions = VALID_TOOL_ACTIONS.get(tool_name, [])
-        for act in actions:
-            sig = inspect.signature(tool.fn)
-            target_params = {
-                "action": act,
-                "endpoint_id": 1,
-                "environment_id": None,  # To trigger environment_id = endpoint_id fallback (line 166)
-                "container_id": "test",
-                "stack_id": 1,
-                "user_id": 1,
-                "client": mock_client,
-                "name": "test_stack",
-                "file_content": "version: '3'\nservices:\n  web:\n    image: nginx",
-                "stack_file_content": "version: '3'\nservices:\n  web:\n    image: nginx",
-                "repo_url": "http://gitlab.example/test.git",
-                "swarm_id": "swarm123",
-                "target_endpoint_id": 2,
-                "chart_name": "nginx",
-                "release_name": "web",
-                "params_json": '{"target_endpoint_id": 2}',
-            }
-            filtered_params = {
-                k: v for k, v in target_params.items() if k in sig.parameters
-            }
-            # Call tool.fn directly with dynamic valid parameters
-            await tool.fn(**filtered_params)
-
-        # Test invalid action to cover raise ValueError at the end of each routing function
-        try:
-            sig = inspect.signature(tool.fn)
-            target_params = {
-                "action": "invalid_action_value_123",
-                "endpoint_id": 1,
-                "environment_id": None,
-                "client": mock_client,
-            }
-            filtered_params = {
-                k: v for k, v in target_params.items() if k in sig.parameters
-            }
-            await tool.fn(**filtered_params)
-        except ValueError:
-            pass
+        actions = VALID_TOOL_ACTIONS.get(tool.name, [])
+        await _exercise_tool_actions(tool, actions, mock_client)
 
 
 @pytest.mark.asyncio

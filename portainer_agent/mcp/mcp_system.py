@@ -3,14 +3,25 @@
 Auto-generated from mcp_server.py during ecosystem standardization.
 """
 
-from typing import Any
-
-from agent_utilities.mcp.concurrency import run_blocking
 from fastmcp import FastMCP
 from fastmcp.dependencies import Depends
 from pydantic import Field
 
 from portainer_agent.auth import get_client
+from portainer_agent.mcp.action_kwargs import ActionCall, dispatch_client_action
+
+_SYSTEM_ACTIONS: dict[str, ActionCall] = {
+    "get_status": ActionCall(),
+    "get_system_info": ActionCall(),
+    "get_system_version": ActionCall(),
+    "get_settings": ActionCall(),
+    "update_settings": ActionCall(),
+    "get_tags": ActionCall(),
+    "create_tag": ActionCall(params=("name",)),
+    "delete_tag": ActionCall(params=("tag_id",)),
+    "get_motd": ActionCall(),
+    "backup_portainer": ActionCall(),
+}
 
 
 def register_system_tools(mcp: FastMCP):
@@ -37,47 +48,13 @@ def register_system_tools(mcp: FastMCP):
           - 'get_motd': Get the message of the day.
           - 'backup_portainer': Call backup_portainer
         """
-        kwargs: dict[str, Any]
-        if action == "get_status":
-            kwargs = {}
-            kwargs = {k: v for k, v in kwargs.items() if v is not None}
-            return await run_blocking(client.get_status, **kwargs)
-        if action == "get_system_info":
-            kwargs = {}
-            kwargs = {k: v for k, v in kwargs.items() if v is not None}
-            return await run_blocking(client.get_system_info, **kwargs)
-        if action == "get_system_version":
-            kwargs = {}
-            kwargs = {k: v for k, v in kwargs.items() if v is not None}
-            return await run_blocking(client.get_system_version, **kwargs)
-        if action == "get_settings":
-            kwargs = {}
-            kwargs = {k: v for k, v in kwargs.items() if v is not None}
-            return await run_blocking(client.get_settings, **kwargs)
-        if action == "update_settings":
-            kwargs = {}
-            kwargs = {k: v for k, v in kwargs.items() if v is not None}
-            return await run_blocking(client.update_settings, **kwargs)
-        if action == "get_tags":
-            kwargs = {}
-            kwargs = {k: v for k, v in kwargs.items() if v is not None}
-            return await run_blocking(client.get_tags, **kwargs)
-        if action == "create_tag":
-            kwargs = {"name": name}
-            kwargs = {k: v for k, v in kwargs.items() if v is not None}
-            return await run_blocking(client.create_tag, **kwargs)
-        if action == "delete_tag":
-            kwargs = {"tag_id": tag_id}
-            kwargs = {k: v for k, v in kwargs.items() if v is not None}
-            return await run_blocking(client.delete_tag, **kwargs)
-        if action == "get_motd":
-            kwargs = {}
-            kwargs = {k: v for k, v in kwargs.items() if v is not None}
-            return await run_blocking(client.get_motd, **kwargs)
-        if action == "backup_portainer":
-            kwargs = {}
-            kwargs = {k: v for k, v in kwargs.items() if v is not None}
-            return await run_blocking(client.backup_portainer, **kwargs)
-        raise ValueError(
-            f"Unknown action: {action}. Must be one of: get_status', 'get_system_info', 'get_system_version', 'get_settings', 'update_settings', 'get_tags', 'create_tag', 'delete_tag', 'get_motd', 'backup_portainer"
+        if action not in _SYSTEM_ACTIONS:
+            raise ValueError(
+                f"Unknown action: {action}. Must be one of: get_status', 'get_system_info', 'get_system_version', 'get_settings', 'update_settings', 'get_tags', 'create_tag', 'delete_tag', 'get_motd', 'backup_portainer"
+            )
+        return await dispatch_client_action(
+            action=action,
+            client=client,
+            values={"name": name, "tag_id": tag_id},
+            actions=_SYSTEM_ACTIONS,
         )

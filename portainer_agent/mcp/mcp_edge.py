@@ -3,14 +3,26 @@
 Auto-generated from mcp_server.py during ecosystem standardization.
 """
 
-from typing import Any
-
-from agent_utilities.mcp.concurrency import run_blocking
 from fastmcp import FastMCP
 from fastmcp.dependencies import Depends
 from pydantic import Field
 
 from portainer_agent.auth import get_client
+from portainer_agent.mcp.action_kwargs import ActionCall, dispatch_client_action
+
+_EDGE_ACTIONS: dict[str, ActionCall] = {
+    "get_edge_groups": ActionCall(),
+    "create_edge_group": ActionCall(params=("name",)),
+    "delete_edge_group": ActionCall(params=("group_id",)),
+    "get_edge_stacks": ActionCall(),
+    "get_edge_stack": ActionCall(params=("stack_id",)),
+    "create_edge_stack": ActionCall(),
+    "delete_edge_stack": ActionCall(params=("stack_id",)),
+    "get_edge_jobs": ActionCall(),
+    "get_edge_job": ActionCall(params=("job_id",)),
+    "create_edge_job": ActionCall(),
+    "delete_edge_job": ActionCall(params=("job_id",)),
+}
 
 
 def register_edge_tools(mcp: FastMCP):
@@ -26,51 +38,18 @@ def register_edge_tools(mcp: FastMCP):
         client=Depends(get_client),
     ) -> dict:
         """Manage edge operations."""
-        kwargs: dict[str, Any]
-        if action == "get_edge_groups":
-            kwargs = {}
-            kwargs = {k: v for k, v in kwargs.items() if v is not None}
-            return await run_blocking(client.get_edge_groups, **kwargs)
-        if action == "create_edge_group":
-            kwargs = {"name": name}
-            kwargs = {k: v for k, v in kwargs.items() if v is not None}
-            return await run_blocking(client.create_edge_group, **kwargs)
-        if action == "delete_edge_group":
-            kwargs = {"group_id": group_id}
-            kwargs = {k: v for k, v in kwargs.items() if v is not None}
-            return await run_blocking(client.delete_edge_group, **kwargs)
-        if action == "get_edge_stacks":
-            kwargs = {}
-            kwargs = {k: v for k, v in kwargs.items() if v is not None}
-            return await run_blocking(client.get_edge_stacks, **kwargs)
-        if action == "get_edge_stack":
-            kwargs = {"stack_id": stack_id}
-            kwargs = {k: v for k, v in kwargs.items() if v is not None}
-            return await run_blocking(client.get_edge_stack, **kwargs)
-        if action == "create_edge_stack":
-            kwargs = {}
-            kwargs = {k: v for k, v in kwargs.items() if v is not None}
-            return await run_blocking(client.create_edge_stack, **kwargs)
-        if action == "delete_edge_stack":
-            kwargs = {"stack_id": stack_id}
-            kwargs = {k: v for k, v in kwargs.items() if v is not None}
-            return await run_blocking(client.delete_edge_stack, **kwargs)
-        if action == "get_edge_jobs":
-            kwargs = {}
-            kwargs = {k: v for k, v in kwargs.items() if v is not None}
-            return await run_blocking(client.get_edge_jobs, **kwargs)
-        if action == "get_edge_job":
-            kwargs = {"job_id": job_id}
-            kwargs = {k: v for k, v in kwargs.items() if v is not None}
-            return await run_blocking(client.get_edge_job, **kwargs)
-        if action == "create_edge_job":
-            kwargs = {}
-            kwargs = {k: v for k, v in kwargs.items() if v is not None}
-            return await run_blocking(client.create_edge_job, **kwargs)
-        if action == "delete_edge_job":
-            kwargs = {"job_id": job_id}
-            kwargs = {k: v for k, v in kwargs.items() if v is not None}
-            return await run_blocking(client.delete_edge_job, **kwargs)
-        raise ValueError(
-            f"Unknown action: {action}. Must be one of: get_edge_groups', 'create_edge_group', 'delete_edge_group', 'get_edge_stacks', 'get_edge_stack', 'create_edge_stack', 'delete_edge_stack', 'get_edge_jobs', 'get_edge_job', 'create_edge_job', 'delete_edge_job"
+        if action not in _EDGE_ACTIONS:
+            raise ValueError(
+                f"Unknown action: {action}. Must be one of: get_edge_groups', 'create_edge_group', 'delete_edge_group', 'get_edge_stacks', 'get_edge_stack', 'create_edge_stack', 'delete_edge_stack', 'get_edge_jobs', 'get_edge_job', 'create_edge_job', 'delete_edge_job"
+            )
+        return await dispatch_client_action(
+            action=action,
+            client=client,
+            values={
+                "name": name,
+                "group_id": group_id,
+                "job_id": job_id,
+                "stack_id": stack_id,
+            },
+            actions=_EDGE_ACTIONS,
         )

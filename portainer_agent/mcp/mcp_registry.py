@@ -3,14 +3,19 @@
 Auto-generated from mcp_server.py during ecosystem standardization.
 """
 
-from typing import Any
-
-from agent_utilities.mcp.concurrency import run_blocking
 from fastmcp import FastMCP
 from fastmcp.dependencies import Depends
 from pydantic import Field
 
 from portainer_agent.auth import get_client
+from portainer_agent.mcp.action_kwargs import ActionCall, dispatch_client_action
+
+_REGISTRY_ACTIONS: dict[str, ActionCall] = {
+    "get_registries": ActionCall(),
+    "get_registry": ActionCall(params=("registry_id",)),
+    "create_registry": ActionCall(params=("name", "registry_type", "url")),
+    "delete_registry": ActionCall(params=("registry_id",)),
+}
 
 
 def register_registry_tools(mcp: FastMCP):
@@ -26,27 +31,18 @@ def register_registry_tools(mcp: FastMCP):
         client=Depends(get_client),
     ) -> dict:
         """Manage registry operations."""
-        kwargs: dict[str, Any]
-        if action == "get_registries":
-            kwargs = {}
-            kwargs = {k: v for k, v in kwargs.items() if v is not None}
-            return await run_blocking(client.get_registries, **kwargs)
-        if action == "get_registry":
-            kwargs = {"registry_id": registry_id}
-            kwargs = {k: v for k, v in kwargs.items() if v is not None}
-            return await run_blocking(client.get_registry, **kwargs)
-        if action == "create_registry":
-            kwargs = {
+        if action not in _REGISTRY_ACTIONS:
+            raise ValueError(
+                f"Unknown action: {action}. Must be one of: get_registries', 'get_registry', 'create_registry', 'delete_registry"
+            )
+        return await dispatch_client_action(
+            action=action,
+            client=client,
+            values={
+                "registry_id": registry_id,
                 "name": name,
                 "registry_type": registry_type,
                 "url": url,
-            }
-            kwargs = {k: v for k, v in kwargs.items() if v is not None}
-            return await run_blocking(client.create_registry, **kwargs)
-        if action == "delete_registry":
-            kwargs = {"registry_id": registry_id}
-            kwargs = {k: v for k, v in kwargs.items() if v is not None}
-            return await run_blocking(client.delete_registry, **kwargs)
-        raise ValueError(
-            f"Unknown action: {action}. Must be one of: get_registries', 'get_registry', 'create_registry', 'delete_registry"
+            },
+            actions=_REGISTRY_ACTIONS,
         )
