@@ -7,7 +7,7 @@ for the full explanation: the running server's ``get_mcp_instance()`` in
 ``mcp_server.py`` discovers tools by inspecting its OWN module namespace via
 ``register_tool_surface(..., tools_module=sys.modules[__name__])``, never
 importing the ``portainer_agent.mcp`` subpackage). Before the
-CXA-WD11-FL-03 complexity-collapse pass, none of these eight modules had any
+complexity-collapse pass, none of these eight modules had any
 test coverage at all -- each ``register_*_tools.portainer_*`` function was a
 long if/elif chain at 10-35 cyclomatic / 18-68 cognitive complexity. They are
 now table dispatch through ``portainer_agent.mcp.action_kwargs``; this file
