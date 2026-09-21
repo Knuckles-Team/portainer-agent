@@ -31,7 +31,9 @@ def _load_module():
     spec = importlib.util.spec_from_file_location(
         "analyze_health_under_test", _SCRIPT_PATH
     )
+    assert spec is not None
     module = importlib.util.module_from_spec(spec)
+    assert spec.loader is not None
     spec.loader.exec_module(module)
     return module
 

@@ -51,7 +51,7 @@ pytest.importorskip(
 
 from agent_utilities.knowledge_graph.core.session import GraphSession, use_session
 from agent_utilities.knowledge_graph.memory.native_ingest import NativeIngestError
-from agent_utilities.models.company_brain import ActorType
+from agent_utilities.security.actor_identity import ActorType
 from agent_utilities.security.brain_context import ActorContext, use_actor
 
 from portainer_agent.kg_ingest import (
@@ -251,7 +251,7 @@ def test_ingest_stacks_git_backed_creates_repository_and_deployed_from_edge():
     repo_node = "git:repo:github.com/acme/web-stack"
     repo = c.nodes.values[repo_node]
     assert repo["node_type"] == "Repository"
-    assert repo["url"] == "https://github.com/acme/web-stack"
+    assert repo["url"] == "[REDACTED_LOCATION]"
     assert (
         "portainer:stack:5",
         repo_node,
