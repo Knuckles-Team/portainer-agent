@@ -277,7 +277,7 @@ sync:
   updated_field: null
   pagination: null
   doc_type: environment
-  tool_schema_sha256: b50529ca205c7216273190f09e90c507282e9b072f31d151b2f637d4197eb3cb
+  tool_schema_sha256: d94991141d06d1cc62ca03696e152ea79a717eea6787eca85f1e9e775ca86308
   raw:
     server: portainer-mcp
     tool: portainer_environment
@@ -287,6 +287,7 @@ sync:
     title_field: Name
     text_field: URL
     doc_type: environment
+    params_style: args
 - preset: portainer-stacks
   server: portainer-mcp
   tool: portainer_stack
@@ -298,7 +299,7 @@ sync:
   updated_field: null
   pagination: null
   doc_type: stack
-  tool_schema_sha256: edd1ff95e420d32372d5544ae802f85527155df6125b36bf68aef75be9f60852
+  tool_schema_sha256: fb66faff858047ae4d72fd5dcebc39dd57a5d565321f02f010dbcf679f548ff8
   raw:
     server: portainer-mcp
     tool: portainer_stack

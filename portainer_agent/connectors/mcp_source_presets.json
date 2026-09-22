@@ -8,7 +8,8 @@
     "id_field": "Id",
     "title_field": "Name",
     "text_field": "URL",
-    "doc_type": "environment"
+    "doc_type": "environment",
+    "params_style": "args"
   },
   "portainer-stacks": {
     "server": "portainer-mcp",

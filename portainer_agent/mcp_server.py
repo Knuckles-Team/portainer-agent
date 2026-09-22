@@ -21,7 +21,7 @@ warnings.filterwarnings("ignore", message=".*urllib3.*or charset_normalizer.*")
 
 import logging
 import sys
-from typing import Any
+from typing import Any, Literal
 
 from agent_utilities.core.config import load_config
 from agent_utilities.mcp.action_dispatch import resolve_action
@@ -169,7 +169,20 @@ def register_auth_tools(mcp: FastMCP):
 def register_environment_tools(mcp: FastMCP):
     @mcp.tool(tags={"Environment"})
     async def portainer_environment(
-        action: str = Field(
+        action: Literal[
+            "create_endpoint",
+            "create_endpoint_group",
+            "delete_endpoint",
+            "delete_endpoint_group",
+            "get_endpoint",
+            "get_endpoint_groups",
+            "get_endpoint_settings",
+            "get_endpoints",
+            "snapshot_all_endpoints",
+            "snapshot_endpoint",
+            "update_endpoint",
+            "update_endpoint_settings",
+        ] = Field(
             description="Action to perform. Must be one of: 'get_endpoints', 'get_endpoint', 'create_endpoint', 'update_endpoint', 'delete_endpoint', 'snapshot_endpoint', 'snapshot_all_endpoints', 'get_endpoint_groups', 'create_endpoint_group', 'delete_endpoint_group', 'get_endpoint_settings', 'update_endpoint_settings'"
         ),
         limit: int | None = Field(default=None, description="limit"),
@@ -594,7 +607,27 @@ def register_docker_tools(mcp: FastMCP):
 def register_stack_tools(mcp: FastMCP):
     @mcp.tool(tags={"Stack"})
     async def portainer_stack(
-        action: str = Field(
+        action: Literal[
+            "associate_stack",
+            "create_kubernetes_stack_from_repository",
+            "create_kubernetes_stack_from_string",
+            "create_standalone_stack_from_repository",
+            "create_standalone_stack_from_string",
+            "create_swarm_stack_from_repository",
+            "create_swarm_stack_from_string",
+            "delete_stack",
+            "export_all_stacks",
+            "get_stack",
+            "get_stack_by_name",
+            "get_stack_file",
+            "get_stacks",
+            "migrate_stack",
+            "redeploy_stack_git",
+            "start_stack",
+            "stop_stack",
+            "update_stack",
+            "update_stack_git",
+        ] = Field(
             description="Action to perform. Must be one of: 'get_stacks', 'get_stack', 'get_stack_by_name', 'get_stack_file', 'export_all_stacks', 'create_standalone_stack_from_string', 'create_standalone_stack_from_repository', 'create_swarm_stack_from_string', 'create_swarm_stack_from_repository', 'create_kubernetes_stack_from_string', 'create_kubernetes_stack_from_repository', 'update_stack', 'delete_stack', 'start_stack', 'stop_stack', 'migrate_stack', 'update_stack_git', 'redeploy_stack_git', 'associate_stack'"
         ),
         stack_id: int | None = Field(default=None, description="stack id"),
