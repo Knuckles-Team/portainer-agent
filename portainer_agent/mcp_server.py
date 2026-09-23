@@ -167,7 +167,18 @@ def register_auth_tools(mcp: FastMCP):
 
 
 def register_environment_tools(mcp: FastMCP):
-    @mcp.tool(tags={"Environment"})
+    @mcp.tool(
+        tags={"Environment"},
+        annotations={
+            "readOnlyHint": False,
+            "destructiveHint": True,
+            "idempotentHint": False,
+            "openWorldHint": True,
+        },
+        meta={
+            "eg.annotations": {"modalities_in": ["text"], "modalities_out": ["text"]}
+        },
+    )
     async def portainer_environment(
         action: Literal[
             "create_endpoint",
@@ -605,7 +616,18 @@ def register_docker_tools(mcp: FastMCP):
 
 
 def register_stack_tools(mcp: FastMCP):
-    @mcp.tool(tags={"Stack"})
+    @mcp.tool(
+        tags={"Stack"},
+        annotations={
+            "readOnlyHint": False,
+            "destructiveHint": True,
+            "idempotentHint": False,
+            "openWorldHint": True,
+        },
+        meta={
+            "eg.annotations": {"modalities_in": ["text"], "modalities_out": ["text"]}
+        },
+    )
     async def portainer_stack(
         action: Literal[
             "associate_stack",
