@@ -161,65 +161,6 @@ docker compose -f docker/mcp.compose.yml up -d
 docker compose -f docker/mcp.compose.yml logs -f
 ```
 
-## A2A agent server
-
-`portainer-agent` also ships an **A2A agent server** (console script `portainer-agent`).
-It connects to the MCP server over HTTP and exposes a natural-language interface with
-an optional web UI.
-
-```bash
-export PORTAINER_URL=http://your-portainer:9000
-export PORTAINER_TOKEN=your_api_token
-portainer-agent --provider openai --model-id gpt-4o --api-key sk-...
-```
-
-The repo ships [`docker/agent.compose.yml`](https://github.com/Knuckles-Team/portainer-agent/blob/main/docker/agent.compose.yml),
-which runs the MCP server and the agent together. The agent listens on `:9004` and
-reaches the MCP server by container name via `MCP_URL`:
-
-```yaml
-services:
-  portainer-agent-mcp:
-    image: example/portainer-agent@sha256:<digest>
-    container_name: portainer-agent-mcp
-    hostname: portainer-agent-mcp
-    restart: always
-    env_file:
-      - ../.env
-    environment:
-      - PYTHONUNBUFFERED=1
-      - HOST=0.0.0.0
-      - PORT=8000
-      - TRANSPORT=streamable-http
-    ports:
-      - "8000:8000"
-
-  portainer-agent-agent:
-    image: example/portainer-agent@sha256:<digest>
-    container_name: portainer-agent-agent
-    hostname: portainer-agent-agent
-    restart: always
-    depends_on:
-      - portainer-agent-mcp
-    env_file:
-      - ../.env
-    command: ["portainer-agent"]
-    environment:
-      - PYTHONUNBUFFERED=1
-      - HOST=0.0.0.0
-      - PORT=9004
-      - MCP_URL=http://portainer-agent-mcp:8000/mcp
-      - PROVIDER=${PROVIDER:-openai}
-      - MODEL_ID=${MODEL_ID:-gpt-4o}
-      - ENABLE_WEB_UI=True
-    ports:
-      - "9004:9004"
-```
-
-```bash
-docker compose -f docker/agent.compose.yml up -d
-```
-
 ## Behind a Caddy reverse proxy
 
 Expose the HTTP server on a hostname with automatic TLS. Add to your `Caddyfile`:

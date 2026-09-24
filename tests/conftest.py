@@ -92,8 +92,8 @@ def _clean_argv(monkeypatch):
     element before every test.
 
     Several tests in this suite exercise this package's own argparse-based
-    CLI entrypoint — directly via `get_mcp_instance()`/`agent_server()`, or
-    indirectly via `runpy.run_module(..., run_name="__main__")` — and that
+    CLI entrypoint — directly via `get_mcp_instance()`, or indirectly via
+    `runpy.run_module(..., run_name="__main__")` — and that
     argparse call reads the LIVE `sys.argv`. Left alone, pytest's own
     invocation flags (`-p no:randomly`, `-n auto`, `--randomly-seed=...`, ...)
     end up in that argv and are rejected by the module's CLI parser:

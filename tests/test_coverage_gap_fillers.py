@@ -42,9 +42,10 @@ def test_init_module_lazy_attributes():
     assert hasattr(portainer_agent, "_MCP_AVAILABLE")
     assert hasattr(portainer_agent, "_AGENT_AVAILABLE")
 
-    # Test getting dynamic lazy attributes
+    # Test getting dynamic lazy attributes; agent_server was retired
+    # fleet-wide, so _AGENT_AVAILABLE is a permanent False.
     assert portainer_agent._MCP_AVAILABLE is True
-    assert portainer_agent._AGENT_AVAILABLE is True
+    assert portainer_agent._AGENT_AVAILABLE is False
 
     # Test requesting nonexistent attribute raises AttributeError
     with pytest.raises(AttributeError):
@@ -87,7 +88,7 @@ def test_init_lazy_expose_members():
     import portainer_agent
 
     # Trigger hasattr and getattr via __getattr__
-    assert portainer_agent.agent_server is not None
+    assert portainer_agent.mcp_server is not None
 
     # Access an unexposed attribute (__version__) on optional module to cover line 69
     val = portainer_agent.__getattr__("__version__")
@@ -156,85 +157,7 @@ def test_auth_get_client_unauthorized_error():
             portainer_agent.auth.get_client()
 
 
-# --- 3. Tests for portainer_agent/agent_server.py & __main__.py ---
-
-
-def test_agent_server_debug_mode():
-    with (
-        patch("agent_utilities.initialize_workspace"),
-        patch("agent_utilities.load_identity", return_value={"name": "test"}),
-        patch(
-            "agent_utilities.build_system_prompt_from_workspace", return_value="prompt"
-        ),
-        patch("agent_utilities.create_agent_server") as mock_server,
-        patch("agent_utilities.create_agent_parser") as mock_parser,
-        patch("sys.argv", ["agent_server.py", "--debug"]),
-    ):
-        mock_args = MagicMock()
-        mock_args.debug = True
-        mock_args.mcp_url = None
-        mock_args.mcp_config = None
-        mock_args.host = "localhost"
-        mock_args.port = 8000
-        mock_args.provider = "openai"
-        mock_args.model_id = "gpt-4"
-        mock_args.base_url = None
-        mock_args.api_key = "test"
-        mock_args.custom_skills_directory = None
-        mock_args.web = False
-        mock_args.otel = False
-        mock_args.otel_endpoint = None
-        mock_args.otel_headers = None
-        mock_args.otel_public_key = None
-        mock_args.otel_secret_key = None
-        mock_args.otel_protocol = "http/protobuf"
-        mock_parser.return_value.parse_args.return_value = mock_args
-
-        import importlib
-        import sys
-
-        mod = sys.modules.get("portainer_agent.agent_server")
-        if not mod:
-            mod = importlib.import_module("portainer_agent.agent_server")
-
-        importlib.reload(mod)
-        mod.agent_server()
-        assert mock_server.called
-
-
-def test_agent_server_main_execution():
-    with (
-        patch("agent_utilities.initialize_workspace"),
-        patch("agent_utilities.load_identity", return_value={"name": "test"}),
-        patch(
-            "agent_utilities.build_system_prompt_from_workspace", return_value="prompt"
-        ),
-        patch("agent_utilities.create_agent_server") as mock_server,
-        patch("agent_utilities.create_agent_parser") as mock_parser,
-        patch("sys.argv", ["agent_server.py"]),
-    ):
-        mock_args = MagicMock()
-        mock_args.debug = False
-        mock_args.mcp_url = None
-        mock_args.mcp_config = None
-        mock_args.host = "localhost"
-        mock_args.port = 8000
-        mock_args.provider = "openai"
-        mock_args.model_id = "gpt-4"
-        mock_args.base_url = None
-        mock_args.api_key = "test"
-        mock_args.custom_skills_directory = None
-        mock_args.web = False
-        mock_args.otel = False
-        mock_args.otel_endpoint = None
-        mock_args.otel_headers = None
-        mock_args.otel_public_key = None
-        mock_args.otel_secret_key = None
-        mock_args.otel_protocol = "http/protobuf"
-        mock_parser.return_value.parse_args.return_value = mock_args
-
-        runpy.run_module("portainer_agent.agent_server", run_name="__main__")
-        assert mock_server.called
+# --- 3. Tests for portainer_agent/__main__.py ---
 
 
 def test_main_module():
@@ -243,14 +166,14 @@ def test_main_module():
     # `-p no:randomly`) leaks in and is rejected by the module's CLI
     # parser. Pin argv to a clean single-element list for the duration of
     # the run so the module under test sees the same argv regardless of how
-    # pytest was invoked (agent_server is mocked out here too, but this
-    # keeps the runpy call site safe if that mock is ever loosened).
+    # pytest was invoked. agent_server was retired fleet-wide; __main__.py
+    # now runs the MCP server directly, so that's what's mocked here.
     with (
-        patch("portainer_agent.agent_server.agent_server") as mock_agent_server,
+        patch("portainer_agent.mcp_server.mcp_server") as mock_mcp_server,
         patch("sys.argv", ["__main__.py"]),
     ):
         runpy.run_module("portainer_agent.__main__", run_name="__main__")
-        mock_agent_server.assert_called_once()
+        mock_mcp_server.assert_called_once()
 
 
 # --- 4. Tests for portainer_agent/api_client.py ---

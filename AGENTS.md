@@ -81,15 +81,9 @@ ptw .  # If pytest-watch is installed
 # Execution Commands
 # portainer-mcp
 portainer_agent.mcp:mcp_server
-# portainer-agent
-portainer_agent.agent:agent_server
-
-# Development server with reload
-uvicorn portainer_agent.agent_server:app --reload  # If using FastAPI
 
 ## Project Structure Quick Reference
 - MCP Entry Point → `mcp_server.py`
-- Agent Entry Point → `agent.py`
 - Source Code → `portainer_agent/`
 - Skills → `skills/` (if exists)
 
