@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 try:
-    from agent_utilities.core.exceptions import AuthError, UnauthorizedError
+    from agent_connector_sdk.exceptions import AuthError, UnauthorizedError
 except ImportError:
 
     class AuthError(Exception):  # type: ignore[no-redef]

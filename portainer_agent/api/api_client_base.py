@@ -18,10 +18,8 @@ from typing import Any
 
 import httpx
 import requests
-from agent_utilities.core.transport_security import (
-    ResolvedTLSProfile,
-    resolve_configured_tls_profile,
-)
+from agent_connector_sdk.tls.profile import ResolvedTLSProfile
+from agent_connector_sdk.tls.resolve import resolve_tls_profile
 from agent_utilities.httpsupport import AuthHeaderInjector, TokenAuth
 from agent_utilities.httpsupport import BaseApiClient as FleetApiClient
 
@@ -100,7 +98,7 @@ class BaseApiClient:
         self.base_url = base_url.rstrip("/")
         self.api_base = f"{self.base_url}/api"
         self.timeout = timeout or self.DEFAULT_TIMEOUT
-        self.tls_profile = tls_profile or resolve_configured_tls_profile("portainer")
+        self.tls_profile = tls_profile or resolve_tls_profile("portainer")
         self.session = self.tls_profile.configure_requests_session(requests.Session())
         if token:
             self.session.headers.update({"X-API-Key": token})

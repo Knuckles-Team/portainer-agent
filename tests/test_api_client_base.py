@@ -8,7 +8,7 @@ requests-style session — no live Portainer.
 from types import SimpleNamespace
 
 import pytest
-from agent_utilities.core.exceptions import AuthError, ParameterError
+from agent_connector_sdk.exceptions import AuthError, ParameterError
 
 from portainer_agent.api.api_client_base import BaseApiClient
 
