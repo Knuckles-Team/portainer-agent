@@ -592,8 +592,6 @@ Detailed graph node architecture explanations, custom skill configurations, and 
 | `TRANSPORT` | `stdio` | options: stdio, streamable-http, sse |
 | `ENABLE_OTEL` | `True` |  |
 | `OTEL_EXPORTER_OTLP_ENDPOINT` | `http://localhost:8080/api/public/otel` |  |
-| `OTEL_EXPORTER_OTLP_PUBLIC_KEY` | secret-injected |  |
-| `OTEL_EXPORTER_OTLP_SECRET_KEY` | secret-injected |  |
 | `OTEL_EXPORTER_OTLP_PROTOCOL` | `http/protobuf` |  |
 | `EUNOMIA_TYPE` | `none` | options: none, embedded, remote |
 | `EUNOMIA_POLICY_FILE` | `mcp_policies.json` |  |
@@ -601,6 +599,8 @@ Detailed graph node architecture explanations, custom skill configurations, and 
 | `PORTAINER_URL` | `http://localhost:9000` |  |
 | `PORTAINER_PASSWORD` | secret-injected |  |
 | `PORTAINER_TOKEN` | secret-injected |  |
+| `PORTAINER_TLS_PROFILE` | `system` | TLS peer and hostname verification is mandatory. Select trust anchors, mTLS, and proxy policy through the XDG AgentConfig TLS_PROFILE/TLS_PROFILE_REF fields. |
+| `PORTAINER_TLS_PROFILE_REF` | — |  |
 | `PORTAINER_GIT_USERNAME` | `oauth2` | username for git-backed stack auth (default: oauth2) |
 | `PORTAINER_GIT_TOKEN` | secret-injected | token for private git repos used by stacks |
 | `GITLAB_TOKEN` | secret-injected | fallback token when PORTAINER_GIT_TOKEN is unset |
@@ -614,6 +614,8 @@ Detailed graph node architecture explanations, custom skill configurations, and 
 | `USERTOOL` | `True` |  |
 | `REGISTRYTOOL` | `True` |  |
 | `SYSTEMTOOL` | `True` |  |
+| `PORTAINER_AGENT_MCP_IMAGE` | `registry.example.invalid/portainer-agent-mcp@sha256:<digest>` |  |
+| `PORTAINER_AGENT_AGENT_IMAGE` | `registry.example.invalid/portainer-agent@sha256:<digest>` |  |
 
 #### Inherited agent-utilities variables (apply to every connector)
 
@@ -632,11 +634,11 @@ Detailed graph node architecture explanations, custom skill configurations, and 
 | `DEBUG` | `False` | Verbose logging |
 | `PYTHONUNBUFFERED` | `1` | Unbuffered stdout (recommended in containers) |
 | `MCP_URL` | `http://localhost:8000/mcp` | URL of the MCP server the agent connects to |
-| `PROVIDER` | `openai` | LLM provider for the agent |
-| `MODEL_ID` | `gpt-4o` | Model id for the agent |
+| `PROVIDER` | — | Operator-configured LLM provider for the agent |
+| `MODEL_ID` | — | Operator-configured model id for the agent |
 | `ENABLE_WEB_UI` | `True` | Serve the AG-UI web interface |
 
-_27 package + 16 inherited variable(s). Auto-generated from `.env.example` + the shared agent-utilities set — do not edit._
+_29 package + 16 inherited variable(s). Auto-generated from `.env.example` + the shared agent-utilities set — do not edit._
 <!-- ENV-VARS-TABLE:END -->
 
 
