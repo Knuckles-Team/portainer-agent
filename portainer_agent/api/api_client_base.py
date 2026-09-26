@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Portainer HTTP base built on ``agent_utilities.http.BaseApiClient``.
+"""Portainer HTTP base built on ``agent_utilities.httpsupport.BaseApiClient``.
 
 CONCEPT:AU-ECO.ui.fleet-http-client-library (Fleet HTTP Client Library) adoption: the public surface
 The plumbing — typed error mapping, rate-limit capture, bounded 429 backoff,

@@ -1,7 +1,7 @@
 """Facade-parity tests for the current BaseApiClient.
 
 The plumbing (typed error mapping, rate-limit capture, bounded 429 backoff)
-comes from the shared agent_utilities.http fleet base. Transport is a fake
+comes from the shared agent_utilities.httpsupport fleet base. Transport is a fake
 requests-style session — no live Portainer.
 """
 
@@ -102,7 +102,7 @@ def test_typed_error_mapping():
 
 def test_429_backoff_retries_through_session(monkeypatch):
     sleeps: list[float] = []
-    monkeypatch.setattr("agent_utilities.http.client.time.sleep", sleeps.append)
+    monkeypatch.setattr("agent_utilities.httpsupport.client.time.sleep", sleeps.append)
     client, fake = _client(
         [
             _response(status_code=429, headers={"Retry-After": "1"}),
