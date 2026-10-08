@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- Per-user git credentials (typed, 1:1): get/get-one/create/update/delete via
+- Per-user git credentials (typed, 1:1): get/get-one/create/update/remove via
   `/users/{id}/gitcredentials`, exposed as `port__user` actions. Provision a
   reusable credential once and bind it to git-backed stacks via
   `RepositoryGitCredentialID` so Portainer redeploys them unattended.
