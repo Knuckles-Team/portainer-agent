@@ -846,7 +846,7 @@
 
 <h1 id="usage-api-cli-mcp">Usage — API / CLI / MCP<a class="headerlink" href="#usage-api-cli-mcp" title="Permanent link">&para;</a></h1>
 <p><code>portainer-agent</code> exposes the same capability three ways: as <strong>MCP tools</strong> an agent
-calls, as a <strong>Python API</strong> (<code>PortainerApi</code>) you import, and as <strong>console scripts</strong> you
+calls, as a <strong>Python API</strong> (<code>PortainerApi</code>) the operator import, and as <strong>console scripts</strong> the operator
 run. The complete tool surface and the environment toggles are in <a href="../overview/">Overview</a>.</p>
 <h2 id="as-an-mcp-server">As an MCP server<a class="headerlink" href="#as-an-mcp-server" title="Permanent link">&para;</a></h2>
 <p>Once <a href="../deployment/">deployed</a>, the server registers one action-dispatch tool per
@@ -921,7 +921,7 @@ management domain. Each domain is enabled by default and can be toggled off with
 </ul>
 <h2 id="as-a-python-api">As a Python API<a class="headerlink" href="#as-a-python-api" title="Permanent link">&para;</a></h2>
 <p><code>PortainerApi</code> is a composed REST client built from one sub-client per management
-domain. Construct it directly, or build one from the environment with <code>get_client()</code>.</p>
+domain. Built it directly, or build one from the environment with <code>get_client()</code>.</p>
 <div class="language-python highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">portainer_agent.api_client</span><span class="w"> </span><span class="kn">import</span> <span class="n">PortainerApi</span>
 </span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>
 </span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="n">api</span> <span class="o">=</span> <span class="n">PortainerApi</span><span class="p">(</span>
@@ -959,7 +959,7 @@ domain. Construct it directly, or build one from the environment with <code>get_
 </span></code></pre></div>
 <p>Both honor the <code>PORTAINER_*</code> environment variables described in
 <a href="../deployment/#configuration-environment">Deployment</a>. The agent reaches the MCP server
-via <code>MCP_URL</code> (or launches it from <code>mcp_config.json</code>) and routes each request to the
+via <code>MCP_URL</code> (or starts it from <code>mcp_config.json</code>) and routes each request to the
 relevant domain tool.</p>
 
 
