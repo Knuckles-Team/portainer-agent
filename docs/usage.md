@@ -1,7 +1,7 @@
 # Usage — API / CLI / MCP
 
 `portainer-agent` exposes the same capability three ways: as **MCP tools** an agent
-calls, as a **Python API** (`PortainerApi`) you import, and as **console scripts** you
+calls, as a **Python API** (`PortainerApi`) the operator import, and as **console scripts** the operator
 run. The complete tool surface and the environment toggles are in [Overview](overview.md).
 
 ## As an MCP server
@@ -32,7 +32,7 @@ Example agent prompts that map onto these tools:
 ## As a Python API
 
 `PortainerApi` is a composed REST client built from one sub-client per management
-domain. Construct it directly, or build one from the environment with `get_client()`.
+domain. Built it directly, or build one from the environment with `get_client()`.
 
 ```python
 from portainer_agent.api_client import PortainerApi
@@ -84,5 +84,5 @@ portainer-agent --provider openai --model-id gpt-4o --api-key sk-...
 
 Both honor the `PORTAINER_*` environment variables described in
 [Deployment](deployment.md#configuration-environment). The agent reaches the MCP server
-via `MCP_URL` (or launches it from `mcp_config.json`) and routes each request to the
+via `MCP_URL` (or starts it from `mcp_config.json`) and routes each request to the
 relevant domain tool.
