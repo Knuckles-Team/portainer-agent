@@ -8,7 +8,7 @@ from typing import Any
 from unittest.mock import MagicMock, patch
 
 import pytest
-from agent_utilities.core.exceptions import UnauthorizedError
+from agent_connector_sdk.exceptions import UnauthorizedError
 from starlette.datastructures import Headers
 from starlette.requests import Request
 
@@ -126,7 +126,7 @@ def test_auth_get_client_uses_configured_tls_profile():
     with (
         patch.dict(os.environ, env_mock),
         patch(
-            "portainer_agent.auth.resolve_configured_tls_profile",
+            "portainer_agent.auth.resolve_tls_profile",
             return_value=profile,
         ) as resolver,
         patch("portainer_agent.auth.PortainerApi", return_value=expected) as factory,
@@ -341,7 +341,7 @@ def test_api_client_import_fallback():
     original_import = builtins.__import__
 
     def mock_import(name, *args, **kwargs):
-        if "agent_utilities.core.exceptions" in name:
+        if "agent_connector_sdk.exceptions" in name:
             raise ImportError("Simulated import error")
         return original_import(name, *args, **kwargs)
 

@@ -1,9 +1,10 @@
-"""Native epistemic-graph ingestion for Portainer infrastructure records.
+"""Epistemic-graph ingestion for Portainer infrastructure records.
 
-All writes use the required ``agent_utilities.knowledge_graph.memory.native_ingest``
-primitive. Nodes use canonical ``node_type`` and edges use canonical ``relationship``;
-nodes and edges commit in one native transaction. Missing engine dependencies, rejected
-records, conflicts, and transaction failures propagate as ``NativeIngestError``.
+All writes use ``agent_connector_sdk.ingest`` -- the generated ``SourceIngest``
+client, not a local ingestion helper. Nodes use canonical ``node_type`` and edges
+use canonical ``relationship``; nodes and edges commit in one submission. Missing
+engine dependencies, rejected records, conflicts, and submission failures propagate
+as ``IngestError``/``IngestUnavailableError``.
 """
 
 from __future__ import annotations
@@ -12,8 +13,14 @@ import logging
 from typing import Any
 from urllib.parse import urlsplit
 
-from agent_utilities.knowledge_graph.memory.native_ingest import (
-    ingest_entities as _native_ingest_entities,
+from agent_connector_sdk.ingest import (
+    ChangeSet,
+    Entity,
+    IngestBinding,
+    IngestError,
+    KnowledgeIngest,
+    Relationship,
+    current_ingest,
 )
 
 logger = logging.getLogger("portainer_agent.kg")
@@ -21,25 +28,56 @@ logger = logging.getLogger("portainer_agent.kg")
 _SOURCE = "portainer-agent"
 _DOMAIN = "portainer"
 
+_BINDING = IngestBinding(connector=_SOURCE, stream=_DOMAIN)
 
-def ingest_entities(
+_ENTITY_RESERVED_KEYS = frozenset({"id", "node_type"})
+_RELATIONSHIP_RESERVED_KEYS = frozenset({"source", "target", "relationship"})
+
+
+def _to_entity(record: dict[str, Any]) -> Entity:
+    return Entity(
+        id=record.get("id"),
+        node_type=record.get("node_type"),
+        properties={
+            key: value
+            for key, value in record.items()
+            if key not in _ENTITY_RESERVED_KEYS
+        },
+    )
+
+
+def _to_relationship(record: dict[str, Any]) -> Relationship:
+    properties = {
+        key: value
+        for key, value in record.items()
+        if key not in _RELATIONSHIP_RESERVED_KEYS
+    }
+    return Relationship(
+        source=record["source"],
+        target=record["target"],
+        relationship=record["relationship"],
+        properties=properties or None,
+    )
+
+
+async def ingest_entities(
     entities: list[dict[str, Any]],
     relationships: list[dict[str, Any]] | None = None,
     *,
-    source: str = _SOURCE,
-    domain: str = _DOMAIN,
-    client: Any | None = None,
-    graph: str | None = None,
+    ingest: KnowledgeIngest | None = None,
 ) -> dict[str, int]:
-    """Write canonical typed nodes and relationships in one native transaction."""
-    return _native_ingest_entities(
-        entities,
-        relationships,
-        source=source,
-        domain=domain,
-        client=client,
-        graph=graph,
+    """Write canonical typed nodes and relationships in one submission."""
+    if not entities:
+        raise IngestError("ingest_entities needs at least one entity")
+    change_set = ChangeSet(
+        entities=tuple(_to_entity(entity) for entity in entities),
+        relationships=tuple(
+            _to_relationship(relationship) for relationship in relationships or ()
+        ),
     )
+    service = ingest or current_ingest()
+    receipt = await service.submit(_BINDING, change_set)
+    return {"nodes": receipt.affected_count, "edges": receipt.relationship_count}
 
 
 def _get(rec: dict[str, Any], *keys: str, default: Any = None) -> Any:
@@ -50,11 +88,10 @@ def _get(rec: dict[str, Any], *keys: str, default: Any = None) -> Any:
     return default
 
 
-def ingest_environments(
+async def ingest_environments(
     endpoints: list[dict[str, Any]],
     *,
-    client: Any | None = None,
-    graph: str | None = None,
+    ingest: KnowledgeIngest | None = None,
 ) -> dict[str, int]:
     """Map Portainer endpoint records → ``:Environment`` (+ ``:EndpointGroup``) nodes."""
     entities: list[dict[str, Any]] = []
@@ -90,7 +127,7 @@ def ingest_environments(
                     "relationship": "partOfEndpointGroup",
                 }
             )
-    return ingest_entities(entities, relationships, client=client, graph=graph)
+    return await ingest_entities(entities, relationships, ingest=ingest)
 
 
 def _host_path_from_url_scheme(raw: str) -> tuple[str, str] | None:
@@ -165,11 +202,10 @@ def _repo_from_git_config(
     return repo_node, clean_url, ref, compose_path
 
 
-def ingest_stacks(
+async def ingest_stacks(
     stacks: list[dict[str, Any]],
     *,
-    client: Any | None = None,
-    graph: str | None = None,
+    ingest: KnowledgeIngest | None = None,
 ) -> dict[str, int]:
     """Map Portainer stack records → ``:Stack`` nodes linked to their ``:Environment``.
 
@@ -221,15 +257,14 @@ def ingest_stacks(
                     "relationship": "inEnvironment",
                 }
             )
-    return ingest_entities(entities, relationships, client=client, graph=graph)
+    return await ingest_entities(entities, relationships, ingest=ingest)
 
 
-def ingest_containers(
+async def ingest_containers(
     containers: list[dict[str, Any]],
     environment_id: int | str,
     *,
-    client: Any | None = None,
-    graph: str | None = None,
+    ingest: KnowledgeIngest | None = None,
 ) -> dict[str, int]:
     """Map Docker container records → ``:Container`` nodes in an ``:Environment``.
 
@@ -275,7 +310,7 @@ def ingest_containers(
                     "relationship": "deployedByStack",
                 }
             )
-    return ingest_entities(entities, relationships, client=client, graph=graph)
+    return await ingest_entities(entities, relationships, ingest=ingest)
 
 
 def _status_label(val: Any) -> Any:

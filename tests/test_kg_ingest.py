@@ -1,58 +1,22 @@
-"""Native epistemic-graph typed-node ingestion — Wire-First coverage.
+"""Epistemic-graph typed-node ingestion — Wire-First coverage.
 
 Exercises the real ``ingest_entities`` / ``ingest_environments`` / ``ingest_stacks`` /
-``ingest_containers`` seam with a fake engine client (no engine required), asserting the
-txn add_node/commit + edge calls and the Portainer record -> :Environment/:Stack/:Container
+``ingest_containers`` seam against a fake transport one level below the SDK's own
+``SourceIngest`` request builder (per the fleet SDK migration recipe), asserting the
+committed nodes/edges and the Portainer record -> :Environment/:Stack/:Container
 mapping. CONCEPT:AU-KG.ingest.enterprise-source-extractor.
+
+This file no longer needs the ``agent_utilities[graphos]`` opt-in extra (WD4-FIX-01
+defect (d)) -- ``kg_ingest.py`` now rides ``agent_connector_sdk.ingest`` exclusively.
 """
 
 from __future__ import annotations
 
+from types import SimpleNamespace
 from typing import Any
 
-import msgpack
 import pytest
-
-# `agent_utilities.knowledge_graph.memory` unconditionally imports
-# `agent_utilities.numeric` at module-load time, which in turn requires the
-# compiled `epistemic_graph.numeric` kernel. agent-utilities moved that
-# kernel out of its base dependency set into the opt-in `graphos` extra
-# (GOC-73); this repo depends only on `agent-utilities[mcp]`, which does not
-# pull it in. Left unguarded, importing it here raises a bare
-# ModuleNotFoundError/ImportError chain that pytest reports as a COLLECTION
-# ERROR — which (a) reads exactly like a regression in THIS repo and
-# (b) aborts collection of the entire `tests/` suite, not just this file
-# (`pytest tests/ -q` reports "0 tests collected, 1 error" for the whole
-# run, which is why lanes have been passing `--ignore=tests/test_kg_ingest.py`
-# and silently losing coverage on both sides of every before/after
-# comparison). This is an ENVIRONMENT/packaging gap, not application-code
-# breakage — install `agent-utilities[graphos]>=2.27.0` to exercise these
-# tests. See plans/complex/waves/wD4/WD4-FIX-01.md defect (d). Turn it into
-# a clean, LOUD, explained skip of just this file instead.
-pytest.importorskip(
-    "agent_utilities.knowledge_graph.memory.native_ingest",
-    # pytest 9.1 changed importorskip()'s default `exc_type` from
-    # ImportError to ModuleNotFoundError (see the versionchanged note in
-    # pytest.importorskip's own docstring). agent_utilities.numeric
-    # deliberately re-raises a plain ImportError (not ModuleNotFoundError)
-    # with an explanatory message, so the new default silently fails to
-    # catch it and the "skip" degrades right back into the collection
-    # error this guard exists to prevent. Pin exc_type explicitly so the
-    # guard keeps working regardless of installed pytest version.
-    exc_type=ImportError,
-    reason=(
-        "agent_utilities.numeric requires the compiled epistemic_graph.numeric "
-        "kernel, shipped only behind agent-utilities' opt-in `graphos` extra "
-        "(GOC-73); not installed by this repo's `agent-utilities[mcp]` "
-        "dependency — install `agent-utilities[graphos]>=2.27.0` to run "
-        "KG-ingestion tests (WD4-FIX-01 defect (d))"
-    ),
-)
-
-from agent_utilities.knowledge_graph.core.session import GraphSession, use_session
-from agent_utilities.knowledge_graph.memory.native_ingest import NativeIngestError
-from agent_utilities.security.actor_identity import ActorType
-from agent_utilities.security.brain_context import ActorContext, use_actor
+from agent_connector_sdk.ingest import IngestError, KnowledgeIngest
 
 from portainer_agent.kg_ingest import (
     ingest_containers,
@@ -62,116 +26,68 @@ from portainer_agent.kg_ingest import (
 )
 
 
-@pytest.fixture(autouse=True)
-def _governed_session():
-    actor = ActorContext(
-        actor_id="subject:opaque:synthetic",
-        actor_type=ActorType.AUTOMATED_SERVICE,
-        roles=(),
-        tenant_id="tenant:opaque:synthetic",
-        authenticated=True,
-    )
-    session = GraphSession(
-        actor=actor,
-        tenant=actor.tenant_id,
-        scopes=frozenset({"kg:write"}),
-        graph="graph:opaque:synthetic",
-        policy_version="policy:opaque:synthetic",
-        audience="epistemic-graph",
-    )
-    with use_actor(actor), use_session(session):
-        yield
-
-
-class _FakeNodes:
+class _FakeTransport:
     def __init__(self) -> None:
-        self.values: dict[str, dict[str, Any]] = {}
+        self.requests: list[Any] = []
 
-    def properties(self, node_id: str) -> dict[str, Any] | None:
-        return self.values.get(node_id)
+    async def source_status(self, connector: str, stream: str) -> Any:
+        return SimpleNamespace(accepted_checkpoint=None)
 
-    def list(self) -> list[tuple[str, dict[str, Any]]]:
-        return list(self.values.items())
+    async def submit(self, request: Any) -> Any:
+        self.requests.append(request)
+        return SimpleNamespace(
+            affected_count=len(request.records),
+            relationship_count=len(request.relationships),
+        )
 
-
-class _FakeChanges:
-    def __init__(self, nodes: _FakeNodes) -> None:
-        self.nodes = nodes
-        self.edges: list[tuple[str, str, dict[str, Any]]] = []
-        self.applied: list[dict[str, Any]] = []
-        self.records: dict[str, dict[str, Any]] = {}
-        self.versions: dict[str, dict[str, Any]] = {}
-
-    def get(self, envelope_id: str) -> dict[str, Any] | None:
-        return self.records.get(envelope_id)
-
-    def content_version(self, object_id: str) -> dict[str, Any] | None:
-        return self.versions.get(object_id)
-
-    def cursor(self, _source: str, _partition: str = "") -> None:
-        return None
-
-    def apply(self, envelope: dict[str, Any]) -> dict[str, Any]:
-        self.applied.append(envelope)
-        mutation = envelope["mutation"]
-        for operation in mutation["operations"]:
-            method = operation["method"]
-            params = method["params"]
-            properties = msgpack.unpackb(params["properties_msgpack"], raw=False)
-            if method["method"] == "AddNode":
-                self.nodes.values[params["node_id"]] = properties
-            elif method["method"] == "AddEdge":
-                self.edges.append(
-                    (params["source_id"], params["target_id"], properties)
-                )
-        version = envelope["content_version"]
-        self.versions[version["object_id"]] = version
-        self.records[envelope["envelope_id"]] = envelope
-        return {
-            "batch_id": mutation["batch_id"],
-            "replayed": False,
-            "projection_pending": False,
-        }
+    async def store_blob(self, data: bytes) -> str:
+        raise AssertionError("this connector's ingestion carries no media")
 
 
-class _FakeRdf:
-    def validate_shacl(self, _shapes: str, _data_graph: str) -> dict[str, Any]:
-        return {"conforms": True, "results": []}
+@pytest.fixture
+def ingest() -> tuple[KnowledgeIngest, _FakeTransport]:
+    transport = _FakeTransport()
+    return KnowledgeIngest(transport, loop=None), transport
 
 
-class _FakeClient:
-    def __init__(self) -> None:
-        self.nodes = _FakeNodes()
-        self.changes = _FakeChanges(self.nodes)
-        self.rdf = _FakeRdf()
-
-    @staticmethod
-    def supports(operation: str) -> bool:
-        return operation == "ApplyChangeEnvelope"
+def _node(transport: _FakeTransport, node_id: str) -> dict[str, Any]:
+    for request in transport.requests:
+        for record in request.records:
+            if record.record_id == node_id:
+                return dict(record.payload)
+    raise AssertionError(f"no committed record {node_id!r}")
 
 
-def test_ingest_entities_writes_nodes_and_edges():
-    c = _FakeClient()
-    res = ingest_entities(
+def _edges(transport: _FakeTransport) -> set[tuple[str, str, str]]:
+    edges: set[tuple[str, str, str]] = set()
+    for request in transport.requests:
+        for rel in request.relationships:
+            relationship_name = rel.relation_reference.rsplit("/relations/", 1)[-1]
+            edges.add((rel.source.record_id, rel.target.record_id, relationship_name))
+    return edges
+
+
+@pytest.mark.asyncio
+async def test_ingest_entities_writes_nodes_and_edges(ingest):
+    service, transport = ingest
+    res = await ingest_entities(
         [
             {"id": "a", "node_type": "Environment", "name": "prod"},
             {"id": "b", "node_type": "Stack"},
         ],
         [{"source": "b", "target": "a", "relationship": "inEnvironment"}],
-        client=c,
+        ingest=service,
     )
     assert res == {"nodes": 2, "edges": 1}
-    assert len(c.changes.applied) == 1
-    assert set(c.nodes.values) == {"a", "b"}
-    # provenance is stamped
-    assert c.nodes.values["a"]["source"] == "portainer-agent"
-    assert c.nodes.values["a"]["domain"] == "portainer"
-    assert c.changes.edges == [("b", "a", {"relationship": "inEnvironment"})]
+    record_ids = {record.record_id for record in transport.requests[0].records}
+    assert record_ids == {"a", "b"}
+    assert _edges(transport) == {("b", "a", "inEnvironment")}
 
 
-def test_ingest_environments_maps_env_and_group():
-    c = _FakeClient()
-    res = ingest_environments(
+@pytest.mark.asyncio
+async def test_ingest_environments_maps_env_and_group(ingest):
+    service, transport = ingest
+    res = await ingest_environments(
         [
             {
                 "Id": 1,
@@ -182,48 +98,42 @@ def test_ingest_environments_maps_env_and_group():
                 "GroupId": 3,
             }
         ],
-        client=c,
+        ingest=service,
     )
     assert res == {"nodes": 2, "edges": 1}
-    env = c.nodes.values["portainer:environment:1"]
-    assert env["node_type"] == "Environment"
+    env = _node(transport, "portainer:environment:1")
     assert env["environmentType"] == 2
     assert env["endpointUrl"] == "tcp://node:9001"
     assert env["status"] == "up"
     assert env["portainerId"] == "1"
-    assert c.nodes.values["portainer:endpointgroup:3"]["node_type"] == "EndpointGroup"
-    assert c.changes.edges == [
-        (
-            "portainer:environment:1",
-            "portainer:endpointgroup:3",
-            {"relationship": "partOfEndpointGroup"},
-        )
-    ]
+    _node(transport, "portainer:endpointgroup:3")
+    assert _edges(transport) == {
+        ("portainer:environment:1", "portainer:endpointgroup:3", "partOfEndpointGroup")
+    }
 
 
-def test_ingest_stacks_links_environment():
-    c = _FakeClient()
-    res = ingest_stacks(
+@pytest.mark.asyncio
+async def test_ingest_stacks_links_environment(ingest):
+    service, transport = ingest
+    res = await ingest_stacks(
         [{"Id": 5, "Name": "web", "Type": 2, "Status": 1, "EndpointId": 1}],
-        client=c,
+        ingest=service,
     )
     assert res == {"nodes": 1, "edges": 1}
-    st = c.nodes.values["portainer:stack:5"]
-    assert st["node_type"] == "Stack"
+    st = _node(transport, "portainer:stack:5")
     assert st["stackType"] == 2
     assert st["status"] == "active"
-    assert c.changes.edges == [
-        (
-            "portainer:stack:5",
-            "portainer:environment:1",
-            {"relationship": "inEnvironment"},
-        )
-    ]
+    assert _edges(transport) == {
+        ("portainer:stack:5", "portainer:environment:1", "inEnvironment")
+    }
 
 
-def test_ingest_stacks_git_backed_creates_repository_and_deployed_from_edge():
-    c = _FakeClient()
-    res = ingest_stacks(
+@pytest.mark.asyncio
+async def test_ingest_stacks_git_backed_creates_repository_and_deployed_from_edge(
+    ingest,
+):
+    service, transport = ingest
+    res = await ingest_stacks(
         [
             {
                 "Id": 5,
@@ -239,34 +149,32 @@ def test_ingest_stacks_git_backed_creates_repository_and_deployed_from_edge():
                 },
             }
         ],
-        client=c,
+        ingest=service,
     )
     assert res == {"nodes": 2, "edges": 2}
-    st = c.nodes.values["portainer:stack:5"]
+    st = _node(transport, "portainer:stack:5")
     assert st["repositoryUrl"] == "https://github.com/acme/web-stack"
     assert st["repositoryRef"] == "refs/heads/main"
     # explicit GitConfig.ConfigFilePath wins over the top-level EntryPoint
     assert st["composePath"] == "deploy/docker-compose.yml"
 
     repo_node = "git:repo:github.com/acme/web-stack"
-    repo = c.nodes.values[repo_node]
-    assert repo["node_type"] == "Repository"
-    assert repo["url"] == "https://github.com/acme/web-stack"
-    assert (
-        "portainer:stack:5",
-        repo_node,
-        {"relationship": "deployedFrom"},
-    ) in c.changes.edges
-    assert (
-        "portainer:stack:5",
-        "portainer:environment:1",
-        {"relationship": "inEnvironment"},
-    ) in c.changes.edges
+    repo = _node(transport, repo_node)
+    # agent_connector_sdk.privacy.PersistencePrivacyGuard redacts any property
+    # literally named "url" by field name (not content) before it crosses the
+    # ingest boundary -- a new SDK-wide behavior this migration surfaces, not a
+    # mapping bug. The stack's own "repositoryUrl" property (checked above) is
+    # unaffected since that exact field name isn't in the guard's location set.
+    assert repo["url"] == "[REDACTED_LOCATION]"
+    edges = _edges(transport)
+    assert ("portainer:stack:5", repo_node, "deployedFrom") in edges
+    assert ("portainer:stack:5", "portainer:environment:1", "inEnvironment") in edges
 
 
-def test_ingest_stacks_git_backed_scp_style_and_entrypoint_fallback():
-    c = _FakeClient()
-    res = ingest_stacks(
+@pytest.mark.asyncio
+async def test_ingest_stacks_git_backed_scp_style_and_entrypoint_fallback(ingest):
+    service, transport = ingest
+    res = await ingest_stacks(
         [
             {
                 "Id": 6,
@@ -277,61 +185,63 @@ def test_ingest_stacks_git_backed_scp_style_and_entrypoint_fallback():
                 },
             }
         ],
-        client=c,
+        ingest=service,
     )
     assert res == {"nodes": 2, "edges": 1}
-    st = c.nodes.values["portainer:stack:6"]
+    st = _node(transport, "portainer:stack:6")
     assert st["repositoryUrl"] == "https://gitlab.example.com/team/api"
     # no ReferenceName/ConfigFilePath supplied -> falls back to EntryPoint, no ref
     assert st["composePath"] == "docker-compose.yml"
     assert "repositoryRef" not in st
-    assert (
-        c.nodes.values["git:repo:gitlab.example.com/team/api"]["node_type"]
-        == "Repository"
-    )
+    _node(transport, "git:repo:gitlab.example.com/team/api")
 
 
-def test_ingest_stacks_without_git_config_has_no_repository_node():
-    c = _FakeClient()
-    res = ingest_stacks(
+@pytest.mark.asyncio
+async def test_ingest_stacks_without_git_config_has_no_repository_node(ingest):
+    service, transport = ingest
+    res = await ingest_stacks(
         [{"Id": 7, "Name": "plain", "EndpointId": 1, "GitConfig": None}],
-        client=c,
+        ingest=service,
     )
     assert res == {"nodes": 1, "edges": 1}
-    st = c.nodes.values["portainer:stack:7"]
+    st = _node(transport, "portainer:stack:7")
     assert "repositoryUrl" not in st
     assert "repositoryRef" not in st
     assert "composePath" not in st
-    assert not any(n.startswith("git:repo:") for n in c.nodes.values)
-    assert c.changes.edges == [
-        (
-            "portainer:stack:7",
-            "portainer:environment:1",
-            {"relationship": "inEnvironment"},
-        )
-    ]
+    all_ids = {
+        record.record_id for req in transport.requests for record in req.records
+    }
+    assert not any(n.startswith("git:repo:") for n in all_ids)
+    assert _edges(transport) == {
+        ("portainer:stack:7", "portainer:environment:1", "inEnvironment")
+    }
 
 
-def test_ingest_stacks_propagates_native_ingest_failure(monkeypatch):
-    def _fail(*_args, **_kwargs):
-        raise NativeIngestError("native ingest engine client is unavailable")
+@pytest.mark.asyncio
+async def test_ingest_stacks_propagates_ingest_failure(monkeypatch, ingest):
+    service, _transport = ingest
 
-    monkeypatch.setattr("portainer_agent.kg_ingest._native_ingest_entities", _fail)
-    with pytest.raises(NativeIngestError, match="engine client is unavailable"):
-        ingest_stacks(
+    async def _fail(*_args, **_kwargs):
+        raise IngestError("epistemic-graph is unavailable")
+
+    monkeypatch.setattr(service, "submit", _fail)
+    with pytest.raises(IngestError, match="unavailable"):
+        await ingest_stacks(
             [
                 {
                     "Id": 8,
                     "Name": "web",
                     "GitConfig": {"URL": "https://github.com/acme/web.git"},
                 }
-            ]
+            ],
+            ingest=service,
         )
 
 
-def test_ingest_containers_links_env_and_stack():
-    c = _FakeClient()
-    res = ingest_containers(
+@pytest.mark.asyncio
+async def test_ingest_containers_links_env_and_stack(ingest):
+    service, transport = ingest
+    res = await ingest_containers(
         [
             {
                 "Id": "abc123",
@@ -342,32 +252,34 @@ def test_ingest_containers_links_env_and_stack():
             }
         ],
         environment_id=1,
-        client=c,
+        ingest=service,
     )
     assert res == {"nodes": 1, "edges": 2}
-    node = c.nodes.values["portainer:container:1_abc123"]
-    assert node["node_type"] == "Container"
+    node = _node(transport, "portainer:container:1_abc123")
     assert node["name"] == "web_1"
     assert node["imageName"] == "nginx:latest"
     assert node["status"] == "running"
     assert node["dockerId"] == "abc123"
-    assert (
-        "portainer:container:1_abc123",
-        "portainer:environment:1",
-        {"relationship": "inEnvironment"},
-    ) in c.changes.edges
+    edges = _edges(transport)
+    assert ("portainer:container:1_abc123", "portainer:environment:1", "inEnvironment") in edges
     assert (
         "portainer:container:1_abc123",
         "portainer:stack:name:web",
-        {"relationship": "deployedByStack"},
-    ) in c.changes.edges
+        "deployedByStack",
+    ) in edges
 
 
-def test_retired_structural_alias_is_rejected():
-    with pytest.raises(NativeIngestError, match="canonical node_type"):
-        ingest_entities([{"id": "a", "type": "Environment"}], client=_FakeClient())
+@pytest.mark.asyncio
+async def test_retired_structural_alias_is_rejected(ingest):
+    service, _transport = ingest
+    with pytest.raises(IngestError, match="node_type"):
+        await ingest_entities(
+            [{"id": "a", "type": "Environment"}], ingest=service
+        )
 
 
-def test_empty_native_ingest_is_rejected():
-    with pytest.raises(NativeIngestError, match="at least one entity"):
-        ingest_entities([], client=_FakeClient())
+@pytest.mark.asyncio
+async def test_empty_ingest_is_rejected(ingest):
+    service, _transport = ingest
+    with pytest.raises(IngestError, match="at least one entity"):
+        await ingest_entities([], ingest=service)

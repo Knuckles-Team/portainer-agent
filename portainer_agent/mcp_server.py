@@ -23,11 +23,11 @@ import logging
 import sys
 from typing import Any
 
-from agent_utilities.core.config import load_config
-from agent_utilities.mcp.action_dispatch import resolve_action
-from agent_utilities.mcp.concurrency import run_blocking
-from agent_utilities.mcp.server_factory import create_mcp_server
-from agent_utilities.mcp.verbose_tools import register_tool_surface
+from agent_connector_sdk.config import load_config
+from agent_connector_sdk.mcp.action_dispatch import resolve_action
+from agent_connector_sdk.mcp.concurrency import run_blocking
+from agent_connector_sdk.mcp.server import create_mcp_server
+from agent_connector_sdk.mcp.tool_surface import register_tool_surface
 from starlette.requests import Request
 from starlette.responses import JSONResponse
 
@@ -1590,7 +1590,7 @@ def register_system_tools(mcp: FastMCP):
             ]
 
         endpoints = _records(await run_blocking(client.get_endpoints))
-        env_result = ingest_environments(endpoints)
+        env_result = await ingest_environments(endpoints)
         out: dict[str, Any] = {
             "environments_listed": len(endpoints),
             "environments_ingested": env_result,
@@ -1598,7 +1598,7 @@ def register_system_tools(mcp: FastMCP):
         if include_stacks:
             stacks = _records(await run_blocking(client.get_stacks))
             out["stacks_listed"] = len(stacks)
-            out["stacks_ingested"] = ingest_stacks(stacks)
+            out["stacks_ingested"] = await ingest_stacks(stacks)
         return out
 
     @mcp.tool(tags={"System", "kg"})
@@ -1625,7 +1625,7 @@ def register_system_tools(mcp: FastMCP):
             for r in records
             if isinstance(r, dict) or hasattr(r, "model_dump")
         ]
-        result = ingest_containers(containers, environment_id)
+        result = await ingest_containers(containers, environment_id)
         return {"listed": len(containers), "ingested": result}
 
 
