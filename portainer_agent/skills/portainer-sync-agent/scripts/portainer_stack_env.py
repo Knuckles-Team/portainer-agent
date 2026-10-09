@@ -35,10 +35,8 @@ import sys
 import urllib.parse
 
 import httpx
-from agent_utilities.core.transport_security import (
-    ResolvedTLSProfile,
-    resolve_configured_tls_profile,
-)
+from agent_connector_sdk.tls.profile import ResolvedTLSProfile
+from agent_connector_sdk.tls.resolve import resolve_tls_profile
 
 
 def _req(method, url, token, tls_profile: ResolvedTLSProfile, body=None):
@@ -83,7 +81,7 @@ def main() -> int:
             file=sys.stderr,
         )
         return 2
-    tls_profile = resolve_configured_tls_profile("portainer")
+    tls_profile = resolve_tls_profile("portainer")
     base = a.url.rstrip("/")
 
     overrides: dict[str, str] = {}

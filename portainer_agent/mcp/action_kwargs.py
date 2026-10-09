@@ -16,7 +16,7 @@ from collections.abc import Mapping
 from dataclasses import dataclass
 from typing import Any
 
-from agent_utilities.mcp.concurrency import run_blocking
+from agent_connector_sdk.mcp.concurrency import run_blocking
 
 #: One parameter to forward: either a plain name (used as both the target
 #: keyword and the lookup key in `values`) or a `(target_keyword, source_key)`

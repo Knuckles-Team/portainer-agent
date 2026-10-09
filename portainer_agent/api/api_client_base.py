@@ -18,10 +18,16 @@ from typing import Any
 
 import httpx
 import requests
-from agent_utilities.core.transport_security import (
-    ResolvedTLSProfile,
-    resolve_configured_tls_profile,
-)
+from agent_connector_sdk.tls.profile import ResolvedTLSProfile
+from agent_connector_sdk.tls.resolve import resolve_tls_profile
+
+# NOTE (SDK gap, found migrating this connector): agent_connector_sdk has no
+# equivalent of agent_utilities.httpsupport's BaseApiClient/AuthHeaderInjector/
+# TokenAuth class hierarchy (typed error mapping, rate-limit capture, bounded
+# 429 backoff, log redaction over a requests.Session). The SDK's own http/
+# package is a different, httpx-native functional shape (create_http_client,
+# attempt_flow, error_for_response, ...), not a drop-in replacement for this
+# class-based fleet base. Kept on agent_utilities for now; see PR body.
 from agent_utilities.httpsupport import AuthHeaderInjector, TokenAuth
 from agent_utilities.httpsupport import BaseApiClient as FleetApiClient
 
@@ -100,7 +106,7 @@ class BaseApiClient:
         self.base_url = base_url.rstrip("/")
         self.api_base = f"{self.base_url}/api"
         self.timeout = timeout or self.DEFAULT_TIMEOUT
-        self.tls_profile = tls_profile or resolve_configured_tls_profile("portainer")
+        self.tls_profile = tls_profile or resolve_tls_profile("portainer")
         self.session = self.tls_profile.configure_requests_session(requests.Session())
         if token:
             self.session.headers.update({"X-API-Key": token})
