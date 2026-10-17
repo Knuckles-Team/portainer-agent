@@ -346,7 +346,7 @@ When query strings or parameters are supplied, an LLM-free **Knowledge Graph res
 <!-- MCP-CONFIG-EXAMPLES:START -->
 
 > **Install the connector-focused `[mcp]` extra.** Examples use `portainer-agent[mcp]` to add
-> FastMCP / FastAPI through `agent-utilities[mcp]`; the required Agent Utilities core
+> FastMCP / FastAPI through `agent-connector-sdk[mcp]`; the required Agent Utilities core
 > still carries `epistemic-graph[full]`. The `[agent-runtime]` extra additionally
 > enables model orchestration.
 
@@ -615,7 +615,7 @@ Detailed graph node architecture explanations, custom skill configurations, and 
 | `REGISTRYTOOL` | `True` |  |
 | `SYSTEMTOOL` | `True` |  |
 
-#### Inherited agent-utilities variables (apply to every connector)
+#### Inherited agent-connector-sdk variables (apply to every connector)
 
 | Variable | Example | Description |
 |----------|---------|-------------|
@@ -636,7 +636,7 @@ Detailed graph node architecture explanations, custom skill configurations, and 
 | `MODEL_ID` | `gpt-4o` | Model id for the agent |
 | `ENABLE_WEB_UI` | `True` | Serve the AG-UI web interface |
 
-_27 package + 16 inherited variable(s). Auto-generated from `.env.example` + the shared agent-utilities set — do not edit._
+_27 package + 16 inherited variable(s). Auto-generated from `.env.example` + the shared agent-connector-sdk set — do not edit._
 <!-- ENV-VARS-TABLE:END -->
 
 
@@ -709,7 +709,7 @@ See [`.env.example`](.env.example) for a copy-paste starting point.
 
 ## Security & Governance
 
-Built directly upon the enterprise-ready [`agent-utilities`](https://github.com/Knuckles-Team/agent-utilities) core, standard security parameters are fully supported:
+Built directly upon the enterprise-ready [`agent-connector-sdk`](https://github.com/Knuckles-Team/agent-connector-sdk) core, standard security parameters are fully supported:
 
 ### Access Control & Policy Enforcement
 - **Eunomia Policies:** Fine-grained, policy-driven tool authorization. Supports `none`, local `embedded` (`mcp_policies.json`), or centralized `remote` modes.
@@ -731,8 +731,8 @@ Pick the extra that matches what the operator want to run:
 
 | Extra | Installs | Use when |
 |-------|----------|----------|
-| `portainer-agent[mcp]` | Connector-focused MCP server (`agent-utilities[mcp]` — FastMCP/FastAPI + `epistemic-graph[full]`) | The operator only run the **MCP server** (smallest install / image) |
-| `portainer-agent[agent]` | Agent runtime (`agent-utilities[agent-runtime,logfire]` — model orchestration + `epistemic-graph[full]`) | The operator run the **integrated agent** |
+| `portainer-agent[mcp]` | Connector-focused MCP server (`agent-connector-sdk[mcp]` — FastMCP/FastAPI + `epistemic-graph[full]`) | The operator only run the **MCP server** (smallest install / image) |
+| `portainer-agent[agent]` | Agent runtime (`agent-connector-sdk[agent-runtime,logfire]` — model orchestration + `epistemic-graph[full]`) | The operator run the **integrated agent** |
 | `portainer-agent[all]` | Everything (`mcp` + `agent` + `logfire`) | Development / both surfaces |
 
 ```bash
@@ -813,15 +813,15 @@ Contributions are welcome! Please ensure code quality by running local checks be
 - Ran test suites using `pytest`
 
 
-<!-- BEGIN agent-utilities-deployment (generated; do not edit between markers) -->
+<!-- BEGIN agent-connector-sdk-deployment (generated; do not edit between markers) -->
 
-## Deploy with `agent-utilities-deployment`
+## Deploy with `agent-connector-sdk-deployment`
 
-Provision this package with the consolidated **`agent-utilities-deployment`**
+Provision this package with the consolidated **`agent-connector-sdk-deployment`**
 workflow. It selects an installed-package, editable-source, or immutable-container
 path; records only runtime secret and TLS-profile references in `AgentConfig`; and
 runs doctor, registration, policy, observability, and rollback gates. Ask your agent
-to **"deploy `portainer-agent` with agent-utilities-deployment"**.
+to **"deploy `portainer-agent` with agent-connector-sdk-deployment"**.
 
 | Install mode | Command |
 |------|---------|
@@ -833,7 +833,7 @@ The repository embeds no deployment profile, credential value, certificate path,
 environment-specific endpoint. Supply those at runtime through `AgentConfig` and the
 configured secret provider.
 
-<!-- END agent-utilities-deployment -->
+<!-- END agent-connector-sdk-deployment -->
 
 <!-- GOVERNED-CAPABILITY:START -->
 ## Governed capability contract

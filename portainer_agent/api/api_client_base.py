@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Portainer HTTP base built on ``agent_utilities.http.BaseApiClient``.
+"""Portainer HTTP base built on the SDK fleet ``BaseApiClient``.
 
 CONCEPT:AU-ECO.ui.fleet-http-client-library (Fleet HTTP Client Library) adoption: the public surface
 The plumbing — typed error mapping, rate-limit capture, bounded 429 backoff,
@@ -21,15 +21,9 @@ import requests
 from agent_connector_sdk.tls.profile import ResolvedTLSProfile
 from agent_connector_sdk.tls.resolve import resolve_tls_profile
 
-# NOTE (SDK gap, found migrating this connector): agent_connector_sdk has no
-# equivalent of agent_utilities.httpsupport's BaseApiClient/AuthHeaderInjector/
-# TokenAuth class hierarchy (typed error mapping, rate-limit capture, bounded
-# 429 backoff, log redaction over a requests.Session). The SDK's own http/
-# package is a different, httpx-native functional shape (create_http_client,
-# attempt_flow, error_for_response, ...), not a drop-in replacement for this
-# class-based fleet base. Kept on agent_utilities for now; see PR body.
-from agent_utilities.httpsupport import AuthHeaderInjector, TokenAuth
-from agent_utilities.httpsupport import BaseApiClient as FleetApiClient
+from agent_connector_sdk.http.support import AuthHeaderInjector
+from agent_connector_sdk.http.support import TokenAuth
+from agent_connector_sdk.http.support import BaseApiClient as FleetApiClient
 
 #: Request headers managed by the session/transport rather than forwarded.
 _HOP_HEADERS = {"host", "content-length"}
