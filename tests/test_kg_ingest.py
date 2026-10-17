@@ -6,7 +6,7 @@ Exercises the real ``ingest_entities`` / ``ingest_environments`` / ``ingest_stac
 committed nodes/edges and the Portainer record -> :Environment/:Stack/:Container
 mapping. CONCEPT:AU-KG.ingest.enterprise-source-extractor.
 
-This file no longer needs the ``agent_connector_sdk[graphos]`` opt-in extra (WD4-FIX-01
+This file no longer needs the ``agent_connector_sdk[arbora]`` opt-in extra (WD4-FIX-01
 defect (d)) -- ``kg_ingest.py`` now rides ``agent_connector_sdk.ingest`` exclusively.
 """
 
