@@ -34,7 +34,7 @@ from starlette.responses import JSONResponse
 from portainer_agent.api_client import PortainerApi
 from portainer_agent.auth import get_client
 
-__version__ = "2.3.2"
+__version__ = "2.3.3"
 
 logger = get_logger(name="portainer-agent")
 logger.setLevel(logging.INFO)
@@ -388,18 +388,18 @@ def _handle_resource_actions(
         )
 
     no_arg_methods: dict[str, Any] = {
-        "docker_list_images": client.docker_list_images,
-        "docker_inspect_image": client.docker_inspect_image,
-        "docker_list_networks": client.docker_list_networks,
-        "docker_inspect_network": client.docker_inspect_network,
-        "docker_list_volumes": client.docker_list_volumes,
-        "docker_inspect_volume": client.docker_inspect_volume,
-        "docker_get_info": client.docker_get_info,
-        "docker_get_version": client.docker_get_version,
+        "docker_list_images": client.list_images,
+        "docker_inspect_image": client.inspect_image,
+        "docker_list_networks": client.list_networks,
+        "docker_inspect_network": client.inspect_network,
+        "docker_list_volumes": client.list_volumes,
+        "docker_inspect_volume": client.inspect_volume,
+        "docker_get_info": client.get_docker_info,
+        "docker_get_version": client.get_docker_version,
         "docker_get_system_df": client.docker_get_system_df,
-        "docker_create_container": client.docker_create_container,
-        "docker_create_network": client.docker_create_network,
-        "docker_create_volume": client.docker_create_volume,
+        "docker_create_container": client.create_container,
+        "docker_create_network": client.create_network,
+        "docker_create_volume": client.create_volume,
     }
     if action not in no_arg_methods:
         raise ValueError(f"Unknown resource action: {action}")
@@ -1094,17 +1094,17 @@ def register_kubernetes_tools(mcp: FastMCP):
         # Group 1: no-argument passthrough reads -- kwargs is always {} (an
         # empty dict filtered by "v is not None" is still {}).
         no_arg_methods = {
-            "get_k8s_dashboard": client.get_k8s_dashboard,
-            "get_k8s_namespaces": client.get_k8s_namespaces,
-            "get_k8s_applications": client.get_k8s_applications,
-            "get_k8s_services": client.get_k8s_services,
-            "get_k8s_ingresses": client.get_k8s_ingresses,
-            "get_k8s_configmaps": client.get_k8s_configmaps,
-            "get_k8s_secrets": client.get_k8s_secrets,
-            "get_k8s_volumes": client.get_k8s_volumes,
-            "get_k8s_events": client.get_k8s_events,
-            "get_k8s_nodes_limits": client.get_k8s_nodes_limits,
-            "get_k8s_metrics_nodes": client.get_k8s_metrics_nodes,
+            "get_k8s_dashboard": client.get_kubernetes_dashboard,
+            "get_k8s_namespaces": client.get_kubernetes_namespaces,
+            "get_k8s_applications": client.get_kubernetes_applications,
+            "get_k8s_services": client.get_kubernetes_services,
+            "get_k8s_ingresses": client.get_kubernetes_ingresses,
+            "get_k8s_configmaps": client.get_kubernetes_configmaps,
+            "get_k8s_secrets": client.get_kubernetes_secrets,
+            "get_k8s_volumes": client.get_kubernetes_volumes,
+            "get_k8s_events": client.get_kubernetes_events,
+            "get_k8s_nodes_limits": client.get_kubernetes_nodes_limits,
+            "get_k8s_metrics_nodes": client.get_kubernetes_metrics_nodes,
         }
         if action in no_arg_methods:
             return await run_blocking(no_arg_methods[action])
