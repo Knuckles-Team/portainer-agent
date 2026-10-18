@@ -33,9 +33,9 @@ class Api(BaseApiClient):
         """Get Portainer settings."""
         return self._get("settings")
 
-    def update_settings(self, **kwargs) -> dict:
-        """Update Portainer settings."""
-        return self._put("settings", data=kwargs)
+    def update_settings(self, settings: dict[str, Any]) -> dict:
+        """Update Portainer settings with the given settings object."""
+        return self._put("settings", data=settings)
 
     def get_public_settings(self) -> dict:
         """Get public (unauthenticated) settings."""
@@ -45,9 +45,19 @@ class Api(BaseApiClient):
         """Get SSL settings."""
         return self._get("ssl")
 
-    def update_ssl_settings(self, **kwargs) -> dict:
-        """Update SSL settings."""
-        return self._put("ssl", data=kwargs)
+    def update_ssl_settings(
+        self,
+        cert: str | None = None,
+        key: str | None = None,
+        http_enabled: bool | None = None,
+    ) -> dict:
+        """Update SSL settings: certificate, private key and whether HTTP stays enabled."""
+        body = {
+            "cert": cert,
+            "key": key,
+            "httpEnabled": http_enabled,
+        }
+        return self._put("ssl", data={k: v for k, v in body.items() if v is not None})
 
     def backup(self, password: str = "") -> Any:  # nosec B107
         """Create a backup of Portainer data."""
@@ -76,9 +86,9 @@ class Api(BaseApiClient):
         """Delete a tag."""
         return self._delete(f"tags/{tag_id}")
 
-    def check_ldap(self, **kwargs) -> dict:
-        """Check LDAP connectivity."""
-        return self._post("ldap/check", data=kwargs)
+    def check_ldap(self, settings: dict[str, Any]) -> dict:
+        """Check LDAP connectivity with the given LDAP settings object."""
+        return self._post("ldap/check", data=settings)
 
     def get_motd(self) -> dict:
         """Get the message of the day."""

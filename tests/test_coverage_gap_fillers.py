@@ -512,20 +512,21 @@ async def _exercise_tool_actions(tool: Any, actions: list[str], mock_client: Any
 
 
 @pytest.mark.asyncio
-async def test_mcp_server_comprehensive_action_routes():
+async def test_mcp_server_serves_typed_per_operation_tools():
     from portainer_agent.mcp_server import get_mcp_instance
 
     mcp_data = get_mcp_instance()
     mcp = mcp_data[0] if isinstance(mcp_data, tuple) else mcp_data
 
-    tool_objs = await mcp.list_tools()
-
-    mock_client = MagicMock()
-    mock_client.get_stack.return_value = {"Name": "test_stack", "Type": 1}
-
-    for tool in tool_objs:
-        actions = VALID_TOOL_ACTIONS.get(tool.name, [])
-        await _exercise_tool_actions(tool, actions, mock_client)
+    tools = await mcp.list_tools()
+    operations = [t for t in tools if "operation" in (t.tags or set())]
+    assert len(operations) >= 200
+    for tool in operations:
+        properties = tool.parameters.get("properties", {})
+        assert "action" not in properties
+        assert set(properties) != {"params_json"}
+        assert tool.annotations is not None
+        assert tool.annotations.read_only_hint is not None
 
 
 @pytest.mark.asyncio

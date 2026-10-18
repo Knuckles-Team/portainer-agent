@@ -53,9 +53,14 @@ class Api(BaseApiClient):
             pass
         return kwargs
 
-    def get_stacks(self, **filters) -> Any:
-        """List all stacks."""
-        return self._list("stacks", **filters)
+    def get_stacks(
+        self,
+        limit: int | None = None,
+        offset: int | None = None,
+        filters: dict[str, Any] | None = None,
+    ) -> Any:
+        """List all stacks, optionally narrowed by query filters."""
+        return self._list("stacks", limit=limit, offset=offset, **(filters or {}))
 
     def get_stack(self, stack_id: int) -> dict:
         """Get a specific stack."""

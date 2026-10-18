@@ -7,7 +7,6 @@
         "portainer-mcp"
       ],
       "env": {
-        "MCP_TOOL_MODE": "intent",
         "AUTHTOOL": "True",
         "DOCKERTOOL": "True",
         "EDGETOOL": "True",

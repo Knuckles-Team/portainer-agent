@@ -34,7 +34,7 @@ from starlette.responses import JSONResponse
 from portainer_agent.api_client import PortainerApi
 from portainer_agent.auth import get_client
 
-__version__ = "2.2.0"
+__version__ = "2.3.0"
 
 logger = get_logger(name="portainer-agent")
 logger.setLevel(logging.INFO)
@@ -732,7 +732,7 @@ def register_stack_tools(mcp: FastMCP):
         resolved_kwargs = _reinject_stack_env_prune(resolved_kwargs, get_val)
 
         async def _get_stacks():
-            res = await run_blocking(client.get_stacks, **resolved_kwargs)
+            res = await run_blocking(client.get_stacks, filters=resolved_kwargs)
             return {"data": res} if isinstance(res, list) else res
 
         async def _get_stack():
@@ -1548,7 +1548,10 @@ def register_system_tools(mcp: FastMCP):
             "get_system_info": (client.get_system_info, _filtered_kwargs()),
             "get_system_version": (client.get_system_version, _filtered_kwargs()),
             "get_settings": (client.get_settings, _filtered_kwargs()),
-            "update_settings": (client.update_settings, _filtered_kwargs()),
+            "update_settings": (
+                client.update_settings,
+                {"settings": _filtered_kwargs()},
+            ),
             "get_tags": (client.get_tags, _filtered_kwargs()),
             "create_tag": (client.create_tag, _filtered_kwargs(name=name)),
             "delete_tag": (client.delete_tag, _filtered_kwargs(tag_id=tag_id)),
