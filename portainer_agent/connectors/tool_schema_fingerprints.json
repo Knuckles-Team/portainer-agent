@@ -1,9 +1,9 @@
 {
-  "algorithm": "agent-connector-sdk:mcp-tool-schema-compat:v1",
+  "algorithm": "agent-connector-sdk:mcp-tool-contract-compat:v2",
   "connector": "portainer-agent",
   "schema_version": "1",
   "tools": {
-    "portainer_environment": "b50529ca205c7216273190f09e90c507282e9b072f31d151b2f637d4197eb3cb",
-    "portainer_stack": "edd1ff95e420d32372d5544ae802f85527155df6125b36bf68aef75be9f60852"
+    "portainer_get_endpoints": "94adb673ea552daad60f4c6ed81a7df81c76ac250c83658b7cc5f3798ca9abb5",
+    "portainer_get_stacks": "01f09d6b927c4369c24fbcd4cf64e18969ab9f6e06cbf94f5e347dce527aa37d"
   }
 }
