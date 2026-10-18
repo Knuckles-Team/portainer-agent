@@ -2,12 +2,12 @@
 name: portainer-agent-operations
 skill_type: skill
 description: >-
-  Operate portainer-agent through its governed MCP and GraphOS capabilities, including analyze portainer health, portainer agent docs, portainer sync agent. Use when a request requires this provider's read, change, automation, ingestion, troubleshooting, or evidence workflows.
+  Operate portainer-agent through its governed MCP and Arbora capabilities, including analyze portainer health, portainer agent docs, portainer sync agent. Use when a request requires this provider's read, change, automation, ingestion, troubleshooting, or evidence workflows.
 ---
 
 # Portainer Agent Operations
 
-Use the provider's governed MCP tools through GraphOS delegation.
+Use the provider's governed MCP tools through Arbora delegation.
 
 ## Workflow
 

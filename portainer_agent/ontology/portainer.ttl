@@ -185,5 +185,5 @@
     rdfs:comment """Portainer container-management model — environments (endpoints), endpoint
     groups, stacks, containers, services, images, networks, volumes, registries, templates,
     edge stacks and teams, with their deployment and placement relationships — federated into
-    the agent-utilities knowledge-graph hub.""" ;
+    the agent-connector-sdk knowledge-graph hub.""" ;
     owl:imports <http://knuckles.team/kg> .

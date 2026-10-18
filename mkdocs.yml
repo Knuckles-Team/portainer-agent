@@ -1,5 +1,5 @@
 site_name: "portainer-agent"
-site_description: "Portainer container-management API + MCP Server + A2A Agent — Docker environments, stacks, Kubernetes clusters, registries, users, and edge devices for the agent-utilities ecosystem."
+site_description: "Portainer container-management API + MCP Server + A2A Agent — Docker environments, stacks, Kubernetes clusters, registries, users, and edge devices for the Arbora ecosystem."
 site_url: "https://knuckles-team.github.io/portainer-agent/"
 repo_name: "Knuckles-Team/portainer-agent"
 repo_url: "https://github.com/Knuckles-Team/portainer-agent"

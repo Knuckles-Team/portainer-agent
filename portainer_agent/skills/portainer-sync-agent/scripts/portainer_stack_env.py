@@ -13,7 +13,7 @@ two failure modes bite:
 So this tool merges env overrides AND pushes the *current repo* compose file in
 the same update, keeping the deployed stack and the repo in lockstep.
 
-The script uses the package's normal ``agent-utilities``/``httpx`` runtime.
+The script uses the package's normal ``agent-connector-sdk``/``httpx`` runtime.
 Credentials come from the environment (PORTAINER_URL, PORTAINER_TOKEN) or
 --url/--token. No secret is hard-coded.
 
