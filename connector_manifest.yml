@@ -268,8 +268,8 @@ schema_mappings:
 sync:
 - preset: portainer-environments
   server: portainer-mcp
-  tool: portainer_environment
-  action: get_endpoints
+  tool: portainer_get_endpoints
+  action: null
   records_path: data
   id_field: Id
   title_field: Name
@@ -277,11 +277,11 @@ sync:
   updated_field: null
   pagination: null
   doc_type: environment
-  tool_schema_sha256: b50529ca205c7216273190f09e90c507282e9b072f31d151b2f637d4197eb3cb
+  tool_schema_sha256: 94adb673ea552daad60f4c6ed81a7df81c76ac250c83658b7cc5f3798ca9abb5
   raw:
     server: portainer-mcp
-    tool: portainer_environment
-    action: get_endpoints
+    tool: portainer_get_endpoints
+    params_style: args
     records_path: data
     id_field: Id
     title_field: Name
@@ -289,8 +289,8 @@ sync:
     doc_type: environment
 - preset: portainer-stacks
   server: portainer-mcp
-  tool: portainer_stack
-  action: get_stacks
+  tool: portainer_get_stacks
+  action: null
   records_path: data
   id_field: Id
   title_field: Name
@@ -298,11 +298,11 @@ sync:
   updated_field: null
   pagination: null
   doc_type: stack
-  tool_schema_sha256: edd1ff95e420d32372d5544ae802f85527155df6125b36bf68aef75be9f60852
+  tool_schema_sha256: 01f09d6b927c4369c24fbcd4cf64e18969ab9f6e06cbf94f5e347dce527aa37d
   raw:
     server: portainer-mcp
-    tool: portainer_stack
-    action: get_stacks
+    tool: portainer_get_stacks
+    params_style: args
     records_path: data
     id_field: Id
     title_field: Name
