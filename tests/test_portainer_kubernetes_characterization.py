@@ -54,17 +54,17 @@ def k8s_fn():
 @pytest.mark.parametrize(
     "action,method_name",
     [
-        ("get_k8s_dashboard", "get_k8s_dashboard"),
-        ("get_k8s_namespaces", "get_k8s_namespaces"),
-        ("get_k8s_applications", "get_k8s_applications"),
-        ("get_k8s_services", "get_k8s_services"),
-        ("get_k8s_ingresses", "get_k8s_ingresses"),
-        ("get_k8s_configmaps", "get_k8s_configmaps"),
-        ("get_k8s_secrets", "get_k8s_secrets"),
-        ("get_k8s_volumes", "get_k8s_volumes"),
-        ("get_k8s_events", "get_k8s_events"),
-        ("get_k8s_nodes_limits", "get_k8s_nodes_limits"),
-        ("get_k8s_metrics_nodes", "get_k8s_metrics_nodes"),
+        ("get_k8s_dashboard", "get_kubernetes_dashboard"),
+        ("get_k8s_namespaces", "get_kubernetes_namespaces"),
+        ("get_k8s_applications", "get_kubernetes_applications"),
+        ("get_k8s_services", "get_kubernetes_services"),
+        ("get_k8s_ingresses", "get_kubernetes_ingresses"),
+        ("get_k8s_configmaps", "get_kubernetes_configmaps"),
+        ("get_k8s_secrets", "get_kubernetes_secrets"),
+        ("get_k8s_volumes", "get_kubernetes_volumes"),
+        ("get_k8s_events", "get_kubernetes_events"),
+        ("get_k8s_nodes_limits", "get_kubernetes_nodes_limits"),
+        ("get_k8s_metrics_nodes", "get_kubernetes_metrics_nodes"),
     ]
 )
 def test_no_arg_actions_call_client_with_no_kwargs(k8s_fn, action, method_name):
