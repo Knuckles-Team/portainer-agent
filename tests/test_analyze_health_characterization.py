@@ -18,6 +18,7 @@ program.
 import importlib.util
 import json
 import sys
+import time
 
 import pytest
 
@@ -31,14 +32,21 @@ def _load_module():
     spec = importlib.util.spec_from_file_location(
         "analyze_health_under_test", _SCRIPT_PATH
     )
+    assert spec is not None and spec.loader is not None
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     return module
 
 
 @pytest.fixture
-def mod():
-    return _load_module()
+def mod(monkeypatch):
+    # format_timestamp renders epochs in the process-local timezone; pin it to
+    # UTC so the golden report is identical on every host and CI runner.
+    monkeypatch.setenv("TZ", "UTC")
+    time.tzset()
+    yield _load_module()
+    monkeypatch.undo()
+    time.tzset()
 
 
 STACKS_FIXTURE = [
@@ -233,8 +241,8 @@ GOLDEN_REPORT = """# 📋 Homelab Swarm Stack Health Report
 | Attribute | Value |
 | :--- | :--- |
 | **Status** | Active |
-| **Created At** | 2023-11-14 16:13:20 |
-| **Last Updated** | 2023-11-14 17:13:20 by `alice` |
+| **Created At** | 2023-11-14 22:13:20 |
+| **Last Updated** | 2023-11-14 23:13:20 by `alice` |
 | **Git Config** | [`https://gitlab.example/infra/web.git`](https://gitlab.example/infra/web.git) (ref: `refs/heads/main`) |
 
 
@@ -251,8 +259,8 @@ GOLDEN_REPORT = """# 📋 Homelab Swarm Stack Health Report
 ### 📦 Stack: `db` (ID: 2)
 | Attribute | Value |
 | :--- | :--- |
-| **Created At** | 2023-11-14 16:13:20 |
-| **Last Updated** | 2023-11-14 17:13:20 by `bob` |
+| **Created At** | 2023-11-14 22:13:20 |
+| **Last Updated** | 2023-11-14 23:13:20 by `bob` |
 
 
 #### Services Detail:
@@ -278,8 +286,8 @@ These stacks are fully operational with all services running normally.
 
 | Stack Name | ID | Services | Git-Backed | Last Updated |
 | :--- | :---: | :---: | :---: | :--- |
-| `cache` | 3 | 0 | No | 2023-11-14 17:13:20 |
-| `empty-stack` | 4 | 0 | Yes | 2023-11-14 17:13:20 |"""
+| `cache` | 3 | 0 | No | 2023-11-14 23:13:20 |
+| `empty-stack` | 4 | 0 | Yes | 2023-11-14 23:13:20 |"""
 
 
 def test_main_prints_golden_report_to_stdout(mod, tmp_path, monkeypatch, capsys):
@@ -410,7 +418,7 @@ def test_main_exits_1_when_output_write_fails(mod, tmp_path, monkeypatch, capsys
 def test_format_timestamp_epoch_and_string_and_missing(mod):
     assert mod.format_timestamp(None) == "N/A"
     assert mod.format_timestamp(0) == "N/A"
-    assert mod.format_timestamp(1700000000) == "2023-11-14 16:13:20"
+    assert mod.format_timestamp(1700000000) == "2023-11-14 22:13:20"
     assert mod.format_timestamp("2023-11-14T16:13:20.123Z") == "2023-11-14 16:13:20"
 
 
