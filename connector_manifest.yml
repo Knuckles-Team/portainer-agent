@@ -1,4 +1,4 @@
-connector: portainer-agent
+connector: portainer-mcp
 ontology_source: portainer
 schema_version: '1'
 resources:

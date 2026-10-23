@@ -1,6 +1,6 @@
 {
   "algorithm": "agent-connector-sdk:mcp-tool-contract-compat:v2",
-  "connector": "portainer-agent",
+  "connector": "portainer-mcp",
   "schema_version": "1",
   "tools": {
     "portainer_get_endpoints": "94adb673ea552daad60f4c6ed81a7df81c76ac250c83658b7cc5f3798ca9abb5",
