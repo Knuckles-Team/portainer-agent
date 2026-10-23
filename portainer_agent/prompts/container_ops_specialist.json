@@ -4,8 +4,6 @@
   "schema_version": "1.0",
   "prompt_version": "0.1.0",
   "source": "portainer-agent",
-  "extends": "agent-connector-sdk:base",
-  "compose": "append",
   "description": "Portainer container-operations specialist: environments, stacks, and Docker/Swarm/Kubernetes workloads over the portainer-agent MCP server.",
   "metadata": {
     "topic": "Portainer container operations",

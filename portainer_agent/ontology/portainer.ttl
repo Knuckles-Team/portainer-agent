@@ -52,21 +52,18 @@
     rdfs:label "Registry" ;
     rdfs:comment "A configured container image registry (portainer_registry)." .
 
-:Template a owl:Class ;
-    rdfs:label "App Template" ;
-    rdfs:comment "A reusable application template for one-click deployment (portainer_template)." .
+:Template a owl:Class .
+
 
 :EdgeStack a owl:Class ;
     rdfs:label "Edge Stack" ;
     rdfs:comment "A stack deployed to remote edge environments via the Portainer edge agent (portainer_edge)." .
 
-:Team a owl:Class ;
-    rdfs:label "Team" ;
-    rdfs:comment "A team of Portainer users used for role-based access control (portainer_user get_teams)." .
+:Team a owl:Class .
 
-:Repository a owl:Class ;
-    rdfs:label "Repository" ;
-    rdfs:comment "The git source repository a Stack was deployed from (portainer_stack GitConfig)." .
+
+:Repository a owl:Class .
+
 
 # --- links (owl:ObjectProperty) ---
 
@@ -185,5 +182,11 @@
     rdfs:comment """Portainer container-management model — environments (endpoints), endpoint
     groups, stacks, containers, services, images, networks, volumes, registries, templates,
     edge stacks and teams, with their deployment and placement relationships — federated into
-    the agent-connector-sdk knowledge-graph hub.""" ;
-    owl:imports <http://knuckles.team/kg> .
+    the agent-connector-sdk knowledge-graph hub.""" .
+
+# ontology-codemod R3
+<http://knuckles.team/kg#Container> rdfs:subClassOf <http://knuckles.team/kg/infrastructure#Container> .
+<http://knuckles.team/kg#EndpointGroup> rdfs:subClassOf <http://knuckles.team/kg#ResourceGroup> .
+<http://knuckles.team/kg#Network> rdfs:subClassOf <http://knuckles.team/kg/infrastructure#Network> .
+<http://knuckles.team/kg#Service> rdfs:subClassOf <http://knuckles.team/kg/infrastructure#Service> .
+<http://knuckles.team/kg#Volume> rdfs:subClassOf <http://knuckles.team/kg/infrastructure#Volume> .
