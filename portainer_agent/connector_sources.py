@@ -7,9 +7,6 @@ Served live as ``connector://resources``. Regenerate by editing the declarations
 from __future__ import annotations
 
 from agent_connector_sdk.ingest.live_declaration import source_meta
-from agent_connector_sdk.ingest.sources import IngestSourceDeclaration, IngestSourceSpec
-
-CONNECTOR = "portainer-mcp"
 
 SOURCES = (
     source_meta(
@@ -42,200 +39,74 @@ SOURCES = (
     ),
 )
 
+SCHEMA_VERSION = 2
+
+FIELD_SETS = {
+    "fields_1": {
+        "composePath": "xsd:string",
+        "dockerId": "xsd:string",
+        "endpointUrl": "xsd:string",
+        "environmentType": "xsd:integer",
+        "imageName": "xsd:string",
+        "portainerId": "xsd:string",
+        "repositoryRef": "xsd:string",
+        "repositoryUrl": "xsd:string",
+        "stackType": "xsd:integer",
+        "status": "xsd:string",
+    },
+}
+
 SCHEMA_MAPPINGS = {
     "Container": {
-        "fields": {
-            "composePath": "xsd:string",
-            "dockerId": "xsd:string",
-            "endpointUrl": "xsd:string",
-            "environmentType": "xsd:integer",
-            "imageName": "xsd:string",
-            "portainerId": "xsd:string",
-            "repositoryRef": "xsd:string",
-            "repositoryUrl": "xsd:string",
-            "stackType": "xsd:integer",
-            "status": "xsd:string",
-        },
+        "field_sets": ["fields_1"],
         "ontology_class": None,
     },
     "EdgeStack": {
-        "fields": {
-            "composePath": "xsd:string",
-            "dockerId": "xsd:string",
-            "endpointUrl": "xsd:string",
-            "environmentType": "xsd:integer",
-            "imageName": "xsd:string",
-            "portainerId": "xsd:string",
-            "repositoryRef": "xsd:string",
-            "repositoryUrl": "xsd:string",
-            "stackType": "xsd:integer",
-            "status": "xsd:string",
-        },
+        "field_sets": ["fields_1"],
         "ontology_class": None,
     },
     "EndpointGroup": {
-        "fields": {
-            "composePath": "xsd:string",
-            "dockerId": "xsd:string",
-            "endpointUrl": "xsd:string",
-            "environmentType": "xsd:integer",
-            "imageName": "xsd:string",
-            "portainerId": "xsd:string",
-            "repositoryRef": "xsd:string",
-            "repositoryUrl": "xsd:string",
-            "stackType": "xsd:integer",
-            "status": "xsd:string",
-        },
+        "field_sets": ["fields_1"],
         "ontology_class": "Organization",
     },
     "Environment": {
-        "fields": {
-            "composePath": "xsd:string",
-            "dockerId": "xsd:string",
-            "endpointUrl": "xsd:string",
-            "environmentType": "xsd:integer",
-            "imageName": "xsd:string",
-            "portainerId": "xsd:string",
-            "repositoryRef": "xsd:string",
-            "repositoryUrl": "xsd:string",
-            "stackType": "xsd:integer",
-            "status": "xsd:string",
-        },
+        "field_sets": ["fields_1"],
         "ontology_class": None,
     },
     "Image": {
-        "fields": {
-            "composePath": "xsd:string",
-            "dockerId": "xsd:string",
-            "endpointUrl": "xsd:string",
-            "environmentType": "xsd:integer",
-            "imageName": "xsd:string",
-            "portainerId": "xsd:string",
-            "repositoryRef": "xsd:string",
-            "repositoryUrl": "xsd:string",
-            "stackType": "xsd:integer",
-            "status": "xsd:string",
-        },
+        "field_sets": ["fields_1"],
         "ontology_class": None,
     },
     "Network": {
-        "fields": {
-            "composePath": "xsd:string",
-            "dockerId": "xsd:string",
-            "endpointUrl": "xsd:string",
-            "environmentType": "xsd:integer",
-            "imageName": "xsd:string",
-            "portainerId": "xsd:string",
-            "repositoryRef": "xsd:string",
-            "repositoryUrl": "xsd:string",
-            "stackType": "xsd:integer",
-            "status": "xsd:string",
-        },
+        "field_sets": ["fields_1"],
         "ontology_class": None,
     },
     "Registry": {
-        "fields": {
-            "composePath": "xsd:string",
-            "dockerId": "xsd:string",
-            "endpointUrl": "xsd:string",
-            "environmentType": "xsd:integer",
-            "imageName": "xsd:string",
-            "portainerId": "xsd:string",
-            "repositoryRef": "xsd:string",
-            "repositoryUrl": "xsd:string",
-            "stackType": "xsd:integer",
-            "status": "xsd:string",
-        },
+        "field_sets": ["fields_1"],
         "ontology_class": None,
     },
     "Repository": {
-        "fields": {
-            "composePath": "xsd:string",
-            "dockerId": "xsd:string",
-            "endpointUrl": "xsd:string",
-            "environmentType": "xsd:integer",
-            "imageName": "xsd:string",
-            "portainerId": "xsd:string",
-            "repositoryRef": "xsd:string",
-            "repositoryUrl": "xsd:string",
-            "stackType": "xsd:integer",
-            "status": "xsd:string",
-        },
+        "field_sets": ["fields_1"],
         "ontology_class": "SoftwareProject",
     },
     "Service": {
-        "fields": {
-            "composePath": "xsd:string",
-            "dockerId": "xsd:string",
-            "endpointUrl": "xsd:string",
-            "environmentType": "xsd:integer",
-            "imageName": "xsd:string",
-            "portainerId": "xsd:string",
-            "repositoryRef": "xsd:string",
-            "repositoryUrl": "xsd:string",
-            "stackType": "xsd:integer",
-            "status": "xsd:string",
-        },
+        "field_sets": ["fields_1"],
         "ontology_class": "System",
     },
     "Stack": {
-        "fields": {
-            "composePath": "xsd:string",
-            "dockerId": "xsd:string",
-            "endpointUrl": "xsd:string",
-            "environmentType": "xsd:integer",
-            "imageName": "xsd:string",
-            "portainerId": "xsd:string",
-            "repositoryRef": "xsd:string",
-            "repositoryUrl": "xsd:string",
-            "stackType": "xsd:integer",
-            "status": "xsd:string",
-        },
+        "field_sets": ["fields_1"],
         "ontology_class": None,
     },
     "Team": {
-        "fields": {
-            "composePath": "xsd:string",
-            "dockerId": "xsd:string",
-            "endpointUrl": "xsd:string",
-            "environmentType": "xsd:integer",
-            "imageName": "xsd:string",
-            "portainerId": "xsd:string",
-            "repositoryRef": "xsd:string",
-            "repositoryUrl": "xsd:string",
-            "stackType": "xsd:integer",
-            "status": "xsd:string",
-        },
+        "field_sets": ["fields_1"],
         "ontology_class": "Team",
     },
     "Template": {
-        "fields": {
-            "composePath": "xsd:string",
-            "dockerId": "xsd:string",
-            "endpointUrl": "xsd:string",
-            "environmentType": "xsd:integer",
-            "imageName": "xsd:string",
-            "portainerId": "xsd:string",
-            "repositoryRef": "xsd:string",
-            "repositoryUrl": "xsd:string",
-            "stackType": "xsd:integer",
-            "status": "xsd:string",
-        },
+        "field_sets": ["fields_1"],
         "ontology_class": None,
     },
     "Volume": {
-        "fields": {
-            "composePath": "xsd:string",
-            "dockerId": "xsd:string",
-            "endpointUrl": "xsd:string",
-            "environmentType": "xsd:integer",
-            "imageName": "xsd:string",
-            "portainerId": "xsd:string",
-            "repositoryRef": "xsd:string",
-            "repositoryUrl": "xsd:string",
-            "stackType": "xsd:integer",
-            "status": "xsd:string",
-        },
+        "field_sets": ["fields_1"],
         "ontology_class": None,
     },
 }
@@ -307,22 +178,3 @@ RESOURCES = (
         "name": "Volume",
     },
 )
-
-
-def declaration() -> IngestSourceDeclaration:
-    """The declaration the server assembles from this module."""
-    specs = []
-    for item in SOURCES:
-        for entry in item["connector_sources"]:
-            body = {k: v for k, v in entry.items() if k not in ("tool", "mapping")}
-            specs.append(
-                IngestSourceSpec.model_validate({**body, "tools": (entry["tool"],)})
-            )
-    return IngestSourceDeclaration.model_validate(
-        {
-            "connector": CONNECTOR,
-            "sources": specs,
-            "schema_mappings": SCHEMA_MAPPINGS,
-            "resources": RESOURCES,
-        }
-    )

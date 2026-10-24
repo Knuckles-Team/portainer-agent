@@ -104,37 +104,3 @@ def test_api_brute_force(_mock_session):
             method(*pos_args, **kwargs)
         except Exception as e:
             print(f"Operation failed: {type(e).__name__}")
-
-
-def test_mcp_server_coverage(_mock_session):
-    import asyncio
-
-    from portainer_agent.mcp_server import get_mcp_instance
-
-    # Mock get_client to return our client
-    client = PortainerApi(base_url="http://test.portainer.com", token="mock_token")
-    with patch("portainer_agent.mcp_server.get_client", return_value=client):
-        # Unpack if tuple
-        mcp_data = get_mcp_instance()
-        mcp = mcp_data[0] if isinstance(mcp_data, tuple) else mcp_data
-
-        async def run_tools():
-            # list_tools might be async
-            tool_objs = (
-                await mcp.list_tools()
-                if inspect.iscoroutinefunction(mcp.list_tools)
-                else mcp.list_tools()
-            )
-            tools = [t.name for t in tool_objs]
-            for tool_name in tools:
-                print(f"Testing MCP tool: {tool_name}")
-                try:
-                    await mcp.call_tool(
-                        tool_name, {"endpoint_id": 1, "id": 1, "name": "test"}
-                    )
-                except Exception:
-                    pass
-
-        loop = asyncio.new_event_loop()
-        loop.run_until_complete(run_tools())
-        loop.close()

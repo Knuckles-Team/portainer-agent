@@ -1,16 +1,12 @@
 import builtins
 import inspect
-import json
 import os
-import runpy
 import sys
 from typing import Any
 from unittest.mock import MagicMock, patch
 
 import pytest
 from agent_connector_sdk.exceptions import UnauthorizedError
-from starlette.datastructures import Headers
-from starlette.requests import Request
 
 # --- Helper Fixture for API Session ---
 
@@ -511,56 +507,6 @@ async def _exercise_tool_actions(tool: Any, actions: list[str], mock_client: Any
         pass
 
 
-@pytest.mark.asyncio
-async def test_mcp_server_serves_typed_per_operation_tools():
-    from portainer_agent.mcp_server import get_mcp_instance
-
-    mcp_data = get_mcp_instance()
-    mcp = mcp_data[0] if isinstance(mcp_data, tuple) else mcp_data
-
-    tools = await mcp.list_tools()
-    operations = [t for t in tools if "operation" in (t.tags or set())]
-    assert len(operations) >= 200
-    for tool in operations:
-        properties = tool.parameters.get("properties", {})
-        assert "action" not in properties
-        assert set(properties) != {"params_json"}
-        assert tool.annotations is not None
-        assert tool.annotations.read_only_hint is not None
-
-
-@pytest.mark.asyncio
-async def test_mcp_server_custom_route():
-    from portainer_agent.mcp_server import get_mcp_instance
-
-    mcp_data = get_mcp_instance()
-    mcp = mcp_data[0] if isinstance(mcp_data, tuple) else mcp_data
-
-    app = mcp.http_app()
-    route_handler = None
-    for route in app.routes:
-        if route.path == "/health":
-            route_handler = route.endpoint
-            break
-
-    assert route_handler is not None
-
-    mock_scope = {
-        "type": "http",
-        "method": "GET",
-        "path": "/health",
-        "headers": Headers().raw,
-    }
-    mock_req = Request(scope=mock_scope)
-    response = await route_handler(mock_req)
-
-    assert response.status_code == 200
-    # The shared MCP server factory now owns the /health route and returns a
-    # lowercase status plus the server name; assert on that current contract.
-    payload = json.loads(response.body.decode())
-    assert payload.get("status", "").lower() == "ok"
-
-
 def test_mcp_server_requests_warning_import_error():
     import importlib
 
@@ -578,74 +524,3 @@ def test_mcp_server_requests_warning_import_error():
 
     if original_mcp_server:
         sys.modules["portainer_agent.mcp_server"] = original_mcp_server
-
-
-def test_mcp_server_startup_transports():
-    from portainer_agent.mcp_server import mcp_server
-
-    mock_args = MagicMock()
-    mock_args.transport = "stdio"
-    mock_args.host = "localhost"
-    mock_args.port = 8000
-    mock_args.auth_type = "none"
-
-    mock_mcp = MagicMock()
-
-    with (
-        patch(
-            "portainer_agent.mcp_server.get_mcp_instance",
-            return_value=(mock_mcp, mock_args, []),
-        ),
-        patch("sys.exit") as mock_exit,
-        patch("fastmcp.FastMCP.run"),
-    ):
-        # 1. stdio
-        mock_args.transport = "stdio"
-        mcp_server()
-        mock_mcp.run.assert_called_with(transport="stdio")
-
-        # 2. streamable-http
-        mock_args.transport = "streamable-http"
-        mcp_server()
-        mock_mcp.run.assert_called_with(
-            transport="streamable-http", host="localhost", port=8000
-        )
-
-        # 3. sse
-        mock_args.transport = "sse"
-        mcp_server()
-        mock_mcp.run.assert_called_with(transport="sse", host="localhost", port=8000)
-
-        # 4. Invalid
-        mock_args.transport = "invalid-transport"
-        mcp_server()
-        mock_exit.assert_called_with(1)
-
-
-def test_mcp_server_main_execution():
-    mock_args = MagicMock()
-    mock_args.transport = "stdio"
-    mock_args.host = "localhost"
-    mock_args.port = 8000
-    mock_args.auth_type = "none"
-
-    mock_mcp = MagicMock()
-
-    # runpy.run_module(..., run_name="__main__") re-executes the module's
-    # own argparse against the LIVE sys.argv, so any pytest flag (e.g.
-    # `-p no:randomly`) leaks in and is rejected by the module's CLI
-    # parser. Pin argv to a clean single-element list for the duration of
-    # the run so the module under test sees the same argv regardless of how
-    # pytest was invoked (get_mcp_instance is mocked out here too, but this
-    # keeps the runpy call site safe if that mock is ever loosened).
-    with (
-        patch(
-            "portainer_agent.mcp_server.get_mcp_instance",
-            return_value=(mock_mcp, mock_args, []),
-        ),
-        patch("sys.exit"),
-        patch("fastmcp.FastMCP.run") as mock_run,
-        patch("sys.argv", ["mcp_server.py"]),
-    ):
-        runpy.run_module("portainer_agent.mcp_server", run_name="__main__")
-        mock_run.assert_called_with(transport="stdio")

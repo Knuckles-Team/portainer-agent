@@ -19,8 +19,8 @@ import pytest
 from agent_connector_sdk.ingest import IngestError, KnowledgeIngest
 
 from portainer_agent.kg_ingest import (
+    STREAM,
     ingest_containers,
-    ingest_entities,
     ingest_environments,
     ingest_stacks,
 )
@@ -70,7 +70,7 @@ def _edges(transport: _FakeTransport) -> set[tuple[str, str, str]]:
 @pytest.mark.asyncio
 async def test_ingest_entities_writes_nodes_and_edges(ingest):
     service, transport = ingest
-    res = await ingest_entities(
+    res = await STREAM.entities(
         [
             {"id": "a", "node_type": "Environment", "name": "prod"},
             {"id": "b", "node_type": "Stack"},
@@ -273,7 +273,7 @@ async def test_ingest_containers_links_env_and_stack(ingest):
 async def test_retired_structural_alias_is_rejected(ingest):
     service, _transport = ingest
     with pytest.raises(IngestError, match="node_type"):
-        await ingest_entities(
+        await STREAM.entities(
             [{"id": "a", "type": "Environment"}], ingest=service
         )
 
@@ -282,4 +282,4 @@ async def test_retired_structural_alias_is_rejected(ingest):
 async def test_empty_ingest_is_rejected(ingest):
     service, _transport = ingest
     with pytest.raises(IngestError, match="at least one entity"):
-        await ingest_entities([], ingest=service)
+        await STREAM.entities([], ingest=service)
