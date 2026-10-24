@@ -83,3 +83,6 @@ exclude = [".specify"]
 
 [tool.pipelines.api_integration]
 baseline = 35.5
+
+[tool.pipelines.skills]
+path_exclude = ["portainer_agent/skills/portainer-agent-docs/reference"]
