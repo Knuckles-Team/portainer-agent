@@ -14,70 +14,13 @@ from typing import Any
 from urllib.parse import urlsplit
 
 from agent_connector_sdk.ingest import (
-    ChangeSet,
-    Entity,
-    IngestBinding,
-    IngestError,
     KnowledgeIngest,
-    Relationship,
-    current_ingest,
+    SourceStream,
 )
 
 logger = logging.getLogger("portainer_agent.kg")
 
-_SOURCE = "portainer-agent"
-_DOMAIN = "portainer"
-
-_BINDING = IngestBinding(connector=_SOURCE, stream=_DOMAIN)
-
-_ENTITY_RESERVED_KEYS = frozenset({"id", "node_type"})
-_RELATIONSHIP_RESERVED_KEYS = frozenset({"source", "target", "relationship"})
-
-
-def _to_entity(record: dict[str, Any]) -> Entity:
-    return Entity(
-        id=record.get("id"),
-        node_type=record.get("node_type"),
-        properties={
-            key: value
-            for key, value in record.items()
-            if key not in _ENTITY_RESERVED_KEYS
-        },
-    )
-
-
-def _to_relationship(record: dict[str, Any]) -> Relationship:
-    properties = {
-        key: value
-        for key, value in record.items()
-        if key not in _RELATIONSHIP_RESERVED_KEYS
-    }
-    return Relationship(
-        source=record["source"],
-        target=record["target"],
-        relationship=record["relationship"],
-        properties=properties or None,
-    )
-
-
-async def ingest_entities(
-    entities: list[dict[str, Any]],
-    relationships: list[dict[str, Any]] | None = None,
-    *,
-    ingest: KnowledgeIngest | None = None,
-) -> dict[str, int]:
-    """Write canonical typed nodes and relationships in one submission."""
-    if not entities:
-        raise IngestError("ingest_entities needs at least one entity")
-    change_set = ChangeSet(
-        entities=tuple(_to_entity(entity) for entity in entities),
-        relationships=tuple(
-            _to_relationship(relationship) for relationship in relationships or ()
-        ),
-    )
-    service = ingest or current_ingest()
-    receipt = await service.submit(_BINDING, change_set)
-    return {"nodes": receipt.affected_count, "edges": receipt.relationship_count}
+STREAM = SourceStream.for_package(__package__.split(".")[0], "portainer")
 
 
 def _get(rec: dict[str, Any], *keys: str, default: Any = None) -> Any:
@@ -127,7 +70,7 @@ async def ingest_environments(
                     "relationship": "partOfEndpointGroup",
                 }
             )
-    return await ingest_entities(entities, relationships, ingest=ingest)
+    return await STREAM.entities(entities, relationships, ingest=ingest)
 
 
 def _host_path_from_url_scheme(raw: str) -> tuple[str, str] | None:
@@ -257,7 +200,7 @@ async def ingest_stacks(
                     "relationship": "inEnvironment",
                 }
             )
-    return await ingest_entities(entities, relationships, ingest=ingest)
+    return await STREAM.entities(entities, relationships, ingest=ingest)
 
 
 async def ingest_containers(
@@ -310,7 +253,7 @@ async def ingest_containers(
                     "relationship": "deployedByStack",
                 }
             )
-    return await ingest_entities(entities, relationships, ingest=ingest)
+    return await STREAM.entities(entities, relationships, ingest=ingest)
 
 
 def _status_label(val: Any) -> Any:

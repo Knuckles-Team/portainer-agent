@@ -84,3 +84,16 @@ def __getattr__(name: str) -> Any:
 
 def __dir__() -> list[str]:
     return sorted(list(globals().keys()) + __all__)
+
+
+from agent_connector_sdk.connector import Connector
+
+from portainer_agent.api_client import PortainerApi
+from portainer_agent.auth import get_client
+
+connector = Connector(
+    api=PortainerApi,
+    get_client=get_client,
+    tools="portainer_agent.mcp_server",
+    instructions="portainer-agent MCP Server — Condensed Action-Routed Tools.",
+)

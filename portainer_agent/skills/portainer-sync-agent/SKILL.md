@@ -29,7 +29,7 @@ List all active endpoints and environments managed by Portainer, mapping target 
 
 ### Step 2: Configure GitOps / Pull Stacks
 Create or redeploy application stacks in Portainer pointing directly to the Git repository source:
-- Set repository URL (e.g. `http://gitlab.arpa/gitops/my-service.git`).
+- Set repository URL (e.g. `http://gitlab.example/gitops/my-service.git`).
 - Set target branch (e.g., `main`).
 - Input generated credentials (GitLab username and PAT).
 - Enable auto-update (webhook or periodic polling) to ensure runtime matches repository state.
@@ -58,7 +58,7 @@ it as the stored content in the same update — keeping the deployed stack and t
 repo in lockstep:
 
 ```bash
-PORTAINER_URL=http://portainer.arpa PORTAINER_TOKEN=… \
+PORTAINER_URL=http://portainer.example PORTAINER_TOKEN=… \
 python scripts/portainer_stack_env.py --stack-id <id> \
   --set-json /run/overrides.json \
   --compose-file services/<svc>/compose.yml

@@ -1,5 +1,5 @@
 schema_version: '1'
-connector: portainer-agent
+connector: portainer-mcp
 ontology_source: portainer
 sync:
 - preset: portainer-environments
