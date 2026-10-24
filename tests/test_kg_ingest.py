@@ -143,7 +143,7 @@ async def test_ingest_stacks_git_backed_creates_repository_and_deployed_from_edg
                 "EndpointId": 1,
                 "EntryPoint": "docker-compose.yml",
                 "GitConfig": {
-                    "URL": "https://oauth2:token123@github.com/acme/web-stack.git/",
+                    "URL": "https://oauth2:placeholder@github.com/acme/web-stack.git/",
                     "ReferenceName": "refs/heads/main",
                     "ConfigFilePath": "deploy/docker-compose.yml",
                 },
