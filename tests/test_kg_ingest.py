@@ -31,7 +31,9 @@ class _FakeTransport:
         self.requests: list[Any] = []
 
     async def source_status(self, connector: str, stream: str) -> Any:  # noqa: V107
-        return SimpleNamespace(accepted_checkpoint=None)
+        return SimpleNamespace(
+            connector=connector, stream=stream, accepted_checkpoint=None
+        )
 
     async def submit(self, request: Any) -> Any:
         self.requests.append(request)
@@ -208,9 +210,7 @@ async def test_ingest_stacks_without_git_config_has_no_repository_node(ingest):
     assert "repositoryUrl" not in st
     assert "repositoryRef" not in st
     assert "composePath" not in st
-    all_ids = {
-        record.record_id for req in transport.requests for record in req.records
-    }
+    all_ids = {record.record_id for req in transport.requests for record in req.records}
     assert not any(n.startswith("git:repo:") for n in all_ids)
     assert _edges(transport) == {
         ("portainer:stack:7", "portainer:environment:1", "inEnvironment")
@@ -261,7 +261,11 @@ async def test_ingest_containers_links_env_and_stack(ingest):
     assert node["status"] == "running"
     assert node["dockerId"] == "abc123"
     edges = _edges(transport)
-    assert ("portainer:container:1_abc123", "portainer:environment:1", "inEnvironment") in edges
+    assert (
+        "portainer:container:1_abc123",
+        "portainer:environment:1",
+        "inEnvironment",
+    ) in edges
     assert (
         "portainer:container:1_abc123",
         "portainer:stack:name:web",
@@ -273,9 +277,7 @@ async def test_ingest_containers_links_env_and_stack(ingest):
 async def test_retired_structural_alias_is_rejected(ingest):
     service, _transport = ingest
     with pytest.raises(IngestError, match="node_type"):
-        await STREAM.entities(
-            [{"id": "a", "type": "Environment"}], ingest=service
-        )
+        await STREAM.entities([{"id": "a", "type": "Environment"}], ingest=service)
 
 
 @pytest.mark.asyncio
