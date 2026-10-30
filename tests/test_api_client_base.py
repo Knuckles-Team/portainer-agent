@@ -1,15 +1,15 @@
 """Facade-parity tests for the current BaseApiClient.
 
 The plumbing (typed error mapping, rate-limit capture, bounded 429 backoff)
-comes from the shared agent_connector_sdk.http fleet base. Transport is a fake
+comes from the shared scion_sdk.http fleet base. Transport is a fake
 requests-style session — no live Portainer.
 """
 
 from types import SimpleNamespace
 
 import pytest
-from agent_connector_sdk.exceptions import AuthError
-from agent_connector_sdk.exceptions import ParameterError
+from scion_sdk.exceptions import AuthError
+from scion_sdk.exceptions import ParameterError
 
 from portainer_agent.api.api_client_base import BaseApiClient
 

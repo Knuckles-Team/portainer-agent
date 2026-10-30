@@ -7,7 +7,7 @@ Skipped informational: 3
   - Priority: P2-Medium | Effort: Medium
 - [ ] [P] **T002** [Dependency Audit] Minor update: pytest-xdist 3.6.0 (constraint — not installed) -> 3.8.0
   - Priority: P3-Low | Effort: Small
-- [ ] [P] **T003** [Dependency Audit] Minor update: agent-connector-sdk 0.2.40 (installed) -> 0.16.0
+- [ ] [P] **T003** [Dependency Audit] Minor update: scion-sdk 0.2.40 (installed) -> 0.16.0
   - Priority: P3-Low | Effort: Small
 - [ ] [P] **T004** [Codebase Optimization] 2 functions exceed 200 lines (actionable refactoring targets): register_docker_t
   - Priority: P2-Medium | Effort: Large

@@ -6,8 +6,8 @@ Exercises the real ``ingest_entities`` / ``ingest_environments`` / ``ingest_stac
 committed nodes/edges and the Portainer record -> :Environment/:Stack/:Container
 mapping. CONCEPT:AU-KG.ingest.enterprise-source-extractor.
 
-This file no longer needs the ``agent_connector_sdk[arbora]`` opt-in extra (WD4-FIX-01
-defect (d)) -- ``kg_ingest.py`` now rides ``agent_connector_sdk.ingest`` exclusively.
+This file no longer needs the ``scion_sdk[arbora]`` opt-in extra (WD4-FIX-01
+defect (d)) -- ``kg_ingest.py`` now rides ``scion_sdk.ingest`` exclusively.
 """
 
 from __future__ import annotations
@@ -16,7 +16,7 @@ from types import SimpleNamespace
 from typing import Any
 
 import pytest
-from agent_connector_sdk.ingest import IngestError, KnowledgeIngest
+from scion_sdk.ingest import IngestError, KnowledgeIngest
 
 from portainer_agent.kg_ingest import (
     STREAM,
@@ -162,7 +162,7 @@ async def test_ingest_stacks_git_backed_creates_repository_and_deployed_from_edg
 
     repo_node = "git:repo:github.com/acme/web-stack"
     repo = _node(transport, repo_node)
-    # agent_connector_sdk.privacy.PersistencePrivacyGuard redacts any property
+    # scion_sdk.privacy.PersistencePrivacyGuard redacts any property
     # literally named "url" by field name (not content) before it crosses the
     # ingest boundary -- a new SDK-wide behavior this migration surfaces, not a
     # mapping bug. The stack's own "repositoryUrl" property (checked above) is

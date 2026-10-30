@@ -4,7 +4,7 @@
     "score": 74,
     "grade": "C",
     "findings": [
-      "Detected ecosystem marker: agent-connector-sdk \u2192 Agent-Utilities Ecosystem",
+      "Detected ecosystem marker: scion-sdk \u2192 Agent-Utilities Ecosystem",
       "Protocol support: MCP",
       "Detected 1 agent skill(s) \u2014 will grade in CE-026"
     ],
@@ -90,7 +90,7 @@
     "grade": "A",
     "findings": [
       "Minor update: pytest-xdist 3.6.0 (constraint \u2014 not installed) -> 3.8.0",
-      "Minor update: agent-connector-sdk 0.2.40 (installed) -> 0.16.0"
+      "Minor update: scion-sdk 0.2.40 (installed) -> 0.16.0"
     ],
     "justifications": [
       {
@@ -119,7 +119,7 @@
         "version_source": "constraint",
         "summary": "pytest xdist plugin for distributed testing, most importantly across multiple CPUs"
       },
-      "agent-connector-sdk": {
+      "scion-sdk": {
         "current": "0.2.40",
         "constraint": "0.16.0",
         "installed": "0.2.40",

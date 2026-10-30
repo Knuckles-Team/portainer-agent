@@ -21,7 +21,7 @@ The base install ships the MCP server runtime. Install the extra for what the op
 
 | Extra | Install | Pulls in |
 |---|---|---|
-| _(base)_ | `pip install portainer-agent` | FastMCP MCP-server runtime (`agent-connector-sdk[mcp]`) |
+| _(base)_ | `pip install portainer-agent` | FastMCP MCP-server runtime (`scion-sdk[mcp]`) |
 | `agent` | `pip install "portainer-agent[agent]"` | Pydantic-AI agent server + Logfire tracing |
 | `all` | `pip install "portainer-agent[all]"` | MCP server, agent server, and Logfire tracing |
 | `test` | `pip install "portainer-agent[test]"` | `pytest`, `pytest-asyncio`, `pytest-cov`, `pytest-xdist` |

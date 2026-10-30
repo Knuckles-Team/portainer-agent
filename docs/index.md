@@ -1,6 +1,6 @@
 # portainer-agent
 
-Portainer container-management **MCP Server + A2A Agent** for the agent-connector-sdk
+Portainer container-management **MCP Server + A2A Agent** for the scion-sdk
 ecosystem — Docker environments, stacks, Kubernetes clusters, registries, users, and
 edge devices through one typed tool surface.
 

@@ -3,10 +3,10 @@
 Auto-generated from mcp_server.py during ecosystem standardization.
 """
 
-from agent_connector_sdk.mcp.concurrency import run_blocking
 from fastmcp import FastMCP
 from fastmcp.dependencies import Depends
 from pydantic import Field
+from scion_sdk.mcp.concurrency import run_blocking
 
 from portainer_agent.auth import get_client
 from portainer_agent.mcp.action_kwargs import ActionCall, dispatch_client_action

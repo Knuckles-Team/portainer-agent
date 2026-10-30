@@ -7,10 +7,10 @@ from portainer_agent.api.api_client_base import BaseApiClient
 def _entitled(namespace: str, names: list[str]) -> list[str]:
     """Filter ``names`` to the subset the calling identity's Okta/Keycloak groups
     entitle (CONCEPT:AU-OS.identity.identity-scoped-resource-autoload). Degrades
-    to the full list if agent-connector-sdk predates the resolver.
+    to the full list if scion-sdk predates the resolver.
     """
     try:
-        from agent_connector_sdk.entitlements import identity_scoped_resources
+        from scion_sdk.entitlements import identity_scoped_resources
     except Exception:
         return list(names)
     return list(identity_scoped_resources(namespace, names))
