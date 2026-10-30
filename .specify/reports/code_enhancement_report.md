@@ -42,7 +42,7 @@ xychart-beta
 `██████████████░░░░░░` 74/100
 
 > [!NOTE]
-> Detected ecosystem marker: agent-connector-sdk → Agent-Utilities Ecosystem
+> Detected ecosystem marker: scion-sdk → Agent-Utilities Ecosystem
 
 | Criterion | Points | Evidence | Reasoning |
 |-----------|--------|----------|-----------|
@@ -75,7 +75,7 @@ xychart-beta
 | dependency_freshness | 94 | `source=${WORKSPACE_ROOT}/agent-packages/agents/portainer-` | Audited 5 deps (3 installed, 2 constraint-only). 0 major, 2 minor, 0 patch updat |
 
 **Findings:**
-- Minor update: agent-connector-sdk 0.2.40 (installed) -> 0.16.0
+- Minor update: scion-sdk 0.2.40 (installed) -> 0.16.0
 
 ---
 
@@ -325,7 +325,7 @@ xychart-beta
 | 21 | 🔴 High | Environment Variables | Only 29% of env vars documented in README.md | High | Medium |
 | 22 | 🔴 High | Environment Variables | Undocumented env vars: AUTHTOOL, AUTH_TYPE, DOCKERTOOL, EDGETOOL, ENVIRONMENTTOO | High | Medium |
 | 23 | 🔴 High | Environment Variables | 3 Python env vars not in .env.example: TLS_PROFILE, PORTAINER_TOKEN, PO | High | Medium |
-| 24 | 🟡 Medium | Project Analysis | Detected ecosystem marker: agent-connector-sdk → Agent-Utilities Ecosystem | Medium | Low |
+| 24 | 🟡 Medium | Project Analysis | Detected ecosystem marker: scion-sdk → Agent-Utilities Ecosystem | Medium | Low |
 | 25 | 🟡 Medium | Project Analysis | Protocol support: MCP | Medium | Low |
 | 26 | 🟡 Medium | Project Analysis | Detected 1 agent skill(s) — will grade in CE-026 | Medium | Low |
 | 27 | 🟡 Medium | Directory Organization | 1 directories with >40 files: portainer_agent/skills/portainer-agent-docs/refere | Medium | Low |

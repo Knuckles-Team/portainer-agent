@@ -10,7 +10,7 @@ license: MIT
 tags: [portainer, development, connector, test, gates]
 tier: repository
 metadata:
-  author: Genius
+  author: Knuckles-Team
   version: '0.1.0'
 ---
 
@@ -19,7 +19,7 @@ metadata:
 This repository owns the Portainer API client, authentication boundary, action-routed
 MCP tools, optional A2A agent, packaged skills, prompts, ontology, connectors, and
 source declarations. Shared MCP contracts, transports, connector serving, and
-credential resolution belong to agent-connector-sdk; admission, serving, and durable
+credential resolution belong to scion-sdk; admission, serving, and durable
 graph state belong to their owning repositories. Read AGENTS.md before changing code.
 Keep Portainer URLs, tenant identifiers, credentials, endpoint data, and raw API
 responses out of source, logs, fixtures, and packaged skill content.

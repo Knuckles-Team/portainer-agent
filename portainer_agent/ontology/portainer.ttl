@@ -182,7 +182,7 @@
     rdfs:comment """Portainer container-management model — environments (endpoints), endpoint
     groups, stacks, containers, services, images, networks, volumes, registries, templates,
     edge stacks and teams, with their deployment and placement relationships — federated into
-    the agent-connector-sdk knowledge-graph hub.""" .
+    the scion-sdk knowledge-graph hub.""" .
 
 # ontology-codemod R3
 <http://knuckles.team/kg#Container> rdfs:subClassOf <http://knuckles.team/kg/infrastructure#Container> .

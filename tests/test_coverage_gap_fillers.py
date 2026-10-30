@@ -6,7 +6,7 @@ from typing import Any
 from unittest.mock import MagicMock, patch
 
 import pytest
-from agent_connector_sdk.exceptions import UnauthorizedError
+from scion_sdk.exceptions import UnauthorizedError
 
 # --- Helper Fixture for API Session ---
 
@@ -215,7 +215,7 @@ def test_api_client_import_fallback():
     original_import = builtins.__import__
 
     def mock_import(name, *args, **kwargs):
-        if "agent_connector_sdk.exceptions" in name:
+        if "scion_sdk.exceptions" in name:
             raise ImportError("Simulated import error")
         return original_import(name, *args, **kwargs)
 

@@ -3,7 +3,7 @@
 The caller's entitled Portainer environments (endpoints) auto-load in
 ``get_endpoints``; a non-entitled endpoint id is denied in ``get_endpoint``.
 Tests the filtering/enforcement logic with the entitlement source mocked (the
-resolver itself is tested in agent-connector-sdk).
+resolver itself is tested in scion-sdk).
 """
 
 import pytest
@@ -56,7 +56,7 @@ def test_missing_resolver_degrades_to_full_list(monkeypatch):
     real_import = builtins.__import__
 
     def _blocked_import(name, *args, **kwargs):
-        if name == "agent_connector_sdk.entitlements":
+        if name == "scion_sdk.entitlements":
             raise ImportError("simulated: resolver not available")
         return real_import(name, *args, **kwargs)
 

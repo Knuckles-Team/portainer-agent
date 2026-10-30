@@ -1,7 +1,7 @@
 """Action-discovery standardization tests.
 
 Verifies that the action-routed MCP tools expose ``list_actions`` discovery and
-a rich did-you-mean error on unknown actions via the shared agent-connector-sdk
+a rich did-you-mean error on unknown actions via the shared scion-sdk
 helper.
 """
 

@@ -18,10 +18,10 @@ from typing import Any
 
 import httpx
 import requests
-from agent_connector_sdk.http.support import AuthHeaderInjector, TokenAuth
-from agent_connector_sdk.http.support import BaseApiClient as FleetApiClient
-from agent_connector_sdk.tls.profile import ResolvedTLSProfile
-from agent_connector_sdk.tls.resolve import resolve_tls_profile
+from scion_sdk.http.support import AuthHeaderInjector, TokenAuth
+from scion_sdk.http.support import BaseApiClient as FleetApiClient
+from scion_sdk.tls.profile import ResolvedTLSProfile
+from scion_sdk.tls.resolve import resolve_tls_profile
 
 #: Request headers managed by the session/transport rather than forwarded.
 _HOP_HEADERS = {"host", "content-length"}

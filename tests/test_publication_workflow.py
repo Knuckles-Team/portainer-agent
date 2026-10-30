@@ -55,7 +55,7 @@ def test_development_skill_has_real_delivery_contract_and_actual_tests():
         "MCP_TOOL_MODE",
         "PortainerApi",
         "portainer_agent/mcp_server.py",
-        "agent-connector-sdk",
+        "scion-sdk",
         "condensed and verbose",
     ):
         assert runtime_name in content

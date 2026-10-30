@@ -1,6 +1,6 @@
 """Epistemic-graph ingestion for Portainer infrastructure records.
 
-All writes use ``agent_connector_sdk.ingest`` -- the generated ``SourceIngest``
+All writes use ``scion_sdk.ingest`` -- the generated ``SourceIngest``
 client, not a local ingestion helper. Nodes use canonical ``node_type`` and edges
 use canonical ``relationship``; nodes and edges commit in one submission. Missing
 engine dependencies, rejected records, conflicts, and submission failures propagate
@@ -13,7 +13,7 @@ import logging
 from typing import Any
 from urllib.parse import urlsplit
 
-from agent_connector_sdk.ingest import (
+from scion_sdk.ingest import (
     KnowledgeIngest,
     SourceStream,
 )

@@ -13,7 +13,7 @@ two failure modes bite:
 So this tool merges env overrides AND pushes the *current repo* compose file in
 the same update, keeping the deployed stack and the repo in lockstep.
 
-The script uses the package's normal ``agent-connector-sdk``/``httpx`` runtime.
+The script uses the package's normal ``scion-sdk``/``httpx`` runtime.
 Credentials come from the environment (PORTAINER_URL, PORTAINER_TOKEN) or
 --url/--token. No secret is hard-coded.
 
@@ -35,8 +35,8 @@ import sys
 import urllib.parse
 
 import httpx
-from agent_connector_sdk.tls.profile import ResolvedTLSProfile
-from agent_connector_sdk.tls.resolve import resolve_tls_profile
+from scion_sdk.tls.profile import ResolvedTLSProfile
+from scion_sdk.tls.resolve import resolve_tls_profile
 
 
 def _req(method, url, token, tls_profile: ResolvedTLSProfile, body=None):
