@@ -15,7 +15,7 @@ tags:
   - health-check
   - devops
 metadata:
-  author: Antigravity
+  author: Repository Maintainers
   version: '0.1.21'
 ---
 
