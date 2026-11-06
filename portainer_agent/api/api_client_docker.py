@@ -230,6 +230,10 @@ class Api(BaseApiClient):
         """Get Docker version information."""
         return self._get(self._docker_url(endpoint_id, "version"))
 
+    def docker_get_system_df(self, endpoint_id: int) -> dict:
+        """Get Docker disk usage (images, containers, volumes, build cache)."""
+        return self._get(self._docker_url(endpoint_id, "system/df"))
+
     def get_docker_events(self, endpoint_id: int, **params) -> Any:
         """Get Docker events."""
         return self._get(self._docker_url(endpoint_id, "events"), params=params)
