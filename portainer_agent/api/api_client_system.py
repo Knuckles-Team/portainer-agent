@@ -94,6 +94,13 @@ class Api(BaseApiClient):
         """Get the message of the day."""
         return self._get("motd")
 
+    def backup_portainer(self, **_unused) -> dict:
+        """Portainer's backup is a binary archive that cannot be returned as a tool result."""
+        raise NotImplementedError(
+            "Portainer backup returns a binary archive; take it from the Portainer "
+            "API (POST /api/backup) or the Portainer settings page, not a tool result"
+        )
+
     def get_webhooks(self) -> Any:
         """List all webhooks."""
         return self._get("webhooks")

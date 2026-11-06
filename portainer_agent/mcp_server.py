@@ -1212,14 +1212,14 @@ def register_edge_tools(mcp: FastMCP):
                 client.get_edge_stack,
                 _filtered_kwargs(stack_id=stack_id),
             ),
-            "create_edge_stack": (client.create_edge_stack, _filtered_kwargs()),
+            "create_edge_stack": (client.create_edge_stack_from_string, _filtered_kwargs()),
             "delete_edge_stack": (
                 client.delete_edge_stack,
                 _filtered_kwargs(stack_id=stack_id),
             ),
             "get_edge_jobs": (client.get_edge_jobs, _filtered_kwargs()),
             "get_edge_job": (client.get_edge_job, _filtered_kwargs(job_id=job_id)),
-            "create_edge_job": (client.create_edge_job, _filtered_kwargs()),
+            "create_edge_job": (client.create_edge_job_from_string, _filtered_kwargs()),
             "delete_edge_job": (
                 client.delete_edge_job,
                 _filtered_kwargs(job_id=job_id),
@@ -1268,7 +1268,7 @@ def register_template_tools(mcp: FastMCP):
                 _filtered_kwargs(template_id=template_id),
             ),
             "create_custom_template": (
-                client.create_custom_template,
+                client.create_custom_template_from_string,
                 _filtered_kwargs(),
             ),
             "delete_custom_template": (
