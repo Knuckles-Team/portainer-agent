@@ -169,19 +169,19 @@ class Api(BaseApiClient):
 
     def get_kubernetes_cluster_roles(self, environment_id: int) -> Any:
         """List Kubernetes cluster roles."""
-        return self._get(f"kubernetes/{environment_id}/clusterroles")
+        return self._get(f"kubernetes/{environment_id}/cluster_roles")
 
     def get_kubernetes_role_bindings(self, environment_id: int) -> Any:
         """List Kubernetes role bindings."""
-        return self._get(f"kubernetes/{environment_id}/rolebindings")
+        return self._get(f"kubernetes/{environment_id}/role_bindings")
 
     def get_kubernetes_cluster_role_bindings(self, environment_id: int) -> Any:
         """List Kubernetes cluster role bindings."""
-        return self._get(f"kubernetes/{environment_id}/clusterrolebindings")
+        return self._get(f"kubernetes/{environment_id}/cluster_role_bindings")
 
     def get_kubernetes_service_accounts(self, environment_id: int) -> Any:
         """List Kubernetes service accounts."""
-        return self._get(f"kubernetes/{environment_id}/serviceaccounts")
+        return self._get(f"kubernetes/{environment_id}/service_accounts")
 
     def get_kubernetes_jobs(self, environment_id: int) -> Any:
         """List Kubernetes jobs."""

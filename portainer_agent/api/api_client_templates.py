@@ -13,9 +13,9 @@ class Api(BaseApiClient):
         """Get template compose file."""
         return self._get(f"templates/{template_id}/file")
 
-    def get_helm_templates(self) -> Any:
-        """List Helm chart templates."""
-        return self._get("templates/helm")
+    def get_helm_templates(self, repo: str) -> Any:
+        """List the Helm charts of one chart repository (its URL, required)."""
+        return self._get("templates/helm", params={"repo": repo})
 
     def get_custom_templates(self) -> Any:
         """List custom templates."""
