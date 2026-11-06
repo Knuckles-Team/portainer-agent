@@ -1212,7 +1212,10 @@ def register_edge_tools(mcp: FastMCP):
                 client.get_edge_stack,
                 _filtered_kwargs(stack_id=stack_id),
             ),
-            "create_edge_stack": (client.create_edge_stack_from_string, _filtered_kwargs()),
+            "create_edge_stack": (
+                client.create_edge_stack_from_string,
+                _filtered_kwargs(),
+            ),
             "delete_edge_stack": (
                 client.delete_edge_stack,
                 _filtered_kwargs(stack_id=stack_id),
