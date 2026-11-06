@@ -4,8 +4,7 @@ ontology_source: portainer
 sync:
 - preset: portainer-environments
   server: portainer-mcp
-  tool: portainer_environment
-  action: get_endpoints
+  tool: portainer_get_endpoints
   records_path: data
   id_field: Id
   title_field: Name
@@ -15,8 +14,7 @@ sync:
   tool_schema_sha256: b50529ca205c7216273190f09e90c507282e9b072f31d151b2f637d4197eb3cb
 - preset: portainer-stacks
   server: portainer-mcp
-  tool: portainer_stack
-  action: get_stacks
+  tool: portainer_get_stacks
   records_path: data
   id_field: Id
   title_field: Name

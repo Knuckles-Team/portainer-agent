@@ -42,7 +42,6 @@ def test_development_skill_has_real_delivery_contract_and_actual_tests():
     assert "## Rapid delivery: the 5-minute contract" in content
     for test_path in (
         "tests/test_publication_workflow.py",
-        "tests/test_action_discovery.py",
         "tests/test_init_dynamics.py",
         "tests/test_api_client_base.py",
         "tests/test_stack_git_auth.py",
@@ -52,11 +51,10 @@ def test_development_skill_has_real_delivery_contract_and_actual_tests():
     for runtime_name in (
         "PORTAINER_URL",
         "PORTAINER_TOKEN",
-        "MCP_TOOL_MODE",
         "PortainerApi",
         "portainer_agent/mcp_server.py",
         "scion-sdk",
-        "condensed and verbose",
+        "typed tool",
     ):
         assert runtime_name in content
 

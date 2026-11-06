@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.3.12] - 2026-11-06
+
+### Changed
+- Connector surface: agent-definition prompts (operator, release deployer, container operator, access administrator), task skills, tool-use contracts for all tools, data locations and roles; ontology classes extend core classes.
+- Require `scion-sdk>=0.9.0`; `uv.lock` relocked.
+- The unregistered condensed action-routed `portainer_{auth,docker,edge,environment,kubernetes,registry,stack,system,template,user}` modules and their characterization tests are removed; the typed per-operation tools are the surface. `portainer_system_raw_request` is a typed tool.
+
 ## [2.3.9] - 2026-10-30
 
 ### Changed

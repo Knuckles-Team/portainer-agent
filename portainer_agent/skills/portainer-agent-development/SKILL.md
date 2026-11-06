@@ -4,7 +4,7 @@ skill_type: skill
 domain: development
 description: >-
   Develop, test, gate, and release the portainer-agent connector. Use this skill
-  when changing Portainer API wrappers, action-routed MCP tools, packaged content,
+  when changing Portainer API wrappers, typed MCP tools, packaged content,
   documentation, or repository gates.
 license: MIT
 tags: [portainer, development, connector, test, gates]
@@ -16,7 +16,7 @@ metadata:
 
 # portainer-agent development
 
-This repository owns the Portainer API client, authentication boundary, action-routed
+This repository owns the Portainer API client, authentication boundary, typed
 MCP tools, optional A2A agent, packaged skills, prompts, ontology, connectors, and
 source declarations. Shared MCP contracts, transports, connector serving, and
 credential resolution belong to scion-sdk; admission, serving, and durable
@@ -32,10 +32,10 @@ spec row in the commit trailer.
 - Find the owning row first with git grep -n "<term>" -- specs; extend the existing
   spec before adding requirement text.
 - Reuse the SDK Connector entry point in portainer_agent/__init__.py, the
-  PortainerApi client, and the action-routed tools in portainer_agent/mcp_server.py.
+  PortainerApi client, and the typed ingestion tools in portainer_agent/mcp_server.py.
   Do not create a second connector entry point, transport, graph-write path, or
   parallel policy.
-- Preserve the action names, condensed and verbose MCP_TOOL_MODE behavior, and the
+- Preserve the typed tool names, one typed tool per operation (no condensed and verbose modes), and the
   client/auth boundary. PORTAINER_URL, PORTAINER_TOKEN, PORTAINER_USERNAME,
   PORTAINER_PASSWORD, PORTAINER_GIT_TOKEN, and MCP_URL are runtime inputs, not
   packaged defaults.
@@ -55,7 +55,7 @@ Use the pinned environment and shared gates from the checkout root:
 For focused feedback, use the tests that exercise the actual connector paths:
 
     uv run --locked --extra test pytest tests/test_publication_workflow.py -q
-    uv run --locked --extra test pytest tests/test_action_discovery.py tests/test_init_dynamics.py -q
+    uv run --locked --extra test pytest tests/test_init_dynamics.py -q
     uv run --locked --extra test pytest tests/test_api_client_base.py tests/test_stack_git_auth.py -q
     uv run --locked --extra test pytest tests/test_kg_ingest.py tests/test_identity_environment_scoping.py -q
 
