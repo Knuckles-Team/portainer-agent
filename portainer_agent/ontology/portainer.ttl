@@ -25,6 +25,7 @@
     rdfs:comment "A named group that organizes environments for access control and tagging (portainer_environment get_endpoint_groups)." .
 
 :Stack a owl:Class ;
+    rdfs:subClassOf :Application ;
     rdfs:label "Stack" ;
     rdfs:comment "A deployed application stack — a compose/swarm/kubernetes manifest managed as one unit (portainer_stack)." .
 
@@ -37,6 +38,7 @@
     rdfs:comment "A Docker Swarm service — a replicated task definition within an environment (portainer_docker list_services)." .
 
 :Image a owl:Class ;
+    rdfs:subClassOf :SoftwareComponent ;
     rdfs:label "Image" ;
     rdfs:comment "A Docker image available in an environment (portainer_docker list_images)." .
 
@@ -49,6 +51,7 @@
     rdfs:comment "A Docker volume within an environment (portainer_docker list_volumes)." .
 
 :Registry a owl:Class ;
+    rdfs:subClassOf :Service ;
     rdfs:label "Registry" ;
     rdfs:comment "A configured container image registry (portainer_registry)." .
 
@@ -56,6 +59,7 @@
 
 
 :EdgeStack a owl:Class ;
+    rdfs:subClassOf :Application ;
     rdfs:label "Edge Stack" ;
     rdfs:comment "A stack deployed to remote edge environments via the Portainer edge agent (portainer_edge)." .
 
