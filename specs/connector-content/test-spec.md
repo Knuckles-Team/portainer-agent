@@ -16,3 +16,9 @@ Each proving test above includes the refusal or error case that its row names. A
 Run `uv run pytest tests` and `pre-commit run --all-files` from the repository root. A planned test is added by the code change that lands the row.
 | T-003 | `CONN-PORTAINER-AGENT-CONNECTOR-CONTENT-R003` | `tests/test_served_dispatch_targets_exist.py` | Every referenced client method exists. |
 | T-004 | `CONN-PORTAINER-AGENT-CONNECTOR-CONTENT-R004` | `tests/test_kubernetes_rbac_and_helm_routes.py` | RBAC reads use the served routes; the Helm chart listing sends `repo`. |
+
+## Adoption of scion-sdk 0.10.0 (`CONN-PORTAINER-AGENT-CONNECTOR-CONTENT-R005`)
+
+| Requirement | Test | Observation |
+|---|---|---|
+| `CONN-PORTAINER-AGENT-CONNECTOR-CONTENT-R005` | `tests/test_scion_sdk_0_10_imports.py::test_every_scion_sdk_import_resolves_on_the_pinned_release` | Every `scion_sdk` import resolves on the pinned release; a removed path fails the test. |

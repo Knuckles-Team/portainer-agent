@@ -8,3 +8,4 @@ Each task line reads `- [ ] T001 [P] [US1] <ID>-R012.4 description`. Tasks run p
 - [ ] T002 [US2] CONN-PORTAINER-AGENT-CONNECTOR-CONTENT-R002 Declare access contracts for the competency reads of portainer-agent.
 - [x] T003 [US1] CONN-PORTAINER-AGENT-CONNECTOR-CONTENT-R003 Served dispatch targets exist.
 - [x] T004 [US1] CONN-PORTAINER-AGENT-CONNECTOR-CONTENT-R004 Kubernetes RBAC and Helm chart reads call served routes.
+- [ ] T005 [US1] CONN-PORTAINER-AGENT-CONNECTOR-CONTENT-R005 Adopt scion-sdk 0.10.0 import paths. Size: S, 1 PR, 30 minutes.
