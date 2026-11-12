@@ -72,7 +72,7 @@ def register_ingest_tools(mcp: FastMCP):
         ),
         client=Depends(get_client),
     ) -> dict:
-        """Natively ingest Portainer environments (+ stacks) into epistemic-graph.
+        """Natively ingest Portainer environments (+ stacks) into medulla.
 
         Lists endpoints via the Portainer API and pushes them as typed ``:Environment``
         nodes (with ``:EndpointGroup`` + ``:partOfEndpointGroup`` links); when
@@ -110,7 +110,7 @@ def register_ingest_tools(mcp: FastMCP):
         ),
         client=Depends(get_client),
     ) -> dict:
-        """Natively ingest an environment's Docker containers into epistemic-graph.
+        """Natively ingest an environment's Docker containers into medulla.
 
         Lists containers in ``environment_id`` and pushes them as typed ``:Container``
         nodes linked ``:inEnvironment`` (and ``:deployedByStack`` where a compose/stack

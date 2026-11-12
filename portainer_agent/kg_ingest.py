@@ -1,4 +1,4 @@
-"""Epistemic-graph ingestion for Portainer infrastructure records.
+"""Medulla ingestion for Portainer infrastructure records.
 
 All writes use ``scion_sdk.ingest`` -- the generated ``SourceIngest``
 client, not a local ingestion helper. Nodes use canonical ``node_type`` and edges
