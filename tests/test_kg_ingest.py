@@ -1,4 +1,4 @@
-"""Epistemic-graph typed-node ingestion — Wire-First coverage.
+"""Medulla typed-node ingestion — Wire-First coverage.
 
 Exercises the real ``ingest_entities`` / ``ingest_environments`` / ``ingest_stacks`` /
 ``ingest_containers`` seam against a fake transport one level below the SDK's own
@@ -222,7 +222,7 @@ async def test_ingest_stacks_propagates_ingest_failure(monkeypatch, ingest):
     service, _transport = ingest
 
     async def _fail(*_args, **_kwargs):
-        raise IngestError("epistemic-graph is unavailable")
+        raise IngestError("medulla is unavailable")
 
     monkeypatch.setattr(service, "submit", _fail)
     with pytest.raises(IngestError, match="unavailable"):

@@ -18,8 +18,8 @@ from typing import Any
 
 import httpx
 import requests
-from scion_sdk.http.support import AuthHeaderInjector, TokenAuth
-from scion_sdk.http.support import BaseApiClient as FleetApiClient
+from scion_sdk.httpsupport.api_client import BaseApiClient as FleetApiClient
+from scion_sdk.httpsupport.auth import AuthHeaderInjector, TokenAuth
 from scion_sdk.tls.profile import ResolvedTLSProfile
 from scion_sdk.tls.resolve import resolve_tls_profile
 

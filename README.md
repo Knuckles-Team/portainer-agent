@@ -97,8 +97,8 @@ When query strings or parameters are supplied, an LLM-free **Knowledge Graph res
 <!-- MCP-CONFIG-EXAMPLES:START -->
 
 > **Install the connector-focused `[mcp]` extra.** Examples use `portainer-agent[mcp]` to add
-> FastMCP / FastAPI through `scion-sdk[mcp]`; the required Agent Utilities core
-> still carries `epistemic-graph[full]`. The `[agent-runtime]` extra additionally
+> FastMCP / FastAPI through `scion-sdk[mcp]`; the required Meristem core
+> still carries `medulla[full]`. The `[agent-runtime]` extra additionally
 > enables model orchestration.
 
 #### stdio Transport (local IDEs — Cursor, Claude Desktop, VS Code)
@@ -467,8 +467,8 @@ Pick the extra that matches what the operator want to run:
 
 | Extra | Installs | Use when |
 |-------|----------|----------|
-| `portainer-agent[mcp]` | Connector-focused MCP server (`scion-sdk[mcp]` — FastMCP/FastAPI + `epistemic-graph[full]`) | The operator only run the **MCP server** (smallest install / image) |
-| `portainer-agent[agent]` | Agent runtime (`scion-sdk[agent-runtime,logfire]` — model orchestration + `epistemic-graph[full]`) | The operator run the **integrated agent** |
+| `portainer-agent[mcp]` | Connector-focused MCP server (`scion-sdk[mcp]` — FastMCP/FastAPI + `medulla[full]`) | The operator only run the **MCP server** (smallest install / image) |
+| `portainer-agent[agent]` | Agent runtime (`scion-sdk[agent-runtime,logfire]` — model orchestration + `medulla[full]`) | The operator run the **integrated agent** |
 | `portainer-agent[all]` | Everything (`mcp` + `agent` + `logfire`) | Development / both surfaces |
 
 ```bash
@@ -488,8 +488,8 @@ One multi-stage `docker/Dockerfile` builds two right-sized images, selected by `
 
 | Image tag | Build target | Contents | Entrypoint |
 |-----------|--------------|----------|------------|
-| `example/portainer-agent:mcp` | `--target mcp` | `portainer-agent[mcp]` — **connector-focused**, includes `epistemic-graph[full]`; no model-orchestration stack | `portainer-mcp` |
-| `example/portainer-agent@sha256:<digest>` | `--target agent` (default) | `portainer-agent[agent]` — **agent runtime**, model orchestration + `epistemic-graph[full]` | `portainer-agent` |
+| `example/portainer-agent:mcp` | `--target mcp` | `portainer-agent[mcp]` — **connector-focused**, includes `medulla[full]`; no model-orchestration stack | `portainer-mcp` |
+| `example/portainer-agent@sha256:<digest>` | `--target agent` (default) | `portainer-agent[agent]` — **agent runtime**, model orchestration + `medulla[full]` | `portainer-agent` |
 
 ```bash
 docker build --target mcp   -t example/portainer-agent:mcp    docker/   # connector-focused MCP server
@@ -499,16 +499,16 @@ docker build --target agent -t example/portainer-agent:agent-local docker/   # a
 `docker/mcp.compose.yml` runs the connector-focused `:mcp` server; `docker/agent.compose.yml` runs the
 agent (`immutable agent digest`) with a co-located `:mcp` sidecar.
 
-### Knowledge-graph database (`epistemic-graph`)
+### Knowledge-graph database (`medulla`)
 
-Both `[mcp]` and `[agent]` carry the **epistemic-graph** engine through the required
-Agent Utilities core dependency (`epistemic-graph[full]`). The `[mcp]` extra keeps
+Both `[mcp]` and `[agent]` carry the **medulla** engine through the required
+Meristem core dependency (`medulla[full]`). The `[mcp]` extra keeps
 the server connector-focused; `[agent]` also enables model orchestration. Local
 deployments can use the bundled engine. For production or shared state, run
-**epistemic-graph as a dedicated database service** and configure the runtime to use it.
+**medulla as a dedicated database service** and configure the runtime to use it.
 Deployment recipes (single-node + Raft HA), connection configuration, and architecture
 diagrams are documented in the
-[epistemic-graph deployment guide](https://knuckles-team.github.io/epistemic-graph/deployment/).
+[medulla deployment guide](https://knuckles-team.github.io/medulla/deployment/).
 
 ---
 
