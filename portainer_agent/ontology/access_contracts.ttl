@@ -1,0 +1,16 @@
+@prefix ac: <https://knuckles-team.github.io/ontology/access#> .
+@prefix : <https://knuckles-team.github.io/ontology/connector/portainer#> .
+@prefix pt: <https://knuckles-team.github.io/ontology/connector/portainer-access#> .
+
+pt:stackAccess a ac:AccessContract ;
+    ac:classIri :Stack ;
+    ac:sourceId "portainer-agent" ;
+    ac:entity "stack" ;
+    ac:keyField "Id" ;
+    ac:accessKind "mcp_tool" ;
+    ac:operation "portainer_get_stacks" ;
+    ac:pagination "none" .
+
+pt:name a ac:PropertyBinding ; ac:contract pt:stackAccess ; ac:property :name ; ac:field "Name" .
+pt:gitUrl a ac:PropertyBinding ; ac:contract pt:stackAccess ; ac:property :gitUrl ; ac:field "GitConfig.URL" .
+pt:endpointId a ac:PropertyBinding ; ac:contract pt:stackAccess ; ac:property :endpointId ; ac:field "EndpointId" .

@@ -158,6 +158,24 @@
     rdfs:comment "Lifecycle/health status (Environment up/down, Stack active/inactive, Container running/exited)." ;
     rdfs:range xsd:string .
 
+:name a owl:DatatypeProperty ;
+    rdfs:label "name" ;
+    rdfs:comment "The display name of a stack." ;
+    rdfs:domain :Stack ;
+    rdfs:range xsd:string .
+
+:gitUrl a owl:DatatypeProperty ;
+    rdfs:label "git url" ;
+    rdfs:comment "The Git repository URL a stack is deployed from." ;
+    rdfs:domain :Stack ;
+    rdfs:range xsd:string .
+
+:endpointId a owl:DatatypeProperty ;
+    rdfs:label "endpoint id" ;
+    rdfs:comment "The identifier of the environment (endpoint) a stack is deployed to." ;
+    rdfs:domain :Stack ;
+    rdfs:range xsd:integer .
+
 :stackType a owl:DatatypeProperty ;
     rdfs:label "stack type" ;
     rdfs:comment "Deployment kind of a Stack (1=swarm, 2=compose, 3=kubernetes)." ;
