@@ -1,7 +1,8 @@
 @prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix core: <https://knuckles-team.github.io/ontology/core#> .
 @prefix foaf: <http://xmlns.com/foaf/0.1/> .
 @prefix dc: <http://purl.org/dc/terms/> .
-@prefix : <http://knuckles.team/kg#> .
+@prefix : <https://knuckles-team.github.io/ontology/connector/portainer#> .
 @prefix owl: <http://www.w3.org/2002/07/owl#> .
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
 @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
@@ -17,6 +18,7 @@
 # --- classes (owl:Class) ---
 
 :Environment a owl:Class ;
+    rdfs:subClassOf core:Environment ;
     rdfs:label "Environment" ;
     rdfs:comment "A Portainer-managed endpoint — a Docker host, Swarm cluster, Kubernetes cluster or edge agent (portainer_environment)." .
 
@@ -25,48 +27,56 @@
     rdfs:comment "A named group that organizes environments for access control and tagging (portainer_environment get_endpoint_groups)." .
 
 :Stack a owl:Class ;
-    rdfs:subClassOf :Application ;
+    rdfs:subClassOf core:Application ;
     rdfs:label "Stack" ;
     rdfs:comment "A deployed application stack — a compose/swarm/kubernetes manifest managed as one unit (portainer_stack)." .
 
 :Container a owl:Class ;
+    rdfs:subClassOf core:ConfigurationItem ;
     rdfs:label "Container" ;
     rdfs:comment "A Docker container running in an environment (portainer_docker docker_list_containers)." .
 
 :Service a owl:Class ;
+    rdfs:subClassOf core:ConfigurationItem ;
     rdfs:label "Service" ;
     rdfs:comment "A Docker Swarm service — a replicated task definition within an environment (portainer_docker list_services)." .
 
 :Image a owl:Class ;
-    rdfs:subClassOf :SoftwareComponent ;
+    rdfs:subClassOf core:SoftwareComponent ;
     rdfs:label "Image" ;
     rdfs:comment "A Docker image available in an environment (portainer_docker list_images)." .
 
 :Network a owl:Class ;
+    rdfs:subClassOf core:ResourceGroup ;
     rdfs:label "Network" ;
     rdfs:comment "A Docker network within an environment (portainer_docker list_networks)." .
 
 :Volume a owl:Class ;
+    rdfs:subClassOf core:StorageContainer ;
     rdfs:label "Volume" ;
     rdfs:comment "A Docker volume within an environment (portainer_docker list_volumes)." .
 
 :Registry a owl:Class ;
+    rdfs:subClassOf core:Repository ;
     rdfs:subClassOf :Service ;
     rdfs:label "Registry" ;
     rdfs:comment "A configured container image registry (portainer_registry)." .
 
-:Template a owl:Class .
+:Template a owl:Class ;
+    rdfs:subClassOf core:Template .
 
 
 :EdgeStack a owl:Class ;
-    rdfs:subClassOf :Application ;
+    rdfs:subClassOf core:Application ;
     rdfs:label "Edge Stack" ;
     rdfs:comment "A stack deployed to remote edge environments via the Portainer edge agent (portainer_edge)." .
 
-:Team a owl:Class .
+:Team a owl:Class ;
+    rdfs:subClassOf core:Team .
 
 
-:Repository a owl:Class .
+:Repository a owl:Class ;
+    rdfs:subClassOf core:Repository .
 
 
 # --- links (owl:ObjectProperty) ---
@@ -112,12 +122,12 @@
 :ownedByUser a owl:ObjectProperty ;
     rdfs:label "owned by user" ;
     rdfs:comment "Links a Stack to the Person (Portainer user) who created it." ;
-    rdfs:range :Person .
+    rdfs:range core:Person .
 
 :memberOfTeam a owl:ObjectProperty ;
     rdfs:label "member of team" ;
     rdfs:comment "Links a Person (Portainer user) to a Team they belong to." ;
-    rdfs:domain :Person ;
+    rdfs:domain core:Person ;
     rdfs:range :Team .
 
 :deployedFrom a owl:ObjectProperty ;
@@ -181,7 +191,7 @@
     rdfs:domain :Stack ;
     rdfs:range xsd:string .
 
-<http://knuckles.team/kg/portainer> a owl:Ontology ;
+<https://knuckles-team.github.io/ontology/connector/portainer> a owl:Ontology ;
     rdfs:label "Portainer Container-Management Ontology" ;
     rdfs:comment """Portainer container-management model — environments (endpoints), endpoint
     groups, stacks, containers, services, images, networks, volumes, registries, templates,
@@ -189,8 +199,8 @@
     the scion-sdk knowledge-graph hub.""" .
 
 # ontology-codemod R3
-<http://knuckles.team/kg#Container> rdfs:subClassOf <http://knuckles.team/kg/infrastructure#Container> .
-<http://knuckles.team/kg#EndpointGroup> rdfs:subClassOf <http://knuckles.team/kg#ResourceGroup> .
-<http://knuckles.team/kg#Network> rdfs:subClassOf <http://knuckles.team/kg/infrastructure#Network> .
-<http://knuckles.team/kg#Service> rdfs:subClassOf <http://knuckles.team/kg/infrastructure#Service> .
-<http://knuckles.team/kg#Volume> rdfs:subClassOf <http://knuckles.team/kg/infrastructure#Volume> .
+<https://knuckles-team.github.io/ontology/connector/portainer#Container> rdfs:subClassOf <https://knuckles-team.github.io/ontology/infrastructure#Container> .
+<https://knuckles-team.github.io/ontology/connector/portainer#EndpointGroup> rdfs:subClassOf <https://knuckles-team.github.io/ontology/core#ResourceGroup> .
+<https://knuckles-team.github.io/ontology/connector/portainer#Network> rdfs:subClassOf <https://knuckles-team.github.io/ontology/infrastructure#Network> .
+<https://knuckles-team.github.io/ontology/connector/portainer#Service> rdfs:subClassOf <https://knuckles-team.github.io/ontology/infrastructure#Service> .
+<https://knuckles-team.github.io/ontology/connector/portainer#Volume> rdfs:subClassOf <https://knuckles-team.github.io/ontology/infrastructure#Volume> .
