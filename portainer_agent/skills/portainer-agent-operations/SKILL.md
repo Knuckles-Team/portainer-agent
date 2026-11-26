@@ -19,6 +19,22 @@ Every Docker call is scoped to an environment (endpoint) id; resolve it with por
 - Stop, remove, prune, drain and delete take confirm=true; pass it only after the person agrees.
 - Never print tokens, registry passwords or stack secrets.
 
+## Steps
+
+1. Resolve the environment with `portainer_get_endpoints`. Verify you have the endpoint id before any other call.
+2. Pick the matching task workflow below, for example `inspect-docker-workloads`. Verify every tool you will call is listed under it.
+3. Read before changing, for example `portainer_get_docker_info` (endpoint_id). Verify the response names the target environment.
+4. Make one change with the listed tool, passing `confirm=true` only after the person agrees to a destructive action. Verify the response reports success.
+5. Re-read the changed object, for example with `portainer_get_container_logs` (endpoint_id, container_id). Verify it shows the intended state.
+
+## Failure recovery
+
+| Failure | Cause | Recovery |
+|---------|-------|----------|
+| 401 or 403 from Portainer | `PORTAINER_URL` or `PORTAINER_TOKEN` missing or expired | Set both variables, or call `portainer_authenticate` (username, password), then repeat `portainer_get_endpoints`. |
+| Endpoint not found | Wrong environment id | List ids with `portainer_get_endpoints` and use the returned id. |
+| Destructive tool refused | `confirm=true` not given | Obtain the person's agreement, then call the tool again with `confirm=true`. |
+
 ## Task workflows
 
 ### inspect-docker-workloads
