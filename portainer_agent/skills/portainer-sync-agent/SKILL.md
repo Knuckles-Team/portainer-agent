@@ -24,6 +24,23 @@ Stateless atomic operation to deploy platform applications to target environment
 
 ## Steps
 
+1. Resolve the target environment with `portainer_get_endpoints`. Verify the endpoint id for the requested environment is present.
+2. Check for an existing stack with `portainer_get_stack_by_name` (name, endpoint_id). Verify whether it exists, to choose between create and redeploy.
+3. Create a new stack with `portainer_create_swarm_stack_from_repository` (or the standalone variant) using the repository URL, branch and credentials, or redeploy an existing one with `portainer_redeploy_stack_git`. Verify the call returns a stack id.
+4. Enable GitOps auto-update through `portainer_update_stack_git` (stack_id). Verify `portainer_get_stack` reports the Git configuration.
+5. Confirm the deployment with `portainer_get_stack_logs` (stack_id). Verify the stack is Active and the logs show no error.
+6. For a rotated secret on a non-GitOps stack, run `python scripts/portainer_stack_env.py --stack-id <id> --set-json overrides.json --compose-file <compose>`. Verify the script reports the redeploy succeeded.
+
+## Failure recovery
+
+| Failure | Cause | Recovery |
+|---------|-------|----------|
+| 401 or 403 from Portainer | `PORTAINER_URL` or `PORTAINER_TOKEN` missing or expired | Set both variables with a valid token and call `portainer_get_endpoints` to confirm access. |
+| Stack deploys with stale files | The stored compose drifted from the repository | Re-run `portainer_stack_env.py` with `--compose-file` pointing at the current repository compose. |
+| Delete or stop refused | Destructive call without `confirm=true` | Confirm with the person, then call the tool again with `confirm=true`. |
+
+## Deployment details
+
 ### Step 1: Query Portainer Environments
 List all active endpoints and environments managed by Portainer, mapping target Swarm manager cluster or standalone node IDs.
 

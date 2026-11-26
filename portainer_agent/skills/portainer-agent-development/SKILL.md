@@ -45,6 +45,23 @@ spec row in the commit trailer.
   package-data contract. Put Spec: <ID> and the assisting-agent trailer on consecutive
   final commit message lines.
 
+## Steps
+
+1. Find the owning requirement with `git grep -n "<term>" -- specs`. Verify a row exists before editing.
+2. Create a worktree from `origin/main` with `git worktree add`. Verify `git status --short` is clean.
+3. Make the smallest change in the existing client or tool module under `portainer_agent/`. Verify with `git diff --stat` that only intended files changed.
+4. Run the focused tests with `uv run --locked --extra test pytest tests/test_publication_workflow.py -q`. Verify they pass.
+5. Run the gates with `uvx pre-commit run --all-files`. Verify every hook reports Passed.
+6. Stage an explicit allowlist with `git add -- <paths>` and commit with the `Spec:` trailer. Verify `git diff --cached --name-status` lists only reviewed paths.
+
+## Failure recovery
+
+| Failure | Cause | Recovery |
+|---------|-------|----------|
+| Locked sync fails | `uv.lock` out of step with `pyproject.toml` | Run `uv sync --locked` in the worktree and fix the dependency the error names. |
+| Hook fails on commit | A gate found a formatting, spelling or spec problem | Read the hook output, fix the named file, and commit again with hooks active. |
+| Test uses a live endpoint | A fixture reads real credentials | Replace it with a local fake and re-run `tests/test_api_client_base.py`. |
+
 ## Setup and gates
 
 Use the pinned environment and shared gates from the checkout root:

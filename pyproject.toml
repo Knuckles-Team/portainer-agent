@@ -85,4 +85,4 @@ exclude = [".specify"]
 baseline = 35.5
 
 [tool.pipelines.skills]
-path_exclude = ["portainer_agent/skills/portainer-agent-docs/reference"]
+path_exclude = ["portainer_agent/skills/portainer-agent-docs/references"]
